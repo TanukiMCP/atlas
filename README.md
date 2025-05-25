@@ -1,98 +1,52 @@
-# 🦝 TanukiMCP Atlas - Phase 1 Foundation
+# 🦝 TanukiMCP Atlas
 
-**Local AI-powered IDE with Hub-Based Dual MCP Architecture**
+**The Future of Local AI: Revolutionary Multi-Layered Intelligence System**
 
-TanukiMCP Atlas is a fully local, free, open-source AI-powered IDE that uses a sophisticated Hub-Based Dual MCP Architecture. The IDE acts as both an MCP server (hosting built-in tools) and MCP client (connecting to external MCP servers).
+TanukiMCP Atlas is a groundbreaking **100% local AI reasoning platform** that redefines how we interact with artificial intelligence. Built on an innovative Enhanced LLM Processing Architecture, Atlas delivers sophisticated AI capabilities without compromising your privacy or requiring cloud subscriptions.
 
-## 🎯 Project Status: Phase 1 Complete ✅
+![License](https://img.shields.io/badge/license-MIT-blue.svg)
+![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey.svg)
+![Local](https://img.shields.io/badge/AI-100%25%20Local-green.svg)
+![Open Source](https://img.shields.io/badge/open%20source-community%20driven-orange.svg)
 
-✅ **Foundation Structure**: Complete monorepo with Turbo orchestration  
-✅ **Electron Application**: Main process with window management and security  
-✅ **Database System**: SQLite with Drizzle ORM and comprehensive schema  
-✅ **IPC Communication**: Type-safe communication between main/renderer  
-✅ **React Frontend**: Modern UI with Zustand state management  
-✅ **TypeScript**: Strict mode with comprehensive type definitions  
-✅ **Build System**: Vite for renderer, esbuild for main process  
+## 🌟 What Makes Atlas Revolutionary?
 
-## 🏗️ Architecture Overview
+### 🧠 **Enhanced Multi-Layered Intelligence**
+Atlas features a sophisticated **4-tier processing architecture** that adapts to task complexity:
+- **Tier 1**: Lightning-fast simple requests (instant responses)
+- **Tier 2**: Atomic task processing (optimized single-step execution)  
+- **Tier 3**: Moderate complexity handling (multi-step reasoning)
+- **Tier 4**: Complex task orchestration (full AI agent capabilities)
 
-```
-TanukiMCP Atlas (Hub-Based Dual MCP Architecture)
-├── Built-in MCP Server (FastMCP) - 100% uptime tools
-│   ├── File Operations (read_file, write_file, edit_block)
-│   ├── Task Management (create_todolist)
-│   ├── Subject-Specific Tools (mathematics, programming, etc.)
-│   └── CRUD Operations (comprehensive data management)
-├── MCP Client Hub - External server integration
-│   ├── stdio transport (local command-line servers)
-│   ├── HTTP/SSE transport (web-based servers)
-│   └── Tool aggregation with conflict resolution
-├── Enhanced LLM Router (Multi-tier processing)
-│   ├── Ollama Integration (Local models only)
-│   └── Context-aware tool selection
-└── Intelligent UI
-    ├── Chat History CRUD
-    ├── Workflow Management (save-chat-as-workflow)
-    ├── Subject Mode Switching
-    └── @ Symbol Tool Integration
-```
+### 🎭 **Dual-Mode Operation**
+- **Agent Mode**: Full autonomous execution with comprehensive tool access
+- **Chat Mode**: High-quality conversational intelligence with thinking tools
+- **Seamless Switching**: Context-preserving transitions between modes
 
-## 📁 Project Structure
+### 🏆 **AI Quality Assurance Council**
+- **Tournament Bracket Enhancement**: 4-agent competition system
+- **Voting Panel Consensus**: 10-judge quality evaluation
+- **Expert Panel Review**: Final validation for critical tasks
+- **80% Agreement Requirement**: Ensures exceptional output quality
 
-```
-tanukimcp-atlas/
-├── package.json (root workspace)
-├── turbo.json (monorepo configuration)
-├── packages/
-│   ├── main/ (Electron main process)
-│   │   ├── src/
-│   │   │   ├── main.ts (Application entry point)
-│   │   │   ├── window.ts (Window management)
-│   │   │   ├── ipc/handlers.ts (IPC communication)
-│   │   │   └── database/
-│   │   │       ├── connection.ts (SQLite setup)
-│   │   │       └── schema.ts (Comprehensive schema)
-│   │   ├── package.json
-│   │   └── tsconfig.json
-│   ├── renderer/ (React frontend)
-│   │   ├── src/
-│   │   │   ├── main.tsx (React entry point)
-│   │   │   ├── App.tsx (Main application)
-│   │   │   ├── stores/app-store.ts (Zustand state)
-│   │   │   └── index.css (Professional styling)
-│   │   ├── index.html
-│   │   ├── vite.config.ts
-│   │   ├── package.json
-│   │   └── tsconfig.json
-│   └── shared/ (Shared utilities)
-│       ├── src/
-│       │   ├── types/
-│       │   │   ├── ipc.ts (IPC type definitions)
-│       │   │   └── database.ts (Database types)
-│       │   └── utils/
-│       │       └── validation.ts (Validation utilities)
-│       ├── package.json
-│       └── tsconfig.json
-└── scripts/
-    └── setup.js (Development setup)
-```
-
+### 🛡️ **Complete Privacy & Control**
+- **100% Local Operation**: No cloud APIs, no data tracking, no subscriptions
+- **Always-Available Stop Button**: Instant halt capability for any operation
+- **Granular Control**: Intervene at any phase, task, or tool level
+- **Your Data Stays Yours**: Everything runs on your hardware
 ## 🚀 Quick Start
 
 ### Prerequisites
-
-- **Node.js 18+**: Required for development
-- **npm**: Package manager
-- **Git**: Version control
-- **Ollama** (optional): For local LLM support
+- **Node.js 18+** (Download from [nodejs.org](https://nodejs.org))
+- **Ollama** (Download from [ollama.ai](https://ollama.ai)) for local AI models
+- **8GB+ RAM recommended** (16GB+ for advanced models)
 
 ### Installation
 
-1. **Clone and setup**:
+1. **Clone the repository**:
    ```bash
-   git clone https://github.com/TanukiMCP/atlas
+   git clone https://github.com/TanukiMCP/atlas.git
    cd tanukimcp-atlas
-   npm run setup  # Runs system checks and creates missing directories
    ```
 
 2. **Install dependencies**:
@@ -100,148 +54,213 @@ tanukimcp-atlas/
    npm install
    ```
 
-3. **Start development**:
+3. **Set up the development environment**:
+   ```bash
+   npm run setup
+   ```
+
+4. **Start Atlas**:
    ```bash
    npm run dev
    ```
 
-### Optional: Ollama Setup
-
-For local LLM support, install Ollama and recommended models:
+### Install AI Models (Recommended)
 
 ```bash
-# Install Ollama (see https://ollama.ai)
-curl -fsSL https://ollama.ai/install.sh | sh
+# Efficient reasoning model (4GB RAM minimum)
+ollama pull deepseek-r1-distill-qwen:7b
 
-# Install recommended models
-ollama pull deepseek-r1-distill-qwen:7b  # Efficient reasoning model
-ollama pull qwq:32b                      # Advanced reasoning (requires 24GB+ RAM)
+# Advanced reasoning model (24GB+ RAM recommended)
+ollama pull qwq:32b
+
+# General purpose model (8GB RAM)
+ollama pull llama3.2:latest
 ```
 
-## 🧠 Enhanced Features (Phase 1 Foundation)
+## 🎯 Key Features
 
-### Database Schema
-- **Projects**: Workspace management with metadata
-- **Chat Sessions**: CRUD operations with favorites, archiving, tagging
-- **Chat History**: Complete message tracking with tool usage analytics
-- **Context Entries**: Intelligent context management with vector embeddings
-- **Workflows**: Save-chat-as-workflow with LangChain integration
-- **MCP Servers**: External server configuration and health monitoring
-- **Model Configurations**: Performance tracking and optimization
-- **Subject Modes**: Specialized tool modes (mathematics, programming, etc.)
-- **Settings**: User preferences and system configuration
-- **Analytics**: Performance and usage tracking
+### 🤖 **Intelligent Task Management**
+- **Adaptive Complexity Assessment**: Automatically routes tasks to the optimal processing tier
+- **Context-Aware Planning**: Understands relationships between tasks and optimizes execution
+- **Real-Time Optimization**: Continuously improves performance based on usage patterns
 
-### Type-Safe Architecture
-- **IPC Communication**: Fully typed channels with validation
-- **Database Operations**: Type-safe queries with Drizzle ORM
-- **State Management**: Zustand with TypeScript integration
-- **Validation**: Comprehensive data validation utilities
+### 🔧 **Powerful Tool Integration**
+- **MCP (Model Context Protocol)**: Connect to hundreds of external tools and services
+- **Built-in Tool Suite**: File operations, task management, calculations, and more
+- **Custom Tool Creation**: Build and share your own tools with the community### 📊 **Workflow Automation**
+- **Chat-to-Workflow Conversion**: Transform successful conversations into reusable workflows
+- **Template Marketplace**: Share and discover workflows created by the community
+- **A/B Testing**: Optimize workflows through experimentation and analytics
 
-### Professional UI
-- **Dark/Light Themes**: CSS custom properties for theming
-- **Responsive Design**: Mobile-friendly responsive layout
-- **IDE-Style Interface**: Title bar, sidebar, status bar
-- **Error Handling**: Comprehensive error boundaries and recovery
-- **Loading States**: Professional loading and transition states
+### 🎨 **Modern Interface**
+- **Dual-Mode UI**: Seamlessly switch between Agent and Chat modes
+- **Real-Time Visualization**: Watch AI reasoning in action with live process display
+- **Customizable Workspace**: Tailor the interface to your workflow preferences
 
-## 🎯 Coming in Future Phases
+## 🏗️ Architecture Overview
 
-### Phase 2: Advanced Local LLM Integration
-- Complete Ollama integration with model management
-- Hardware assessment and performance prediction
-- KV cache optimization and parameter tuning
-- Model installation suite with progress tracking
+Atlas is built on a **Hub-Based Dual MCP Architecture** that combines:
 
-### Phase 3: Built-in MCP Server
-- FastMCP-based built-in tools with 100% uptime
-- Subject-specific tool suites (STEM, Languages, etc.)
-- Enhanced file operations with security
-- Task management and TodoList visualization
+```
+🦝 TanukiMCP Atlas
+├── 🧠 Enhanced LLM Router (4-tier processing)
+├── 🎭 Dual-Mode Operation (Agent + Chat)
+├── 🏆 AI Quality Assurance Council
+├── 🔧 Built-in MCP Server (100% uptime tools)
+├── 🌐 MCP Client Hub (external integrations)
+├── 📊 Workflow Automation System
+└── 🛡️ Advanced User Control & Safety
+```
 
-### Phase 4: External MCP Integration
-- MCP client hub for external servers
-- stdio/HTTP/SSE transport support
-- Tool aggregation with conflict resolution
-- Health monitoring and automatic recovery
+## 💡 Use Cases
 
-### Phase 5-8: Advanced Features
-- Enhanced LLM routing with multi-tier processing
-- Unified tool router with @ symbol integration
-- Complete UI implementation with workflow management
-- MCP management center with comprehensive monitoring
+### **For Developers**
+- **Code Review & Optimization**: Multi-agent code analysis with quality assurance
+- **Architecture Planning**: Complex system design with expert AI consultation
+- **Debugging Assistant**: Intelligent problem-solving with context awareness
 
-## 📋 Development Commands
+### **For Researchers**
+- **Literature Analysis**: Comprehensive research paper analysis and synthesis
+- **Data Processing**: Automated data cleaning and analysis workflows
+- **Hypothesis Generation**: AI-assisted ideation with quality validation
 
+### **For Business**
+- **Process Automation**: Convert manual tasks into intelligent workflows
+- **Decision Support**: Multi-perspective analysis with consensus building
+- **Content Creation**: High-quality content with built-in review processes
+
+### **For Students & Educators**
+- **Interactive Learning**: Adaptive tutoring with personalized explanations
+- **Research Assistance**: Structured investigation with source validation
+- **Skill Development**: Progressive learning with real-time feedback## 🌍 Open Source & Community
+
+### **Why Open Source?**
+Atlas is **completely open source** because we believe AI should be:
+- **Accessible**: Available to everyone regardless of economic status
+- **Transparent**: No black boxes or hidden agendas
+- **Community-Driven**: Improved by collective intelligence
+- **Privacy-Respecting**: You control your data and interactions
+
+### **Community Contributions Welcome!**
+We actively encourage:
+- 🐛 **Bug Reports**: Help us identify and fix issues
+- 💡 **Feature Requests**: Share your ideas for improvements
+- 🔧 **Code Contributions**: Submit pull requests for enhancements
+- 📚 **Documentation**: Improve guides and tutorials
+- 🎨 **UI/UX Improvements**: Enhance the user experience
+- 🧪 **Tool Development**: Create new MCP tools and integrations
+
+### **Learning & Advancement**
+Atlas is designed as a **learning platform**:
+- **Modular Architecture**: Easy to understand and modify
+- **Comprehensive Documentation**: Detailed guides for all skill levels
+- **Example Workflows**: Learn from real-world use cases
+- **Community Tutorials**: Shared knowledge and best practices## ⚠️ Honest Disclaimer
+
+**Atlas was created by a passionate full-time veterinary technician** who believes in the democratization of AI technology. This project represents:
+
+- 🧠 **Original Architecture & Ideas**: Novel concepts in multi-layered AI processing
+- 🤝 **AI-Assisted Implementation**: Built with AI collaboration for rapid development
+- 💝 **Passion Project**: "Vibe coded" with enthusiasm and dedication to the community
+- 🎯 **Practical Focus**: Designed by someone who uses AI daily for real work
+
+**This is not a corporate product** - it's a community-driven initiative built by someone who:
+- Works full-time in veterinary medicine
+- Uses AI tools daily for practical applications
+- Believes AI should be accessible to everyone
+- Values community collaboration over profit
+
+**Contributions from experienced developers are especially welcome** to help refine and improve the codebase!
+
+## 🛣️ Roadmap
+
+### **Current Status: Foundation Complete** ✅
+- ✅ Core architecture and dual-mode system
+- ✅ Enhanced LLM processing pipeline
+- ✅ Basic tool integration and MCP support
+- ✅ Quality assurance framework
+
+### **Coming Soon**
+- 🔄 **Advanced Workflow System**: Visual workflow builder with drag-and-drop
+- 🌐 **Extended MCP Integrations**: Hundreds of pre-built tool connections
+- 📱 **Mobile Companion App**: Remote monitoring and basic interactions
+- 🎯 **Specialized Agent Templates**: Domain-specific AI assistants
+
+### **Future Vision**
+- 🧪 **Research Platform**: Academic collaboration tools
+- 🏢 **Enterprise Features**: Team collaboration and management
+- 🌍 **Global Community Hub**: Workflow sharing and collaboration
+- 🎓 **Educational Platform**: AI literacy and development courses## 🤝 Getting Involved
+
+### **Join Our Community**
+- 💬 **Discussions**: Share ideas and get help on GitHub Discussions
+- 🐛 **Issues**: Report bugs or request features on GitHub Issues
+- 🔧 **Pull Requests**: Contribute code improvements
+- 📖 **Wiki**: Help improve documentation and guides
+
+### **Ways to Contribute**
+1. **Use Atlas**: The best contribution is using and providing feedback
+2. **Share Your Workflows**: Help others by sharing successful automation
+3. **Report Issues**: Even small bugs help improve the experience
+4. **Spread the Word**: Tell others about local AI possibilities
+5. **Contribute Code**: Help build the future of AI interaction
+
+### **Developer Setup**
 ```bash
-# Development
-npm run dev          # Start all packages in development mode
-npm run build        # Build all packages for production
-npm start           # Start built application
+# Fork the repository on GitHub
+git clone https://github.com/YOUR_USERNAME/atlas.git
+cd tanukimcp-atlas
 
-# Individual packages
-npm run dev --workspace=@tanukimcp/renderer    # Start only renderer
-npm run build --workspace=@tanukimcp/main      # Build only main process
+# Install dependencies
+npm install
 
-# Utilities
-npm run type-check   # Run TypeScript type checking
-npm run clean       # Clean all build outputs
-npm run setup       # Run development setup checks
+# Start development environment
+npm run dev
+
+# Run tests
+npm test
+
+# Build for production
+npm run build
 ```
-
-## 🛠️ Technical Stack
-
-- **Desktop**: Electron 28+ with context isolation
-- **Frontend**: React 18 + TypeScript + Zustand
-- **Backend**: Node.js with TypeScript
-- **Database**: SQLite + better-sqlite3 + Drizzle ORM
-- **Build**: Turbo (monorepo) + Vite (renderer) + esbuild (main)
-- **Styling**: CSS Custom Properties + Modern CSS
-- **Architecture**: Hub-Based Dual MCP with local-only operation
-
-## 🔐 Security & Privacy
-
-- **100% Local**: No cloud APIs or external services required
-- **Context Isolation**: Electron security best practices
-- **Input Validation**: Comprehensive validation for all data
-- **Path Sanitization**: Safe file system operations
-- **Rate Limiting**: Built-in rate limiting utilities
-- **No Telemetry**: Complete privacy with optional local analytics
-
-## 📚 Documentation
-
-- **Architecture**: `docs/15-mcp-architecture-complete.md`
-- **Local-Only Changes**: `docs/16-local-only-architecture-changes.md`
-- **Implementation Guide**: `docs/17-implementation-prompts.md`
-- **System Architecture**: `docs/02-system-architecture.md`
-- **Project Overview**: `docs/01-project-overview.md`
-
-## 🤝 Contributing
-
-TanukiMCP Atlas is designed for the community. The monorepo structure makes it easy to contribute to specific areas:
-
-- **Core Features**: `packages/main/` and `packages/shared/`
-- **UI Components**: `packages/renderer/`
-- **Documentation**: `docs/`
-- **Build Tools**: `scripts/` and root configuration
 
 ## 📄 License
 
-MIT License - see `LICENSE` file for details.
+Atlas is released under the **MIT License**, which means:
+- ✅ **Free for personal use**
+- ✅ **Free for commercial use**
+- ✅ **Modify and distribute freely**
+- ✅ **No attribution required** (but appreciated!)
 
-## 🎉 What's Next?
+See the [LICENSE](LICENSE) file for full details.## 🙏 Acknowledgments
 
-With Phase 1 complete, you have a solid foundation for building the world's most advanced local AI IDE. The architecture is designed for:
-
-- **Modularity**: Easy to extend and modify
-- **Performance**: Optimized for local operation
-- **Scalability**: Monorepo structure supports growth
-- **Type Safety**: Comprehensive TypeScript coverage
-- **Local-First**: Complete privacy and control
-
-Ready to start Phase 2? Check out `docs/17-implementation-prompts.md` for the next implementation guide!
+- **Ollama Team**: For making local AI accessible
+- **MCP Community**: For the fantastic protocol and tools
+- **Open Source Community**: For inspiration and contributions
+- **AI Research Community**: For advancing the field
+- **Early Users & Contributors**: For feedback and improvements
 
 ---
 
-**Built with ❤️ for the open source community**  
-*No cloud required. No subscriptions. No limits.* 
+## 🎉 Start Your AI Journey Today
+
+Atlas represents a **new paradigm in AI interaction** - one where you have complete control, absolute privacy, and unlimited potential. Whether you're a developer, researcher, student, or just curious about AI, Atlas provides the tools and intelligence you need.
+
+**No subscriptions. No cloud dependencies. No limits.**
+
+**Just pure, local AI intelligence that grows with your needs.**
+
+### Ready to experience the future of AI?
+
+```bash
+git clone https://github.com/TanukiMCP/atlas.git
+cd tanukimcp-atlas
+npm install && npm run dev
+```
+
+**Welcome to the Atlas community. Let's build the future of AI together.** 🦝✨
+
+---
+
+*Built with ❤️ by the community, for the community*  
+*Empowering everyone with local AI intelligence*

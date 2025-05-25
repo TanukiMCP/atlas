@@ -136,7 +136,6 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
         }}>
           <div style={{
             fontSize: '12px',
-            color: 'var(--color-text-muted)',
             padding: '4px 8px',
             backgroundColor: operationalMode === 'agent' ? 'var(--color-accent)' : 'var(--color-accent-secondary)',
             color: 'white',
