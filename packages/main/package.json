@@ -1,0 +1,30 @@
+{
+  "name": "@tanukimcp/main",
+  "version": "1.0.0",
+  "main": "dist/main.js",
+  "private": true,
+  "description": "TanukiMCP Atlas Electron main process",
+  "scripts": {
+    "build": "esbuild src/main.ts --bundle --platform=node --outfile=dist/main.js --external:electron --external:better-sqlite3 --external:drizzle-orm --sourcemap",
+    "dev": "esbuild src/main.ts --bundle --platform=node --outfile=dist/main.js --external:electron --external:better-sqlite3 --external:drizzle-orm --watch --sourcemap",
+    "type-check": "tsc --noEmit",
+    "clean": "rimraf dist",
+    "test:phase2": "ts-node src/test-phase2.ts",
+    "build:test": "esbuild src/test-phase2.ts --bundle --platform=node --outfile=dist/test-phase2.js --external:better-sqlite3 --external:drizzle-orm --sourcemap"
+  },
+  "dependencies": {
+    "better-sqlite3": "^9.2.2",
+    "drizzle-orm": "^0.29.0",
+    "uuid": "^9.0.1"
+  },
+  "devDependencies": {
+    "esbuild": "^0.19.0",
+    "drizzle-kit": "^0.20.0",
+    "@types/better-sqlite3": "^7.6.0",
+    "@types/uuid": "^9.0.7",
+    "rimraf": "^5.0.5",
+    "typescript": "^5.3.0",
+    "ts-node": "^10.9.0",
+    "@types/node": "^20.10.0"
+  }
+} 
