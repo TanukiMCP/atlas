@@ -1,0 +1,1 @@
+{"version":3,"file":"use-chat-history.d.ts","sourceRoot":"","sources":["../../../../../packages/renderer/src/hooks/use-chat-history.ts"],"names":[],"mappings":"AAEA,OAAO,EAAE,WAAW,EAAE,iBAAiB,EAAE,MAAM,qBAAqB,CAAC;AAErE,eAAO,MAAM,cAAc;;;;iCAKuB,OAAO,CAAC,WAAW,CAAC;wBA4B7B,MAAM,WAAW,OAAO,CAAC,WAAW,CAAC;wBAUd,MAAM;yBAO5B,MAAM;8BAID,iBAAiB;wBAevB,MAAM;0BAaJ,IAAI;;CAkB9C,CAAC"}

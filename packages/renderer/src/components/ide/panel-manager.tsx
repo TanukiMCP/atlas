@@ -6,9 +6,9 @@ interface PanelManagerProps {
   onLayoutChange: (layout: Partial<PanelLayout>) => void;
   panels: {
     fileExplorer: React.ReactNode;
-    chatInterface: React.ReactNode;
-    workflowManager: React.ReactNode;
-    toolOutput: React.ReactNode;
+    centerPanel: React.ReactNode;
+    rightPanel: React.ReactNode;
+    bottomPanel: React.ReactNode;
   };
 }
 
@@ -18,11 +18,11 @@ export const PanelManager: React.FC<PanelManagerProps> = ({
   panels
 }) => {
   return (
-    <div className="panel-manager">
-      {/* Left Panel */}
+    <div className="panel-manager flex h-full w-full">
+      {/* Left Panel (File Explorer) */}
       {layout.leftPanel.isVisible && (
         <div 
-          className="panel border-r custom-scrollbar"
+          className="panel border-r custom-scrollbar bg-color-bg-secondary"
           style={{ 
             width: layout.leftPanel.width,
             minWidth: layout.leftPanel.width 
@@ -33,41 +33,36 @@ export const PanelManager: React.FC<PanelManagerProps> = ({
               {layout.leftPanel.activeTab === 'fileExplorer' ? 'File Explorer' : 'Panel'}
             </div>
           </div>
-          <div className="panel-content">
-            {layout.leftPanel.activeTab === 'fileExplorer' && panels.fileExplorer}
+          <div className="panel-content h-full overflow-y-auto">
+            {panels.fileExplorer}
           </div>
         </div>
       )}
       
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col min-w-0">
-        <div className="flex-1 min-h-0">
-          {panels.chatInterface}
+      {/* Center Panel (Main Content) and Bottom Panel (Tool Output / Terminal) */}
+      <div className="flex-1 flex flex-col min-w-0 bg-color-bg-primary">
+        {/* Center Panel takes up most space */}
+        <div className="flex-grow min-h-0 overflow-y-auto">
+          {panels.centerPanel} {/* This will render Chat, Editor, Settings, etc. */}
         </div>
-        
-        {/* Bottom Panel */}
-        {layout.bottomPanel.isVisible && (
+        {/* Bottom Panel (only rendered when there's actual content) */}
+        {layout.bottomPanel.isVisible && panels.bottomPanel && (
           <div 
-            className="panel border-t custom-scrollbar"
+            className="panel border-t custom-scrollbar bg-color-bg-secondary flex-shrink-0"
             style={{ 
               height: layout.bottomPanel.height,
               minHeight: layout.bottomPanel.height 
             }}
           >
-            <div className="panel-header">
-              <div className="panel-title">
-                {layout.bottomPanel.activeTab === 'terminal' ? 'Terminal' : 'Tool Output'}
-              </div>
-            </div>
-            {panels.toolOutput}
+            {panels.bottomPanel}
           </div>
         )}
       </div>
       
-      {/* Right Panel */}
+      {/* Right Panel (Contextual Info / Workflows, Tools, Agents, Analytics) */}
       {layout.rightPanel.isVisible && (
         <div 
-          className="panel border-l custom-scrollbar"
+          className="panel border-l custom-scrollbar bg-color-bg-secondary"
           style={{ 
             width: layout.rightPanel.width,
             minWidth: layout.rightPanel.width 
@@ -79,7 +74,7 @@ export const PanelManager: React.FC<PanelManagerProps> = ({
             </div>
           </div>
           <div className="panel-content">
-            {layout.rightPanel.activeTab === 'workflowManager' && panels.workflowManager}
+            {panels.rightPanel}
           </div>
         </div>
       )}

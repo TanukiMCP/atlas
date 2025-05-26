@@ -25,31 +25,55 @@ html, body {
 
 /* Theme Variables */
 .app {
-  --color-bg-primary: #1a1a1a;
-  --color-bg-secondary: #2d2d2d;
-  --color-bg-tertiary: #3d3d3d;
-  --color-text-primary: #ffffff;
-  --color-text-secondary: #b3b3b3;
-  --color-text-muted: #666666;
-  --color-border: #404040;
-  --color-accent: #6366f1;
-  --color-accent-hover: #5855eb;
-  --color-success: #10b981;
-  --color-warning: #f59e0b;
-  --color-error: #ef4444;
+  /* Dark Theme (Primary) - Inspired by TanukiMCP Branding */
+  --color-bg-primary: #1a1611;          /* Deep burnt umber */
+  --color-bg-secondary: #2a1f1a;        /* Rich brown */
+  --color-bg-tertiary: #3d2b20;         /* Warm brown */
+  --color-accent: #d97706;              /* Burnt orange - Main Accent */
+  --color-accent-hover: #c2410c;        /* Deeper Burnt orange for hover */
+  --color-accent-secondary: #f59e0b;    /* Amber - Secondary Accent */
+  --color-text-primary: #fef7f0;        /* Warm white */
+  --color-text-secondary: #e7d3c3;      /* Soft beige */
+  --color-text-muted: #a78b7a;          /* Muted brown */
+  --color-border: #4a3428;              /* Dark brown border */
+
+  --color-success: #16a34a;             /* Green */
+  --color-warning: #f59e0b;             /* Orange */
+  --color-error: #dc2626;               /* Red */
+
+  /* Tanuki Specific Branding (can be same as accent or distinct) */
+  --color-tanuki-primary: var(--color-accent);
+  --color-tanuki-secondary: var(--color-accent-secondary);
+  --color-tanuki-accent: #fbbf24; /* Golden yellow for specific highlights */
+
   --sidebar-width: 280px;
-  --header-height: 40px;
+  --header-height: 48px;
   --footer-height: 24px;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.15);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.25);
 }
 
 .app.light {
-  --color-bg-primary: #ffffff;
-  --color-bg-secondary: #f8f9fa;
-  --color-bg-tertiary: #e9ecef;
-  --color-text-primary: #212529;
-  --color-text-secondary: #495057;
-  --color-text-muted: #6c757d;
-  --color-border: #dee2e6;
+  /* Light Theme (Secondary) - Inspired by TanukiMCP.com */
+  --color-bg-primary: #fef7f0;          /* Cream/off-white */
+  --color-bg-secondary: #f7ede3;        /* Light beige */
+  --color-bg-tertiary: #ede0d3;         /* Soft tan */
+  --color-accent: #c2410c;              /* Deep burnt orange - Main Accent */
+  --color-accent-hover: #9a3412;        /* Darker Burnt orange for hover */
+  --color-accent-secondary: #d97706;    /* Burnt orange - Secondary Accent */
+  --color-text-primary: #1c1611;        /* Dark brown */
+  --color-text-secondary: #3f2f27;      /* Medium brown */
+  --color-text-muted: #6b5b52;          /* Muted brown */
+  --color-border: #d6c7bb;              /* Light brown border */
+  
+  /* Tanuki Specific Branding for light theme */
+  --color-tanuki-primary: var(--color-accent);
+  --color-tanuki-secondary: var(--color-accent-secondary);
+  --color-tanuki-accent: #ea580c; /* Orange-red for specific highlights */
 }
 
 /* App Layout */
@@ -66,6 +90,40 @@ html, body {
   background: var(--color-bg-secondary);
   border-bottom: 1px solid var(--color-border);
   z-index: 100;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+/* Tanuki Brand Styling */
+.tanuki-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+}
+
+.tanuki-logo-img {
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+  transition: transform 0.2s ease;
+}
+
+.tanuki-logo-img:hover {
+  transform: scale(1.05);
+}
+
+.tanuki-text {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  letter-spacing: -0.025em;
+}
+
+.tanuki-text .mcp {
+  background: linear-gradient(135deg, var(--color-tanuki-primary), var(--color-tanuki-secondary));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-weight: 800;
 }
 
 .title-bar {

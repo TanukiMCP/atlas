@@ -22,7 +22,11 @@
     "install-deps": "npm install && npm run setup",
     "dev-start": "node scripts/dev-start.js",
     "build-msi": "node scripts/build-msi.js",
-    "dist": "npm run build && npm run build-msi"
+    "dist": "npm run build && npm run build-msi",
+    "build:web": "cd packages/renderer && npm run build",
+    "serve": "cd packages/renderer && npm run serve",
+    "deploy:vercel": "cd packages/renderer && vercel --prod",
+    "deploy:netlify": "cd packages/renderer && netlify deploy --prod"
   },
 
   "devDependencies": {

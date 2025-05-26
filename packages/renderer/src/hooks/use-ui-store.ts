@@ -26,8 +26,8 @@ const DEFAULT_LAYOUT: PanelLayout = {
     activeTab: 'fileExplorer'
   },
   rightPanel: {
-    width: 300,
-    isVisible: false,
+    width: 400,
+    isVisible: true,
     activeTab: 'workflowManager'
   },
   bottomPanel: {

@@ -1,0 +1,1 @@
+{"version":3,"file":"llm-prompts-settings-tab.d.ts","sourceRoot":"","sources":["../../../../../../packages/renderer/src/components/settings/llm-prompts-settings-tab.tsx"],"names":[],"mappings":"AAAA;;;GAGG;AAEH,OAAO,KAAoB,MAAM,OAAO,CAAC;AAGzC,UAAU,0BAA0B;IAClC,mBAAmB,EAAE,MAAM,IAAI,CAAC;CACjC;AAED,eAAO,MAAM,qBAAqB,EAAE,KAAK,CAAC,EAAE,CAAC,0BAA0B,CA0KtE,CAAC"}

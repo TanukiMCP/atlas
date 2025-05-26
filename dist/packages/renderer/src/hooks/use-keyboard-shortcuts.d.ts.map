@@ -1,0 +1,1 @@
+{"version":3,"file":"use-keyboard-shortcuts.d.ts","sourceRoot":"","sources":["../../../../../packages/renderer/src/hooks/use-keyboard-shortcuts.ts"],"names":[],"mappings":"AAGA,MAAM,WAAW,iBAAiB;IAChC,CAAC,GAAG,EAAE,MAAM,GAAG,MAAM,IAAI,CAAC;CAC3B;AAED,eAAO,MAAM,oBAAoB,GAAI,WAAW,iBAAiB,SAqBhE,CAAC;AAGF,eAAO,MAAM,cAAc,GAAI,UAAU,MAAM,KAAG,MAMjD,CAAC"}

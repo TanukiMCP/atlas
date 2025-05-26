@@ -47,7 +47,8 @@ export class ModelManager {
     
     return this.hardwareAssessor.getModelRecommendations(systemCaps, catalog);
   }
-}  async installModel(
+
+  async installModel(
     modelName: string,
     onProgress?: (progress: ModelInstallation) => void
   ): Promise<void> {

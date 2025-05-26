@@ -334,7 +334,7 @@ export function getDatabase() {
   return db;
 }
 
-export function getRawDatabase() {
+export function getRawDatabase(): Database.Database {
   if (!sqlite) {
     throw new Error('Database not initialized. Call initializeDatabase() first.');
   }

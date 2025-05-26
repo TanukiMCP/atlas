@@ -103,7 +103,8 @@ interface SystemInfo {
     });
     return response.json();
   }
-}  async getModelCatalog(): Promise<RecommendedModel[]> {
+
+  async getModelCatalog(): Promise<RecommendedModel[]> {
     return [
       {
         name: 'qwq:32b',
@@ -189,7 +190,8 @@ interface SystemInfo {
     process.env.OLLAMA_NUM_PARALLEL = '4';
     process.env.OLLAMA_MAX_LOADED_MODELS = '2';
   }
-}  async benchmarkModel(modelName: string): Promise<ModelPerformance> {
+
+  async benchmarkModel(modelName: string): Promise<ModelPerformance> {
     const startTime = Date.now();
     const testPrompt = "Write a short explanation of quantum computing in simple terms.";
     

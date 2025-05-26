@@ -187,7 +187,8 @@ export class HardwareAssessor {
     
     return suggestions;
   }
-}  private generateWarnings(
+
+  private generateWarnings(
     model: RecommendedModel,
     system: SystemCapabilities
   ): string[] {

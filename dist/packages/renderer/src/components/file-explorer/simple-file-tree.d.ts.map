@@ -1,0 +1,1 @@
+{"version":3,"file":"simple-file-tree.d.ts","sourceRoot":"","sources":["../../../../../../packages/renderer/src/components/file-explorer/simple-file-tree.tsx"],"names":[],"mappings":"AAAA,OAAO,KAAK,MAAM,OAAO,CAAC;AAE1B,UAAU,mBAAmB;IAC3B,YAAY,CAAC,EAAE,CAAC,IAAI,EAAE,GAAG,KAAK,IAAI,CAAC;CACpC;AAED,eAAO,MAAM,cAAc,EAAE,KAAK,CAAC,EAAE,CAAC,mBAAmB,CA8DxD,CAAC"}

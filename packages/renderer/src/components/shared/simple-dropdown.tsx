@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 
 interface MenuItem {
-  label: string;
+  label?: string;
   action?: () => void;
   shortcut?: string;
+  type?: 'separator';
 }
 
 interface SimpleDropdownProps {
@@ -48,44 +49,55 @@ export const SimpleDropdown: React.FC<SimpleDropdownProps> = ({ label, items }) 
           zIndex: 50,
           overflow: 'hidden'
         }}>
-          {items.map((item, index) => (
-            <button
-              key={index}
-              onClick={() => {
-                item.action?.();
-                setIsOpen(false);
-              }}
-              style={{
-                width: '100%',
-                padding: '8px 12px',
-                textAlign: 'left',
-                fontSize: '13px',
-                backgroundColor: 'transparent',
-                border: 'none',
-                color: 'var(--color-text-primary)',
-                cursor: 'pointer',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                transition: 'all 0.15s ease'
-              }}
-              onMouseEnter={(e) => e.target.style.backgroundColor = 'var(--color-bg-tertiary)'}
-              onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
-            >
-              <span>{item.label}</span>
-              {item.shortcut && (
-                <span style={{
-                  fontSize: '11px',
-                  color: 'var(--color-text-muted)',
-                  backgroundColor: 'var(--color-bg-quaternary)',
-                  padding: '2px 6px',
-                  borderRadius: 'var(--radius-sm)'
-                }}>
-                  {item.shortcut}
-                </span>
-              )}
-            </button>
-          ))}
+          {items.map((item, index) => 
+            item.type === 'separator' ? (
+              <div
+                key={index}
+                style={{
+                  height: '1px',
+                  backgroundColor: 'var(--color-border)',
+                  margin: '4px 0'
+                }}
+              />
+            ) : (
+              <button
+                key={index}
+                onClick={() => {
+                  item.action?.();
+                  setIsOpen(false);
+                }}
+                style={{
+                  width: '100%',
+                  padding: '8px 12px',
+                  textAlign: 'left',
+                  fontSize: '13px',
+                  backgroundColor: 'transparent',
+                  border: 'none',
+                  color: 'var(--color-text-primary)',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  transition: 'all 0.15s ease'
+                }}
+                onMouseEnter={(e) => e.target.style.backgroundColor = 'var(--color-bg-tertiary)'}
+                onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
+              >
+                <span>{item.label}</span>
+                {item.shortcut && (
+                  <span style={{
+                    fontSize: '11px',
+                    color: 'var(--color-text-muted)',
+                    backgroundColor: 'var(--color-bg-secondary)',
+                    padding: '2px 6px',
+                    borderRadius: 'var(--radius-sm)'
+                  }}>
+                    {item.shortcut}
+                  </span>
+                )}
+              </button>
+            )
+          )}
         </div>
       )}
     </div>

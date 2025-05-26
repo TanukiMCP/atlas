@@ -1,10 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { MenuBar } from './menu-bar';
 import { Toolbar } from './toolbar';
 import { StatusBar } from './status-bar';
 import { PanelManager } from './panel-manager';
 import { ChatInterface } from '../chat/chat-interface';
-import { FileExplorer } from '../file-explorer/file-tree';
+import { WorkingFileTree } from '../file-explorer/working-file-tree';
+import { VisualWorkflowBuilder } from '../workflows/visual-workflow-builder';
+import { ComprehensiveToolCatalog } from '../tools/comprehensive-tool-catalog';
+import { SpecializedAgentTemplates } from '../agents/specialized-agent-templates';
+import { AnalyticsDashboard } from '../analytics/analytics-dashboard';
 import { WorkflowManager } from '../workflows/workflow-manager';
 import { ManagementCenterModal } from '../management/management-center-modal';
 import { useKeyboardShortcuts } from '../../hooks/use-keyboard-shortcuts';
@@ -15,6 +19,17 @@ import { FileContentViewer } from '../shared/file-content-viewer';
 import { ProcessingTierIndicator, ProcessingTier } from '../shared/processing-tier-indicator';
 import { ToolExecutionPanel } from '../shared/tool-execution-panel';
 import { FileInfo } from '../../services/file-service';
+
+export type AppView = 
+  | 'chat' 
+  | 'workflow-manager' 
+  | 'tool-catalog' 
+  | 'agent-templates' 
+  | 'analytics-dashboard'
+  | 'settings'
+  | 'llm-prompt-management'
+  | 'mcp-servers'
+  | 'editor'; // Added for file editing
 
 export const IDELayout: React.FC = () => {
   const [showAtSymbol, setShowAtSymbol] = useState(false);
@@ -27,6 +42,8 @@ export const IDELayout: React.FC = () => {
   const [currentTier, setCurrentTier] = useState<ProcessingTier>('MODERATE');
   const [isProcessing, setIsProcessing] = useState(false);
   const [showToolPanel, setShowToolPanel] = useState(false);
+  const [activeRightPanel, setActiveRightPanel] = useState<'workflow' | 'tools' | 'agents' | 'analytics'>('workflow');
+  const [activeMainView, setActiveMainView] = useState<AppView>('chat'); // New state for managing main views
   
   const { currentMode, switchMode } = useSubjectMode();
   const { layout, updateLayout } = useUIStore();
@@ -42,7 +59,7 @@ export const IDELayout: React.FC = () => {
     setShowAtSymbol(false);
     // TODO: Integrate with chat interface to add tool to message
   };
-  const handleOperationalModeChange = (mode: 'agent' | 'chat') => {
+  const handleOperationalModeChange = (mode: string) => {
     console.log('Switching to', mode, 'mode');
     setOperationalMode(mode);
   };
@@ -50,7 +67,7 @@ export const IDELayout: React.FC = () => {
   const handleFileSelect = (file: FileInfo) => {
     setSelectedFile(file);
     if (file.type === 'file') {
-      setShowFileViewer(true);
+      setActiveMainView('editor');
     }
   };
   
@@ -60,12 +77,32 @@ export const IDELayout: React.FC = () => {
   };
   
   const handleEmergencyStop = () => {
+    console.log('Emergency Stop');
     setIsProcessing(false);
-    console.log('Emergency stop activated!');
   };
   
   const getExecutionContext = () => ({ currentMode });
   const getToolRouter = () => ({ /* placeholder tool router */ });
+  
+  const handleOpenLLMPromptManagement = () => {
+    setActiveMainView('llm-prompt-management');
+    console.log('Opening LLM Prompt Management');
+  };
+
+  const handleOpenMCPManager = () => {
+    // This was opening a modal, decide if it should be a main view or keep as modal
+    // For now, let's assume it could be a main view for consistency in routing via menubar
+    setActiveMainView('mcp-servers'); 
+    console.log('Opening MCP Server Management');
+    // Alternatively, if it must be a modal: setShowManagementCenter(true);
+  };
+
+  // Modify MenuBar props to include setActiveMainView or specific handlers
+  // For example, a generic handler or specific ones:
+  const openSettingsView = () => setActiveMainView('settings');
+  const handleNavigate = (view: AppView) => {
+    setActiveMainView(view);
+  };
   
   // Setup keyboard shortcuts
   useKeyboardShortcuts({
@@ -82,74 +119,152 @@ export const IDELayout: React.FC = () => {
       setAtSymbolPosition(position);
       setShowAtSymbol(true);
     }
-  };  return (
-    <div className="ide-container h-screen flex flex-col">
+  };
+
+  // Update bottom panel visibility when tool panel state changes
+  useEffect(() => {
+    updateLayout({
+      bottomPanel: {
+        ...layout.bottomPanel,
+        isVisible: showToolPanel
+      }
+    });
+  }, [showToolPanel, updateLayout]);
+
+  return (
+    <div className="ide-container flex flex-col h-full w-full overflow-hidden">
       {/* Menu Bar */}
-      <div className="menu-bar">
+      <div className="menu-bar flex-shrink-0">
         <MenuBar 
           onNewChat={handleNewChat}
           onOpenProject={handleOpenProject}
           onSaveChat={handleSaveChat}
           onSubjectModeChange={switchMode}
           currentMode={currentMode}
-          onOpenMCPManager={() => setShowManagementCenter(true)}
-          onOpenLLMPromptManagement={() => console.log('LLM Prompt Management')}
+          onOpenMCPManager={handleOpenMCPManager} // Already uses setActiveMainView
+          onOpenLLMPromptManagement={handleOpenLLMPromptManagement} // Already uses setActiveMainView
+          onNavigate={handleNavigate} // Pass the new navigator function
         />
       </div>
       
-      {/* Toolbar */}
-      <div className="toolbar">
-        <Toolbar 
-          currentMode={currentMode}
-          onModeChange={switchMode}
-          onAtSymbolTrigger={() => setShowAtSymbol(true)}
-          operationalMode={operationalMode}
-          onOperationalModeChange={handleOperationalModeChange}
-          onEmergencyStop={handleEmergencyStop}
-          onShowProcessingTier={() => setShowProcessingTier(!showProcessingTier)}
-          onShowToolPanel={() => setShowToolPanel(!showToolPanel)}
-          isProcessing={isProcessing}
-        />
+      {/* Toolbar - Contextual based on activeMainView */}
+      <div className="toolbar flex-shrink-0">
+        {activeMainView === 'chat' && (
+          <Toolbar 
+            currentMode={currentMode}
+            onModeChange={switchMode}
+            onAtSymbolTrigger={() => setShowAtSymbol(true)}
+            operationalMode={operationalMode}
+            onOperationalModeChange={handleOperationalModeChange}
+            onEmergencyStop={handleEmergencyStop}
+            onShowProcessingTier={() => setShowProcessingTier(!showProcessingTier)}
+            onShowToolPanel={() => setShowToolPanel(!showToolPanel)}
+            isProcessing={isProcessing}
+          />
+        )}
+        {/* Add other contextual toolbars here, e.g., for WorkflowManager */}
+        {activeMainView === 'workflow-manager' && (
+          <div> {/* Placeholder for Workflow Manager Toolbar */} 
+            Workflow Manager Toolbar Content Here
+          </div>
+        )}
       </div>
       
       {/* Main Content Area */}
-      <div className="flex-1 flex overflow-hidden">
+      <div className="main-content-area flex-grow flex overflow-hidden">
         <PanelManager
           layout={layout}
           onLayoutChange={updateLayout}
           panels={{
-            fileExplorer: <FileExplorer onFileSelect={handleFileSelect} />,
-            chatInterface: <ChatInterface 
-              onAtSymbolTrigger={handleAtSymbolTrigger} 
-              operationalMode={operationalMode}
-            />,
-            workflowManager: <WorkflowManager />,
-            toolOutput: showToolPanel ? (
+            fileExplorer: <WorkingFileTree onFileSelect={handleFileSelect} />,
+            // Main panel content will now be dynamic based on activeMainView
+            centerPanel: (
+              <>
+                {activeMainView === 'chat' && <ChatInterface onAtSymbolTrigger={handleAtSymbolTrigger} operationalMode={operationalMode} />}
+                {activeMainView === 'workflow-manager' && <WorkflowManager /> /* Assuming WorkflowManager is the component */}
+                {activeMainView === 'settings' && <div>Settings View Placeholder</div>}
+                {activeMainView === 'llm-prompt-management' && <div>LLM Prompt Management Placeholder</div>}
+                {activeMainView === 'mcp-servers' && <div>MCP Servers Placeholder</div>}
+                {activeMainView === 'editor' && selectedFile && (
+                  <FileContentViewer 
+                    selectedFile={selectedFile} 
+                    // isVisible prop is no longer needed if it's part of main content flow
+                    // The component itself should be visible if rendered.
+                    // Ensure FileContentViewer is styled to fill its container.
+                    onClose={() => {
+                      setSelectedFile(null); // Clear selected file
+                      setActiveMainView('chat'); // Revert to chat or previous view
+                    }}
+                  />
+                )}
+                {activeMainView === 'editor' && !selectedFile && (
+                  <div style={{padding: '20px', textAlign: 'center', color: 'var(--color-text-muted)'}}>
+                    Select a file from the explorer to view its content.
+                  </div>
+                )}
+                {/* Add other views here */}
+              </>
+            ),
+            rightPanel: (
+              <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+                {/* Right Panel Tabs */}
+                <div style={{
+                  display: 'flex',
+                  backgroundColor: 'var(--color-bg-secondary)', // Use theme variable
+                  borderBottom: '1px solid var(--color-border)' // Use theme variable
+                }}>
+                  {[
+                    { id: 'workflow', label: 'Workflows', icon: '⚡' },
+                    { id: 'tools', label: 'Tools', icon: '🛠️' },
+                    { id: 'agents', label: 'Agents', icon: '🤖' },
+                    { id: 'analytics', label: 'Analytics', icon: '📊' }
+                  ].map(tab => (
+                    <button
+                      key={tab.id}
+                      onClick={() => setActiveRightPanel(tab.id as any)}
+                      style={{
+                        flex: 1,
+                        padding: '10px 8px', // Adjusted padding
+                        border: 'none',
+                        backgroundColor: activeRightPanel === tab.id ? 'var(--color-bg-tertiary)' : 'transparent',
+                        color: activeRightPanel === tab.id ? 'var(--color-accent)' : 'var(--color-text-secondary)',
+                        cursor: 'pointer',
+                        fontSize: '12px',
+                        fontWeight: activeRightPanel === tab.id ? '600' : '500',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '4px',
+                        borderBottom: activeRightPanel === tab.id ? '2px solid var(--color-accent)' : '2px solid transparent',
+                        transition: 'all 0.15s ease'
+                      }}
+                    >
+                      {tab.icon} {tab.label}
+                    </button>
+                  ))}
+                </div>
+                
+                {/* Right Panel Content */}
+                <div style={{ flex: 1, overflowY: 'auto' }}> {/* Added overflowY */}
+                  {activeRightPanel === 'workflow' && <VisualWorkflowBuilder />}
+                  {activeRightPanel === 'tools' && <ComprehensiveToolCatalog />}
+                  {activeRightPanel === 'agents' && <SpecializedAgentTemplates />}
+                  {activeRightPanel === 'analytics' && <AnalyticsDashboard />}
+                </div>
+              </div>
+            ),
+            bottomPanel: showToolPanel ? (
               <ToolExecutionPanel 
                 isVisible={showToolPanel}
                 onClose={() => setShowToolPanel(false)}
               />
-            ) : (
-              <div className="panel-content">
-                <div style={{ 
-                  padding: '32px', 
-                  textAlign: 'center', 
-                  color: 'var(--color-text-muted)' 
-                }}>
-                  <div style={{ fontSize: '48px', marginBottom: '16px' }}>🛠️</div>
-                  <div>Tool Execution Panel</div>
-                  <div style={{ fontSize: '12px', marginTop: '8px' }}>
-                    Click the 🛠️ button in the toolbar to show tool results
-                  </div>
-                </div>
-              </div>
-            )
+            ) : null
           }}
         />
       </div>
       
       {/* Status Bar */}
-      <div className="status-bar">
+      <div className="status-bar flex-shrink-0">
         <StatusBar 
           currentMode={currentMode}
           connectionStatus="connected"
@@ -166,12 +281,12 @@ export const IDELayout: React.FC = () => {
         onClose={() => setShowAtSymbol(false)}
       />
       
-      {/* File Content Viewer */}
-      <FileContentViewer
+      {/* File Content Viewer - Old Modal Style - To be removed if editor view replaces it fully */}
+      {/* <FileContentViewer
         selectedFile={selectedFile}
-        isVisible={showFileViewer}
+        isVisible={showFileViewer} // This state variable is no longer the primary control for editor
         onClose={() => setShowFileViewer(false)}
-      />
+      /> */}
 
       {/* Processing Tier Indicator */}
       {showProcessingTier && (

@@ -58,3 +58,42 @@ export const useSystemHealth = (): UseSystemHealthReturn => {
 
       setSystemHealth(health);
       setSystemMetrics(metrics);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to fetch system health');
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const refreshHealth = useCallback(async () => {
+    await fetchSystemHealth();
+  }, [fetchSystemHealth]);
+
+  const toggleAutoRefresh = useCallback(() => {
+    setIsAutoRefreshEnabled(prev => !prev);
+  }, []);
+
+  useEffect(() => {
+    fetchSystemHealth();
+  }, [fetchSystemHealth]);
+
+  useEffect(() => {
+    if (!isAutoRefreshEnabled) return;
+
+    const interval = setInterval(() => {
+      fetchSystemHealth();
+    }, 30000); // 30 seconds
+
+    return () => clearInterval(interval);
+  }, [isAutoRefreshEnabled, fetchSystemHealth]);
+
+  return {
+    systemHealth,
+    systemMetrics,
+    isLoading,
+    error,
+    refreshHealth,
+    toggleAutoRefresh,
+    isAutoRefreshEnabled
+  };
+};

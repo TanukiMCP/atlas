@@ -161,25 +161,39 @@
   padding: 16px;
 }
 
+/* File Explorer Panel Override */
+.panel-content:has(.file-explorer-container),
+.panel-content > div[style*="height: 100%"] {
+  padding: 0;
+  height: 100%;
+}
+
 /* Chat Interface */
 .chat-interface {
   background-color: var(--color-bg-primary);
   display: flex;
   flex-direction: column;
   height: 100%;
+  position: relative;
 }
 
 .chat-messages {
   flex: 1;
   overflow-y: auto;
   padding: 16px;
+  padding-bottom: 80px; /* Space for fixed input */
   background-color: var(--color-bg-primary);
+  height: 0; /* Force flex calculation */
 }
 
 .chat-input-area {
   background-color: var(--color-bg-secondary);
   border-top: 1px solid var(--color-border);
   padding: 16px;
+  position: sticky;
+  bottom: 0;
+  z-index: 10;
+  flex-shrink: 0;
 }
 
 /* File Explorer */

@@ -163,7 +163,8 @@ export class SystemMonitor {
       return [];
     }
   }
-}  private async detectLinuxGPUs(): Promise<any[]> {
+
+  private async detectLinuxGPUs(): Promise<any[]> {
     // Linux GPU detection using lspci, nvidia-smi, etc.
     return [];
   }

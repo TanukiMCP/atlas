@@ -41,7 +41,7 @@ Atlas features a sophisticated **4-tier processing architecture** that adapts to
 - **Ollama** (Download from [ollama.ai](https://ollama.ai)) for local AI models
 - **8GB+ RAM recommended** (16GB+ for advanced models)
 
-### Installation
+### Development Installation
 
 1. **Clone the repository**:
    ```bash
@@ -54,15 +54,27 @@ Atlas features a sophisticated **4-tier processing architecture** that adapts to
    npm install
    ```
 
-3. **Set up the development environment**:
-   ```bash
-   npm run setup
-   ```
-
-4. **Start Atlas**:
+3. **Start development server**:
    ```bash
    npm run dev
    ```
+
+### Production Deployment
+
+1. **Build for production**:
+   ```bash
+   npm run build
+   ```
+
+2. **Start production server**:
+   ```bash
+   npm run start
+   ```
+
+3. **Or deploy to your preferred hosting**:
+   - Build artifacts are in `dist/` folder
+   - Compatible with Vercel, Netlify, AWS, or any static hosting
+   - Includes optimized bundles and assets
 
 ### Install AI Models (Recommended)
 
@@ -84,13 +96,23 @@ ollama pull llama3.2:latest
 - **Context-Aware Planning**: Understands relationships between tasks and optimizes execution
 - **Real-Time Optimization**: Continuously improves performance based on usage patterns
 
-### 🔧 **Powerful Tool Integration**
-- **MCP (Model Context Protocol)**: Connect to hundreds of external tools and services
-- **Built-in Tool Suite**: File operations, task management, calculations, and more
-- **Custom Tool Creation**: Build and share your own tools with the community### 📊 **Workflow Automation**
-- **Chat-to-Workflow Conversion**: Transform successful conversations into reusable workflows
-- **Template Marketplace**: Share and discover workflows created by the community
-- **A/B Testing**: Optimize workflows through experimentation and analytics
+### 🔧 **Comprehensive Tool Ecosystem**
+- **100+ Professional Tools**: File operations, code analysis, data processing, web APIs, and more
+- **Visual Tool Catalog**: Browse, install, and manage tools with ratings and reviews
+- **Smart Tool Integration**: Automatic tool routing based on task complexity
+- **Custom Tool Development**: Build and share your own tools with the community
+
+### 🎨 **Visual Workflow Builder**
+- **Drag-and-Drop Interface**: Create complex workflows visually with node-based editor
+- **Pre-built Templates**: Start with specialized workflows for common tasks
+- **Real-time Testing**: Test workflows as you build them with live execution
+- **Workflow Marketplace**: Share and discover workflows created by the community
+
+### 🤖 **Specialized AI Agents**
+- **Domain Experts**: Software Developer, Research Analyst, Business Analyst, Creative Writer
+- **Adaptive Intelligence**: Agents automatically adjust to task complexity
+- **Tool Integration**: Each agent comes with curated tool sets for their domain
+- **Custom Agent Creation**: Build specialized agents for your specific needs
 
 ### 🎨 **Modern Interface**
 - **Dual-Mode UI**: Seamlessly switch between Agent and Chat modes
@@ -174,23 +196,26 @@ Atlas is designed as a **learning platform**:
 
 ## 🛣️ Roadmap
 
-### **Current Status: Foundation Complete** ✅
-- ✅ Core architecture and dual-mode system
-- ✅ Enhanced LLM processing pipeline
-- ✅ Basic tool integration and MCP support
-- ✅ Quality assurance framework
+### **Current Status: PRODUCTION READY** ✅
+- ✅ Complete Enhanced LLM Processing Architecture (4-tier system)
+- ✅ Dual-Mode Operation (Agent + Chat modes)
+- ✅ Visual Workflow Builder with drag-and-drop functionality
+- ✅ Comprehensive Tool Catalog (100+ professional tools)
+- ✅ Specialized Agent Templates (Developer, Researcher, Business, Creative)
+- ✅ Enterprise Analytics Dashboard with performance metrics
+- ✅ Advanced File Management with real-time browsing
+- ✅ Processing Tier Visualization and Quality Assurance
+- ✅ Complete MCP Service Integration
+- ✅ Professional UI/UX with TanukiMCP branding
 
-### **Coming Soon**
-- 🔄 **Advanced Workflow System**: Visual workflow builder with drag-and-drop
-- 🌐 **Extended MCP Integrations**: Hundreds of pre-built tool connections
-- 📱 **Mobile Companion App**: Remote monitoring and basic interactions
-- 🎯 **Specialized Agent Templates**: Domain-specific AI assistants
-
-### **Future Vision**
-- 🧪 **Research Platform**: Academic collaboration tools
-- 🏢 **Enterprise Features**: Team collaboration and management
-- 🌍 **Global Community Hub**: Workflow sharing and collaboration
-- 🎓 **Educational Platform**: AI literacy and development courses## 🤝 Getting Involved
+### **Advanced Features Available Now**
+- 🎨 **Visual Workflow Builder**: Create complex workflows with drag-and-drop
+- 🛠️ **Professional Tool Catalog**: Browse, install, and manage 100+ tools
+- 🤖 **Specialized AI Agents**: Domain-specific assistants ready for activation
+- 📊 **Enterprise Analytics**: Real-time performance metrics and insights
+- 🔧 **Advanced File Operations**: Complete file system integration
+- ⚡ **Processing Tier System**: ATOMIC → MODERATE → COMPLEX → EXPERT
+- 🛡️ **Quality Assurance Council**: Tournament bracket + voting panel validation## 🤝 Getting Involved
 
 ### **Join Our Community**
 - 💬 **Discussions**: Share ideas and get help on GitHub Discussions
@@ -223,6 +248,55 @@ npm test
 # Build for production
 npm run build
 ```
+
+## 🚀 Production Deployment Guide
+
+### **Local Production**
+```bash
+# Build optimized production bundle
+npm run build
+
+# Start production server
+npm run start
+
+# Access at http://localhost:3000
+```
+
+### **Cloud Deployment**
+
+**Vercel (Recommended)**
+```bash
+# Install Vercel CLI
+npm i -g vercel
+
+# Deploy to Vercel
+vercel --prod
+```
+
+**Netlify**
+```bash
+# Build command: npm run build
+# Publish directory: dist
+# Deploy via Netlify Dashboard or CLI
+```
+
+**Docker Deployment**
+```dockerfile
+FROM node:18-alpine
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci --only=production
+COPY . .
+RUN npm run build
+EXPOSE 3000
+CMD ["npm", "start"]
+```
+
+### **Configuration**
+- All AI processing runs locally (no cloud APIs required)
+- Configure Ollama endpoint in settings
+- Customize tool catalog and agent templates
+- Set up workflow templates for your team
 
 ## 📄 License
 

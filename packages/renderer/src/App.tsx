@@ -1,20 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { IDELayout } from './components/ide/ide-layout';
-
-declare global {
-  interface Window {
-    electronAPI?: {
-      invoke: (channel: string, ...args: any[]) => Promise<any>;
-      on: (channel: string, callback: (...args: any[]) => void) => void;
-      removeAllListeners: (channel: string) => void;
-    };
-  }
-}
+import { useAppStore } from './stores/app-store';
 
 function App() {
   const [isReady, setIsReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [theme, setTheme] = useState<'light' | 'dark'>('light');
+  const { theme, setTheme } = useAppStore();
 
   useEffect(() => {
     initializeApp();
@@ -87,7 +78,7 @@ function App() {
   }
 
   return (
-    <div className={theme === 'dark' ? 'dark' : ''}>
+    <div className={`app ${theme} h-screen flex flex-col`}>
       <IDELayout />
     </div>
   );
