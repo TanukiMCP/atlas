@@ -1,0 +1,1 @@
+{"version":3,"file":"native-menu.d.ts","sourceRoot":"","sources":["../../../../../packages/main/src/services/native-menu.ts"],"names":[],"mappings":"AAAA,OAAO,EAAQ,aAAa,EAAc,MAAM,UAAU,CAAC;AAE3D,qBAAa,iBAAiB;IAC5B,OAAO,CAAC,UAAU,CAA8B;gBAEpC,UAAU,EAAE,aAAa;IAKrC,OAAO,CAAC,qBAAqB;IA4I7B,OAAO,CAAC,cAAc;IAKf,aAAa,CAAC,MAAM,EAAE,aAAa,GAAG,IAAI;CAGlD"}

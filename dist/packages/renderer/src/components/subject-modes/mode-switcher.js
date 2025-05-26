@@ -1,10 +1,7 @@
 "use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ModeSwitcher = void 0;
-const react_1 = __importDefault(require("react"));
+const jsx_runtime_1 = require("react/jsx-runtime");
 const SUBJECT_MODES = [
     { id: 'general', name: 'General', icon: '🎯', color: 'blue' },
     { id: 'mathematics', name: 'Mathematics', icon: '📐', color: 'purple' },
@@ -14,22 +11,7 @@ const SUBJECT_MODES = [
     { id: 'research', name: 'Research', icon: '📚', color: 'indigo' }
 ];
 const ModeSwitcher = ({ currentMode, onModeChange }) => {
-    return (<div className="mode-switcher">
-      <span style={{
-            fontSize: '13px',
-            fontWeight: '500',
-            color: 'var(--color-text-secondary)',
-            marginRight: '8px'
-        }}>
-        Subject Mode:
-      </span>
-      <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-        {SUBJECT_MODES.map(mode => (<button key={mode.id} onClick={() => onModeChange(mode.id)} className={`mode-button ${currentMode === mode.id ? 'active' : ''}`}>
-            <span>{mode.icon}</span>
-            <span>{mode.name}</span>
-          </button>))}
-      </div>
-    </div>);
+    return ((0, jsx_runtime_1.jsxs)("div", { className: "mode-switcher", children: [(0, jsx_runtime_1.jsx)("span", { className: "text-sm font-medium text-muted-foreground mr-2", children: "Subject Mode:" }), (0, jsx_runtime_1.jsx)("div", { className: "flex gap-1.5 flex-wrap", children: SUBJECT_MODES.map(mode => ((0, jsx_runtime_1.jsxs)("button", { onClick: () => onModeChange(mode.id), className: `mode-button ${currentMode === mode.id ? 'active' : ''}`, children: [(0, jsx_runtime_1.jsx)("span", { children: mode.icon }), (0, jsx_runtime_1.jsx)("span", { children: mode.name })] }, mode.id))) })] }));
 };
 exports.ModeSwitcher = ModeSwitcher;
 //# sourceMappingURL=mode-switcher.js.map

@@ -1,43 +1,19 @@
 "use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.StatusBar = void 0;
-const react_1 = __importDefault(require("react"));
+const jsx_runtime_1 = require("react/jsx-runtime");
 const StatusBar = ({ currentMode, connectionStatus, activeTools }) => {
-    return (<div style={{
+    return ((0, jsx_runtime_1.jsxs)("div", { style: {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
             width: '100%'
-        }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <div style={{
-            width: '8px',
-            height: '8px',
-            borderRadius: '50%',
-            backgroundColor: connectionStatus === 'connected' ? 'var(--color-success)' : 'var(--color-error)'
-        }}/>
-          <span>{connectionStatus}</span>
-        </div>
-        
-        <div>
-          Mode: {currentMode}
-        </div>
-        
-        {activeTools.length > 0 && (<div>
-            Active Tools: {activeTools.join(', ')}
-          </div>)}
-      </div>
-      
-      <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-        <div>Ready</div>
-        <div>Line 1, Col 1</div>
-        <div>UTF-8</div>
-      </div>
-    </div>);
+        }, children: [(0, jsx_runtime_1.jsxs)("div", { style: { display: 'flex', alignItems: 'center', gap: '16px' }, children: [(0, jsx_runtime_1.jsxs)("div", { style: { display: 'flex', alignItems: 'center', gap: '6px' }, children: [(0, jsx_runtime_1.jsx)("div", { style: {
+                                    width: '8px',
+                                    height: '8px',
+                                    borderRadius: '50%',
+                                    backgroundColor: connectionStatus === 'connected' ? 'var(--color-success)' : 'var(--color-error)'
+                                } }), (0, jsx_runtime_1.jsx)("span", { children: connectionStatus })] }), (0, jsx_runtime_1.jsxs)("div", { children: ["Mode: ", currentMode] }), activeTools.length > 0 && ((0, jsx_runtime_1.jsxs)("div", { children: ["Active Tools: ", activeTools.join(', ')] }))] }), (0, jsx_runtime_1.jsxs)("div", { style: { display: 'flex', alignItems: 'center', gap: '16px' }, children: [(0, jsx_runtime_1.jsx)("div", { children: "Ready" }), (0, jsx_runtime_1.jsx)("div", { children: "Line 1, Col 1" }), (0, jsx_runtime_1.jsx)("div", { children: "UTF-8" })] })] }));
 };
 exports.StatusBar = StatusBar;
 //# sourceMappingURL=status-bar.js.map

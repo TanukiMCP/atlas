@@ -1,40 +1,8 @@
 "use strict";
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || (function () {
-    var ownKeys = function(o) {
-        ownKeys = Object.getOwnPropertyNames || function (o) {
-            var ar = [];
-            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
-            return ar;
-        };
-        return ownKeys(o);
-    };
-    return function (mod) {
-        if (mod && mod.__esModule) return mod;
-        var result = {};
-        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
-        __setModuleDefault(result, mod);
-        return result;
-    };
-})();
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ParameterInput = void 0;
-const react_1 = __importStar(require("react"));
+const jsx_runtime_1 = require("react/jsx-runtime");
+const react_1 = require("react");
 const ParameterInput = ({ tool, onSubmit, onCancel }) => {
     const [parameters, setParameters] = (0, react_1.useState)({});
     const [errors, setErrors] = (0, react_1.useState)({});
@@ -128,74 +96,26 @@ const ParameterInput = ({ tool, onSubmit, onCancel }) => {
         switch (prop.type) {
             case 'string':
                 if (prop.enum) {
-                    return (<select {...commonProps}>
-              <option value="">Select an option</option>
-              {prop.enum.map(option => (<option key={option} value={option}>{option}</option>))}
-            </select>);
+                    return ((0, jsx_runtime_1.jsxs)("select", { ...commonProps, children: [(0, jsx_runtime_1.jsx)("option", { value: "", children: "Select an option" }), prop.enum.map(option => ((0, jsx_runtime_1.jsx)("option", { value: option, children: option }, option)))] }));
                 }
                 if (prop.description?.toLowerCase().includes('multiline') ||
                     prop.description?.toLowerCase().includes('text area')) {
-                    return <textarea {...commonProps} rows={3}/>;
+                    return (0, jsx_runtime_1.jsx)("textarea", { ...commonProps, rows: 3 });
                 }
-                return <input type="text" {...commonProps}/>;
+                return (0, jsx_runtime_1.jsx)("input", { type: "text", ...commonProps });
             case 'number':
-                return (<input type="number" {...commonProps} min={prop.minimum} max={prop.maximum}/>);
+                return ((0, jsx_runtime_1.jsx)("input", { type: "number", ...commonProps, min: prop.minimum, max: prop.maximum }));
             case 'boolean':
-                return (<select {...commonProps}>
-            <option value="">Select</option>
-            <option value="true">True</option>
-            <option value="false">False</option>
-          </select>);
+                return ((0, jsx_runtime_1.jsxs)("select", { ...commonProps, children: [(0, jsx_runtime_1.jsx)("option", { value: "", children: "Select" }), (0, jsx_runtime_1.jsx)("option", { value: "true", children: "True" }), (0, jsx_runtime_1.jsx)("option", { value: "false", children: "False" })] }));
             default:
-                return <input type="text" {...commonProps}/>;
+                return (0, jsx_runtime_1.jsx)("input", { type: "text", ...commonProps });
         }
     };
-    return (<div className="p-4">
-      <div className="mb-4">
-        <h3 className="font-medium text-gray-900 dark:text-white mb-1">
-          Configure {tool.name}
-        </h3>
-        <p className="text-sm text-gray-600 dark:text-gray-400">
-          Fill in the required parameters below
-        </p>
-      </div>
-
-      <form onSubmit={handleSubmit} className="space-y-4">
-        {Object.entries(tool.inputSchema.properties).map(([paramName, prop]) => {
-            const isRequired = tool.inputSchema.required?.includes(paramName);
-            const error = errors[paramName];
-            return (<div key={paramName}>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                {paramName}
-                {isRequired && <span className="text-red-500 ml-1">*</span>}
-              </label>
-              
-              {prop.description && (<p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
-                  {prop.description}
-                </p>)}
-              
-              {renderInput(paramName, prop)}
-              
-              {error && (<p className="text-xs text-red-600 dark:text-red-400 mt-1">
-                  {error}
-                </p>)}
-              
-              {prop.default !== undefined && (<p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                  Default: {String(prop.default)}
-                </p>)}
-            </div>);
-        })}
-
-        <div className="flex space-x-3 pt-4 border-t border-gray-200 dark:border-gray-700">
-          <button type="submit" disabled={!isValid} className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
-            Execute Tool
-          </button>
-          <button type="button" onClick={onCancel} className="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
-            Cancel
-          </button>
-        </div>
-      </form>
-    </div>);
+    return ((0, jsx_runtime_1.jsxs)("div", { className: "p-4", children: [(0, jsx_runtime_1.jsxs)("div", { className: "mb-4", children: [(0, jsx_runtime_1.jsxs)("h3", { className: "font-medium text-gray-900 dark:text-white mb-1", children: ["Configure ", tool.name] }), (0, jsx_runtime_1.jsx)("p", { className: "text-sm text-gray-600 dark:text-gray-400", children: "Fill in the required parameters below" })] }), (0, jsx_runtime_1.jsxs)("form", { onSubmit: handleSubmit, className: "space-y-4", children: [Object.entries(tool.inputSchema.properties).map(([paramName, prop]) => {
+                        const isRequired = tool.inputSchema.required?.includes(paramName);
+                        const error = errors[paramName];
+                        return ((0, jsx_runtime_1.jsxs)("div", { children: [(0, jsx_runtime_1.jsxs)("label", { className: "block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1", children: [paramName, isRequired && (0, jsx_runtime_1.jsx)("span", { className: "text-red-500 ml-1", children: "*" })] }), prop.description && ((0, jsx_runtime_1.jsx)("p", { className: "text-xs text-gray-500 dark:text-gray-400 mb-2", children: prop.description })), renderInput(paramName, prop), error && ((0, jsx_runtime_1.jsx)("p", { className: "text-xs text-red-600 dark:text-red-400 mt-1", children: error })), prop.default !== undefined && ((0, jsx_runtime_1.jsxs)("p", { className: "text-xs text-gray-500 dark:text-gray-400 mt-1", children: ["Default: ", String(prop.default)] }))] }, paramName));
+                    }), (0, jsx_runtime_1.jsxs)("div", { className: "flex space-x-3 pt-4 border-t border-gray-200 dark:border-gray-700", children: [(0, jsx_runtime_1.jsx)("button", { type: "submit", disabled: !isValid, className: "flex-1 bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors", children: "Execute Tool" }), (0, jsx_runtime_1.jsx)("button", { type: "button", onClick: onCancel, className: "px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors", children: "Cancel" })] })] })] }));
 };
 exports.ParameterInput = ParameterInput;
 //# sourceMappingURL=parameter-input.js.map

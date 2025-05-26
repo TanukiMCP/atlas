@@ -1,273 +1,73 @@
 "use strict";
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || (function () {
-    var ownKeys = function(o) {
-        ownKeys = Object.getOwnPropertyNames || function (o) {
-            var ar = [];
-            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
-            return ar;
-        };
-        return ownKeys(o);
-    };
-    return function (mod) {
-        if (mod && mod.__esModule) return mod;
-        var result = {};
-        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
-        __setModuleDefault(result, mod);
-        return result;
-    };
-})();
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.FileContentViewer = void 0;
-const react_1 = __importStar(require("react"));
+const jsx_runtime_1 = require("react/jsx-runtime");
+const react_1 = require("react");
 const file_service_1 = require("../../services/file-service");
-const FileContentViewer = ({ selectedFile, isVisible, onClose }) => {
-    const [content, setContent] = (0, react_1.useState)(null);
-    const [isLoading, setIsLoading] = (0, react_1.useState)(false);
-    const [isEditing, setIsEditing] = (0, react_1.useState)(false);
-    const [editedContent, setEditedContent] = (0, react_1.useState)('');
+const dialog_1 = require("../ui/dialog");
+const button_1 = require("../ui/button");
+const badge_1 = require("../ui/badge");
+const scroll_area_1 = require("../ui/scroll-area");
+const lucide_react_1 = require("lucide-react");
+const FileContentViewer = ({ isVisible, selectedFile, onClose }) => {
+    const [content, setContent] = (0, react_1.useState)('');
+    const [loading, setLoading] = (0, react_1.useState)(false);
+    const [error, setError] = (0, react_1.useState)(null);
     (0, react_1.useEffect)(() => {
-        if (selectedFile && selectedFile.type === 'file') {
+        if (isVisible && selectedFile && selectedFile.type === 'file') {
             loadFileContent();
         }
-    }, [selectedFile]);
+    }, [isVisible, selectedFile]);
     const loadFileContent = async () => {
         if (!selectedFile)
             return;
-        setIsLoading(true);
+        setLoading(true);
+        setError(null);
         try {
             const fileContent = await file_service_1.fileService.readFile(selectedFile.path);
             setContent(fileContent);
-            setEditedContent(fileContent.content);
         }
-        catch (error) {
-            console.error('Failed to load file content:', error);
+        catch (err) {
+            setError(err instanceof Error ? err.message : 'Failed to load file content');
         }
         finally {
-            setIsLoading(false);
+            setLoading(false);
         }
     };
-    const handleSave = async () => {
-        if (!selectedFile || !content)
-            return;
-        try {
-            await file_service_1.fileService.writeFile(selectedFile.path, editedContent);
-            setContent({ ...content, content: editedContent });
-            setIsEditing(false);
-        }
-        catch (error) {
-            console.error('Failed to save file:', error);
+    const getFileExtension = (filename) => {
+        return filename.split('.').pop()?.toLowerCase() || '';
+    };
+    const getLanguageFromExtension = (ext) => {
+        const langMap = {
+            'js': 'javascript',
+            'jsx': 'javascript',
+            'ts': 'typescript',
+            'tsx': 'typescript',
+            'py': 'python',
+            'json': 'json',
+            'css': 'css',
+            'scss': 'scss',
+            'md': 'markdown',
+            'html': 'html'
+        };
+        return langMap[ext] || 'text';
+    };
+    const copyToClipboard = async () => {
+        if (content) {
+            await navigator.clipboard.writeText(content);
         }
     };
-    const getLanguageFromExtension = (extension) => {
-        switch (extension) {
-            case 'tsx':
-            case 'ts': return 'typescript';
-            case 'js':
-            case 'jsx': return 'javascript';
-            case 'css': return 'css';
-            case 'json': return 'json';
-            case 'md': return 'markdown';
-            case 'html': return 'html';
-            default: return 'text';
-        }
+    const formatFileSize = (bytes) => {
+        if (bytes === 0)
+            return '0 B';
+        const k = 1024;
+        const sizes = ['B', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
     };
-    if (!isVisible || !selectedFile)
+    if (!selectedFile)
         return null;
-    return (<div style={{
-            position: 'fixed',
-            top: '50%',
-            left: '50%',
-            transform: 'translate(-50%, -50%)',
-            width: '80%',
-            height: '80%',
-            backgroundColor: 'var(--color-bg-primary)',
-            border: '1px solid var(--color-border)',
-            borderRadius: 'var(--radius-lg)',
-            boxShadow: 'var(--shadow-lg)',
-            zIndex: 1000,
-            display: 'flex',
-            flexDirection: 'column',
-            overflow: 'hidden'
-        }}>
-      {/* Header */}
-      <div style={{
-            padding: '16px 20px',
-            borderBottom: '1px solid var(--color-border)',
-            backgroundColor: 'var(--color-bg-secondary)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between'
-        }}>
-        <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '12px'
-        }}>
-          <span style={{ fontSize: '20px' }}>
-            {selectedFile.type === 'directory' ? '📁' : '📄'}
-          </span>
-          <div>
-            <div style={{
-            fontSize: '16px',
-            fontWeight: '600',
-            color: 'var(--color-text-primary)'
-        }}>
-              {selectedFile.name}
-            </div>
-            <div style={{
-            fontSize: '12px',
-            color: 'var(--color-text-muted)',
-            fontFamily: 'monospace'
-        }}>
-              {selectedFile.path}
-            </div>
-          </div>
-        </div>
-
-        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-          {selectedFile.type === 'file' && content && (<>
-              {isEditing ? (<>
-                  <button onClick={handleSave} className="btn btn-primary btn-sm" style={{ fontSize: '12px' }}>
-                    💾 Save
-                  </button>
-                  <button onClick={() => {
-                    setIsEditing(false);
-                    setEditedContent(content.content);
-                }} className="btn btn-sm" style={{ fontSize: '12px' }}>
-                    Cancel
-                  </button>
-                </>) : (<button onClick={() => setIsEditing(true)} className="btn btn-sm" style={{ fontSize: '12px' }}>
-                  ✏️ Edit
-                </button>)}
-            </>)}
-          
-          <button onClick={onClose} style={{
-            background: 'none',
-            border: 'none',
-            fontSize: '20px',
-            cursor: 'pointer',
-            color: 'var(--color-text-muted)'
-        }}>
-            ×
-          </button>
-        </div>
-      </div>
-
-      {/* Content */}
-      <div style={{
-            flex: 1,
-            overflow: 'hidden',
-            display: 'flex',
-            flexDirection: 'column'
-        }}>
-        {isLoading ? (<div style={{
-                flex: 1,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: 'var(--color-text-muted)'
-            }}>
-            <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '12px'
-            }}>
-              <div style={{
-                width: '20px',
-                height: '20px',
-                border: '2px solid var(--color-accent)',
-                borderTop: '2px solid transparent',
-                borderRadius: '50%',
-                animation: 'spin 1s linear infinite'
-            }}/>
-              Loading file content...
-            </div>
-          </div>) : selectedFile.type === 'directory' ? (<div style={{
-                flex: 1,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: 'var(--color-text-muted)',
-                fontSize: '16px'
-            }}>
-            📁 Directory selected - choose a file to view content
-          </div>) : content ? (<div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-            {/* File Info Bar */}
-            <div style={{
-                padding: '8px 16px',
-                backgroundColor: 'var(--color-bg-tertiary)',
-                borderBottom: '1px solid var(--color-border)',
-                fontSize: '12px',
-                color: 'var(--color-text-secondary)',
-                display: 'flex',
-                justifyContent: 'space-between'
-            }}>
-              <div>
-                Size: {(content.size / 1024).toFixed(2)} KB | 
-                Encoding: {content.encoding} |
-                Language: {getLanguageFromExtension(selectedFile.extension)}
-              </div>
-              <div>
-                Modified: {content.lastModified.toLocaleString()}
-              </div>
-            </div>
-
-            {/* Content Area */}
-            <div style={{ flex: 1, overflow: 'auto' }}>
-              {isEditing ? (<textarea value={editedContent} onChange={(e) => setEditedContent(e.target.value)} style={{
-                    width: '100%',
-                    height: '100%',
-                    padding: '16px',
-                    border: 'none',
-                    outline: 'none',
-                    resize: 'none',
-                    fontFamily: 'Monaco, Menlo, Consolas, monospace',
-                    fontSize: '13px',
-                    lineHeight: '1.5',
-                    backgroundColor: 'var(--color-bg-primary)',
-                    color: 'var(--color-text-primary)'
-                }}/>) : (<pre style={{
-                    margin: 0,
-                    padding: '16px',
-                    fontFamily: 'Monaco, Menlo, Consolas, monospace',
-                    fontSize: '13px',
-                    lineHeight: '1.5',
-                    backgroundColor: 'var(--color-bg-primary)',
-                    color: 'var(--color-text-primary)',
-                    overflow: 'auto',
-                    whiteSpace: 'pre-wrap',
-                    wordBreak: 'break-word'
-                }}>
-                  {content.content}
-                </pre>)}
-            </div>
-          </div>) : (<div style={{
-                flex: 1,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: 'var(--color-text-muted)'
-            }}>
-            Failed to load file content
-          </div>)}
-      </div>
-    </div>);
+    return ((0, jsx_runtime_1.jsx)(dialog_1.Dialog, { open: isVisible, onOpenChange: onClose, children: (0, jsx_runtime_1.jsxs)(dialog_1.DialogContent, { className: "max-w-4xl max-h-[80vh] p-0", children: [(0, jsx_runtime_1.jsx)(dialog_1.DialogHeader, { className: "px-6 py-4 border-b", children: (0, jsx_runtime_1.jsxs)("div", { className: "flex items-center justify-between", children: [(0, jsx_runtime_1.jsxs)("div", { className: "flex items-center gap-3", children: [selectedFile.type === 'directory' ? ((0, jsx_runtime_1.jsx)(lucide_react_1.Folder, { className: "h-5 w-5 text-blue-500" })) : ((0, jsx_runtime_1.jsx)(lucide_react_1.File, { className: "h-5 w-5 text-gray-500" })), (0, jsx_runtime_1.jsxs)("div", { children: [(0, jsx_runtime_1.jsx)(dialog_1.DialogTitle, { className: "text-lg font-semibold", children: selectedFile.name }), (0, jsx_runtime_1.jsxs)("div", { className: "flex items-center gap-2 mt-1", children: [(0, jsx_runtime_1.jsx)(badge_1.Badge, { variant: "secondary", className: "text-xs", children: selectedFile.type }), selectedFile.size && ((0, jsx_runtime_1.jsx)(badge_1.Badge, { variant: "outline", className: "text-xs", children: formatFileSize(selectedFile.size) })), selectedFile.type === 'file' && ((0, jsx_runtime_1.jsx)(badge_1.Badge, { variant: "outline", className: "text-xs", children: getLanguageFromExtension(getFileExtension(selectedFile.name)) }))] })] })] }), (0, jsx_runtime_1.jsxs)("div", { className: "flex items-center gap-2", children: [selectedFile.type === 'file' && content && ((0, jsx_runtime_1.jsxs)(button_1.Button, { variant: "outline", size: "sm", onClick: copyToClipboard, className: "h-8", children: [(0, jsx_runtime_1.jsx)(lucide_react_1.Copy, { className: "h-4 w-4 mr-1" }), "Copy"] })), (0, jsx_runtime_1.jsx)(button_1.Button, { variant: "ghost", size: "sm", onClick: onClose, className: "h-8 w-8 p-0", children: (0, jsx_runtime_1.jsx)(lucide_react_1.X, { className: "h-4 w-4" }) })] })] }) }), (0, jsx_runtime_1.jsx)("div", { className: "flex-1 overflow-hidden", children: selectedFile.type === 'directory' ? ((0, jsx_runtime_1.jsxs)("div", { className: "p-6 text-center", children: [(0, jsx_runtime_1.jsx)(lucide_react_1.Folder, { className: "h-16 w-16 text-blue-500 mx-auto mb-4" }), (0, jsx_runtime_1.jsx)("h3", { className: "text-lg font-medium mb-2", children: "Directory" }), (0, jsx_runtime_1.jsx)("p", { className: "text-muted-foreground", children: "This is a directory. Use the file tree to explore its contents." })] })) : loading ? ((0, jsx_runtime_1.jsxs)("div", { className: "p-6 text-center", children: [(0, jsx_runtime_1.jsx)("div", { className: "animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full mx-auto mb-4" }), (0, jsx_runtime_1.jsx)("p", { className: "text-muted-foreground", children: "Loading file content..." })] })) : error ? ((0, jsx_runtime_1.jsxs)("div", { className: "p-6 text-center", children: [(0, jsx_runtime_1.jsx)("div", { className: "text-red-500 mb-4", children: "\u26A0\uFE0F" }), (0, jsx_runtime_1.jsx)("h3", { className: "text-lg font-medium mb-2 text-red-600", children: "Error Loading File" }), (0, jsx_runtime_1.jsx)("p", { className: "text-muted-foreground", children: error }), (0, jsx_runtime_1.jsx)(button_1.Button, { variant: "outline", onClick: loadFileContent, className: "mt-4", children: "Try Again" })] })) : ((0, jsx_runtime_1.jsx)(scroll_area_1.ScrollArea, { className: "h-full", children: (0, jsx_runtime_1.jsx)("pre", { className: "p-6 text-sm font-mono whitespace-pre-wrap break-words", children: content || 'File is empty' }) })) })] }) }));
 };
 exports.FileContentViewer = FileContentViewer;
 //# sourceMappingURL=file-content-viewer.js.map

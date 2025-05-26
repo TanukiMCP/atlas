@@ -10,6 +10,12 @@ import { HardwareAssessor } from './services/hardware-assessor';
 import { OptimizationEngine } from './services/optimization-engine';
 import { ParameterTuner } from './services/parameter-tuner';
 import { ContextManager } from './services/context-manager';
+import { SystemTrayService } from './services/system-tray';
+import { NativeMenuService } from './services/native-menu';
+import { AutoUpdaterService } from './services/auto-updater';
+import { NotificationService } from './services/notification-service';
+import { CrashReporterService } from './services/crash-reporter';
+import { ProtocolHandlerService } from './services/protocol-handler';
 
 class TanukiMCPApp {
   private mainWindow: BrowserWindow | null = null;
@@ -23,6 +29,14 @@ class TanukiMCPApp {
   private optimizationEngine: OptimizationEngine;
   private parameterTuner: ParameterTuner;
   private contextManager: ContextManager;
+  
+  // Phase 3: Desktop Integration Services
+  private systemTrayService: SystemTrayService | null = null;
+  private nativeMenuService: NativeMenuService | null = null;
+  private autoUpdaterService: AutoUpdaterService | null = null;
+  private notificationService: NotificationService | null = null;
+  private crashReporterService: CrashReporterService | null = null;
+  private protocolHandlerService: ProtocolHandlerService | null = null;
 
   constructor() {
     this.setupEventHandlers();
@@ -81,6 +95,11 @@ class TanukiMCPApp {
       // Create main window
       console.log('🪟 Creating main window...');
       this.mainWindow = createWindow();
+      
+      // Initialize desktop integration services
+      console.log('🖥️ Initializing desktop integration...');
+      await this.initializeDesktopServices();
+      console.log('✅ Desktop integration ready');
       
       // Setup IPC handlers
       console.log('🔌 Setting up IPC handlers...');
@@ -146,6 +165,41 @@ class TanukiMCPApp {
     this.isQuitting = true;
   }
 
+  private async initializeDesktopServices(): Promise<void> {
+    if (!this.mainWindow) return;
+
+    try {
+      // Initialize crash reporter first
+      this.crashReporterService = new CrashReporterService(this.mainWindow);
+      
+      // Initialize notification service
+      this.notificationService = new NotificationService(this.mainWindow);
+      
+      // Initialize system tray
+      this.systemTrayService = new SystemTrayService(this.mainWindow);
+      
+      // Initialize native menu
+      this.nativeMenuService = new NativeMenuService(this.mainWindow);
+      
+      // Initialize protocol handler
+      this.protocolHandlerService = new ProtocolHandlerService(this.mainWindow);
+      
+      // Initialize auto-updater (only in production)
+      if (process.env.NODE_ENV === 'production') {
+        this.autoUpdaterService = new AutoUpdaterService(this.mainWindow);
+        // Check for updates on startup (after a delay)
+        setTimeout(() => {
+          this.autoUpdaterService?.checkForUpdates();
+        }, 5000);
+      }
+      
+      console.log('✅ Desktop integration services initialized');
+    } catch (error) {
+      console.error('❌ Failed to initialize desktop services:', error);
+      this.crashReporterService?.logCrash(error as Error, 'Desktop Services Initialization');
+    }
+  }
+
   private async assessSystemCapabilities(): Promise<void> {
     try {
       // Check Ollama health
@@ -192,7 +246,13 @@ class TanukiMCPApp {
       hardwareAssessor: this.hardwareAssessor,
       optimizationEngine: this.optimizationEngine,
       parameterTuner: this.parameterTuner,
-      contextManager: this.contextManager
+      contextManager: this.contextManager,
+      systemTray: this.systemTrayService,
+      nativeMenu: this.nativeMenuService,
+      autoUpdater: this.autoUpdaterService,
+      notification: this.notificationService,
+      crashReporter: this.crashReporterService,
+      protocolHandler: this.protocolHandlerService
     };
   }
 }
@@ -206,9 +266,12 @@ export { tanukiApp };
 // Handle uncaught exceptions gracefully
 process.on('uncaughtException', (error) => {
   console.error('Uncaught Exception:', error);
-  // In production, we might want to restart the app
+  tanukiApp.getServices().crashReporter?.logCrash(error, 'Uncaught Exception');
+  tanukiApp.getServices().crashReporter?.showCrashDialog(error);
 });
 
 process.on('unhandledRejection', (reason, promise) => {
   console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+  const error = reason instanceof Error ? reason : new Error(String(reason));
+  tanukiApp.getServices().crashReporter?.logCrash(error, 'Unhandled Rejection');
 }); 

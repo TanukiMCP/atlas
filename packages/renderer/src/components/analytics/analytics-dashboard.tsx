@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
+import { Badge } from '../ui/badge';
 
 interface MetricCard {
   title: string;
@@ -25,69 +27,57 @@ export const AnalyticsDashboard: React.FC = () => {
   const [selectedPeriod, setSelectedPeriod] = useState('7d');
 
   return (
-    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', backgroundColor: '#f9fafb' }}>
-      <div style={{ padding: '20px', backgroundColor: 'white', borderBottom: '1px solid #e5e7eb' }}>
-        <h2 style={{ fontSize: '24px', fontWeight: '700', margin: '0 0 4px 0' }}>📊 Analytics Dashboard</h2>
-        <p style={{ color: '#6b7280', margin: 0 }}>Performance metrics and insights</p>
+    <div className="h-full flex flex-col bg-muted/30">
+      <div className="p-5 bg-background border-b border-border">
+        <h2 className="text-2xl font-bold mb-1">📊 Analytics Dashboard</h2>
+        <p className="text-muted-foreground">Performance metrics and insights</p>
       </div>
 
-      <div style={{ flex: 1, padding: '20px', overflowY: 'auto' }}>
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-          gap: '16px',
-          marginBottom: '24px'
-        }}>
+      <div className="flex-1 p-5 overflow-y-auto">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           {METRICS.map((metric, index) => (
-            <div
-              key={index}
-              style={{
-                backgroundColor: 'white',
-                border: '1px solid #e5e7eb',
-                borderRadius: '12px',
-                padding: '20px'
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-                <span style={{ fontSize: '24px' }}>{metric.icon}</span>
-                <span style={{
-                  fontSize: '12px',
-                  color: metric.trend === 'up' ? '#059669' : metric.trend === 'down' ? '#dc2626' : '#6b7280'
-                }}>
-                  {metric.change}
-                </span>
-              </div>
-              <div style={{ fontSize: '28px', fontWeight: '700', marginBottom: '4px' }}>
-                {metric.value}
-              </div>
-              <div style={{ fontSize: '14px', color: '#6b7280' }}>
-                {metric.title}
-              </div>
-            </div>
+            <Card key={index}>
+              <CardContent className="p-5">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-2xl">{metric.icon}</span>
+                  <Badge 
+                    variant={metric.trend === 'up' ? 'default' : metric.trend === 'down' ? 'destructive' : 'secondary'}
+                    className="text-xs"
+                  >
+                    {metric.change}
+                  </Badge>
+                </div>
+                <div className="text-3xl font-bold mb-1">
+                  {metric.value}
+                </div>
+                <div className="text-sm text-muted-foreground">
+                  {metric.title}
+                </div>
+              </CardContent>
+            </Card>
           ))}
         </div>
 
-        <div style={{ backgroundColor: 'white', borderRadius: '12px', border: '1px solid #e5e7eb' }}>
-          <div style={{ padding: '20px', borderBottom: '1px solid #e5e7eb' }}>
-            <h3 style={{ fontSize: '18px', fontWeight: '600', margin: 0 }}>Recent Activities</h3>
-          </div>
-          <div style={{ padding: '20px' }}>
-            {ACTIVITIES.map(activity => (
-              <div key={activity.id} style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
-                <div style={{
-                  width: '8px',
-                  height: '8px',
-                  borderRadius: '50%',
-                  backgroundColor: activity.status === 'success' ? '#059669' : '#3b82f6'
-                }} />
-                <div>
-                  <div style={{ fontSize: '14px' }}>{activity.action}</div>
-                  <div style={{ fontSize: '12px', color: '#6b7280' }}>{activity.time}</div>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Recent Activities</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {ACTIVITIES.map(activity => (
+                <div key={activity.id} className="flex items-center gap-3">
+                  <div className={`w-2 h-2 rounded-full ${
+                    activity.status === 'success' ? 'bg-green-500' : 'bg-blue-500'
+                  }`} />
+                  <div>
+                    <div className="text-sm font-medium">{activity.action}</div>
+                    <div className="text-xs text-muted-foreground">{activity.time}</div>
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
-        </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

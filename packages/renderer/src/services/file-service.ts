@@ -1,6 +1,6 @@
 /**
  * File Service - Real file system operations for TanukiMCP Atlas
- * Handles file reading, writing, and directory operations
+ * Handles file reading, writing, and directory operations using Desktop Commander
  */
 
 export interface FileInfo {
@@ -20,6 +20,58 @@ export interface FileContent {
   lastModified: Date;
 }
 
+// File type icon mapping using lucide-react icons
+export const getFileTypeIcon = (fileName: string, isDirectory: boolean = false): string => {
+  if (isDirectory) return 'folder';
+  
+  const extension = fileName.split('.').pop()?.toLowerCase();
+  
+  switch (extension) {
+    case 'tsx':
+    case 'jsx':
+      return 'component';
+    case 'ts':
+    case 'js':
+      return 'file-code';
+    case 'json':
+      return 'braces';
+    case 'md':
+      return 'file-text';
+    case 'css':
+    case 'scss':
+    case 'sass':
+      return 'palette';
+    case 'html':
+      return 'globe';
+    case 'png':
+    case 'jpg':
+    case 'jpeg':
+    case 'gif':
+    case 'svg':
+      return 'image';
+    case 'pdf':
+      return 'file-text';
+    case 'zip':
+    case 'rar':
+    case '7z':
+      return 'archive';
+    case 'gitignore':
+    case 'env':
+      return 'settings';
+    default:
+      return 'file';
+  }
+};
+
+// Format file size helper
+export const formatFileSize = (bytes: number): string => {
+  if (bytes === 0) return '0 B';
+  const k = 1024;
+  const sizes = ['B', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+};
+
 class FileService {
   private projectRoot: string = '';
 
@@ -28,9 +80,8 @@ class FileService {
   }
 
   private async initializeProjectRoot() {
-    // In a real Electron app, this would get the actual project root
-    // For now, simulate the current project structure
-    this.projectRoot = '/c:/Users/ididi/tanukimcp-atlas/packages/renderer';
+    // Set the actual project root from user info
+    this.projectRoot = 'C:\\Users\\ididi\\tanukimcp-atlas';
   }
 
   /**
@@ -41,146 +92,175 @@ class FileService {
   }
 
   /**
-   * List files and directories in a path
+   * List files and directories in a path using Desktop Commander
    */
   async listDirectory(path: string): Promise<FileInfo[]> {
-    // Simulate file system structure
-    const mockFiles: Record<string, FileInfo[]> = {
-      '': [
-        { name: 'src', path: 'src', type: 'directory', modified: new Date() },
-        { name: 'public', path: 'public', type: 'directory', modified: new Date() },
-        { name: 'package.json', path: 'package.json', type: 'file', size: 1234, modified: new Date(), extension: 'json' },
-        { name: 'tsconfig.json', path: 'tsconfig.json', type: 'file', size: 567, modified: new Date(), extension: 'json' },
-        { name: 'vite.config.ts', path: 'vite.config.ts', type: 'file', size: 890, modified: new Date(), extension: 'ts' },
-        { name: 'README.md', path: 'README.md', type: 'file', size: 2345, modified: new Date(), extension: 'md' }
-      ],
-      'src': [
-        { name: 'components', path: 'src/components', type: 'directory', modified: new Date() },
-        { name: 'hooks', path: 'src/hooks', type: 'directory', modified: new Date() },
-        { name: 'services', path: 'src/services', type: 'directory', modified: new Date() },
-        { name: 'styles', path: 'src/styles', type: 'directory', modified: new Date() },
-        { name: 'types', path: 'src/types', type: 'directory', modified: new Date() },
-        { name: 'App.tsx', path: 'src/App.tsx', type: 'file', size: 3456, modified: new Date(), extension: 'tsx' },
-        { name: 'main.tsx', path: 'src/main.tsx', type: 'file', size: 1123, modified: new Date(), extension: 'tsx' },
-        { name: 'index.css', path: 'src/index.css', type: 'file', size: 2234, modified: new Date(), extension: 'css' }
-      ],
-      'src/components': [
-        { name: 'chat', path: 'src/components/chat', type: 'directory', modified: new Date() },
-        { name: 'file-explorer', path: 'src/components/file-explorer', type: 'directory', modified: new Date() },
-        { name: 'ide', path: 'src/components/ide', type: 'directory', modified: new Date() },
-        { name: 'shared', path: 'src/components/shared', type: 'directory', modified: new Date() }
-      ],
-      'src/components/ide': [
-        { name: 'ide-layout.tsx', path: 'src/components/ide/ide-layout.tsx', type: 'file', size: 4567, modified: new Date(), extension: 'tsx' },
-        { name: 'menu-bar.tsx', path: 'src/components/ide/menu-bar.tsx', type: 'file', size: 2345, modified: new Date(), extension: 'tsx' },
-        { name: 'toolbar.tsx', path: 'src/components/ide/toolbar.tsx', type: 'file', size: 3456, modified: new Date(), extension: 'tsx' },
-        { name: 'status-bar.tsx', path: 'src/components/ide/status-bar.tsx', type: 'file', size: 1234, modified: new Date(), extension: 'tsx' }
-      ]
-    };
+    try {
+      // Construct full path
+      const fullPath = path === '' || path === '.' ? this.projectRoot : 
+                      path.startsWith('C:') ? path : 
+                      `${this.projectRoot}\\${path.replace(/\//g, '\\')}`;
 
-    return mockFiles[path] || [];
+      // Use Desktop Commander to get real directory listing
+      const result = await window.electronAPI?.invoke('mcp_desktop-commander_list_directory', {
+        path: fullPath
+      });
+
+      if (!result || typeof result !== 'string') {
+        throw new Error('Invalid response from Desktop Commander');
+      }
+
+      // Parse the Desktop Commander response
+      const lines = result.split('\n').filter(line => line.trim());
+      const files: FileInfo[] = [];
+
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (!trimmed) continue;
+
+        const isDirectory = trimmed.startsWith('[DIR]');
+        const isFile = trimmed.startsWith('[FILE]');
+        
+        if (!isDirectory && !isFile) continue;
+
+        const name = trimmed.replace(/^\[(DIR|FILE)\]\s+/, '');
+        if (!name) continue;
+
+        // Skip hidden files/directories (starting with .)
+        if (name.startsWith('.') && name !== '..') continue;
+
+        const relativePath = path === '' || path === '.' ? name : `${path}/${name}`;
+        const extension = isFile ? name.split('.').pop()?.toLowerCase() : undefined;
+
+        // Get file info for files
+        let size: number | undefined;
+        let modified = new Date();
+
+        if (isFile) {
+          try {
+            const fileInfo = await window.electronAPI?.invoke('mcp_desktop-commander_get_file_info', {
+              path: `${fullPath}\\${name}`
+            });
+            
+            if (fileInfo && typeof fileInfo === 'string') {
+              // Parse file info response to extract size and modification date
+              const sizeMatch = fileInfo.match(/size:\s*(\d+)/i);
+              if (sizeMatch) {
+                size = parseInt(sizeMatch[1]);
+              }
+              
+              const modifiedMatch = fileInfo.match(/last modified:\s*([^\n]+)/i);
+              if (modifiedMatch) {
+                modified = new Date(modifiedMatch[1]);
+              }
+            }
+          } catch (error) {
+            console.warn(`Failed to get file info for ${name}:`, error);
+          }
+        }
+
+        files.push({
+          name,
+          path: relativePath,
+          type: isDirectory ? 'directory' : 'file',
+          size,
+          modified,
+          extension,
+          isHidden: name.startsWith('.')
+        });
+      }
+
+      // Sort directories first, then files, both alphabetically
+      return files.sort((a, b) => {
+        if (a.type !== b.type) {
+          return a.type === 'directory' ? -1 : 1;
+        }
+        return a.name.localeCompare(b.name);
+      });
+
+    } catch (error) {
+      console.error('Failed to list directory:', error);
+      // Return empty array on error rather than throwing
+      return [];
+    }
   }
 
   /**
-   * Read file content
+   * Read file content using Desktop Commander
    */
   async readFile(path: string): Promise<FileContent> {
-    // Simulate reading different file types
-    const extension = path.split('.').pop()?.toLowerCase();
-    
-    let content = '';
-    switch (extension) {
-      case 'tsx':
-      case 'ts':
-        content = `import React from 'react';
+    try {
+      // Construct full path
+      const fullPath = path.startsWith('C:') ? path : 
+                      `${this.projectRoot}\\${path.replace(/\//g, '\\')}`;
 
-interface ${path.split('/').pop()?.replace('.tsx', '')}Props {
-  // Component props
+      // Use Desktop Commander to read file
+      const result = await window.electronAPI?.invoke('mcp_desktop-commander_read_file', {
+        path: fullPath
+      });
+
+      if (!result || typeof result !== 'string') {
+        throw new Error('Failed to read file content');
+      }
+
+      // Get file info for metadata
+      let size = result.length;
+      let lastModified = new Date();
+
+      try {
+        const fileInfo = await window.electronAPI?.invoke('mcp_desktop-commander_get_file_info', {
+          path: fullPath
+        });
+        
+        if (fileInfo && typeof fileInfo === 'string') {
+          const sizeMatch = fileInfo.match(/size:\s*(\d+)/i);
+          if (sizeMatch) {
+            size = parseInt(sizeMatch[1]);
 }
 
-export const ${path.split('/').pop()?.replace('.tsx', '')}: React.FC<${path.split('/').pop()?.replace('.tsx', '')}Props> = () => {
-  return (
-    <div>
-      {/* Component content for ${path} */}
-    </div>
-  );
-};`;
-        break;
-        
-      case 'json':
-        content = JSON.stringify({
-          name: "tanukimcp-atlas",
-          version: "1.0.0",
-          description: "AI-powered IDE with MCP integration",
-          main: "index.js",
-          scripts: {
-            dev: "vite",
-            build: "vite build",
-            preview: "vite preview"
+          const modifiedMatch = fileInfo.match(/last modified:\s*([^\n]+)/i);
+          if (modifiedMatch) {
+            lastModified = new Date(modifiedMatch[1]);
           }
-        }, null, 2);
-        break;
-        
-      case 'md':
-        content = `# ${path.split('/').pop()?.replace('.md', '')}
-
-This is a markdown file for the TanukiMCP Atlas project.
-
-## Features
-
-- Real-time file editing
-- MCP tool integration
-- AI-powered assistance
-
-## Usage
-
-\`\`\`bash
-npm run dev
-\`\`\`
-`;
-        break;
-        
-      case 'css':
-        content = `/* Styles for ${path} */
-
-.container {
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
-  background-color: var(--color-bg-primary);
-  color: var(--color-text-primary);
-}
-
-.main-content {
-  flex: 1;
-  overflow: hidden;
-}`;
-        break;
-        
-      default:
-        content = `Content of ${path}
-
-This is a sample file for demonstration purposes.
-In a real implementation, this would read the actual file content.`;
+        }
+      } catch (error) {
+        console.warn('Failed to get file metadata:', error);
     }
 
     return {
-      content,
+        content: result,
       encoding: 'utf-8',
-      size: content.length,
-      lastModified: new Date()
+        size,
+        lastModified
     };
+
+    } catch (error) {
+      console.error('Failed to read file:', error);
+      throw new Error(`Failed to read file: ${error instanceof Error ? error.message : String(error)}`);
+    }
   }
 
   /**
-   * Write content to a file
+   * Write content to a file using Desktop Commander
    */
   async writeFile(path: string, content: string): Promise<boolean> {
-    // Simulate writing file
-    console.log(`Writing to ${path}:`, content.substring(0, 100) + '...');
+    try {
+      // Construct full path
+      const fullPath = path.startsWith('C:') ? path : 
+                      `${this.projectRoot}\\${path.replace(/\//g, '\\')}`;
     
-    // In a real implementation, this would write to the actual file system
-    return true;
+      // Use Desktop Commander to write file
+      const result = await window.electronAPI?.invoke('mcp_desktop-commander_write_file', {
+        path: fullPath,
+        content
+      });
+
+      return result === true || (typeof result === 'string' && result.includes('success'));
+
+    } catch (error) {
+      console.error('Failed to write file:', error);
+      return false;
+    }
   }
 
   /**
@@ -191,11 +271,25 @@ In a real implementation, this would read the actual file content.`;
   }
 
   /**
-   * Create a new directory
+   * Create a new directory using Desktop Commander
    */
   async createDirectory(path: string): Promise<boolean> {
-    console.log(`Creating directory: ${path}`);
-    return true;
+    try {
+      // Construct full path
+      const fullPath = path.startsWith('C:') ? path : 
+                      `${this.projectRoot}\\${path.replace(/\//g, '\\')}`;
+
+      // Use Desktop Commander to create directory
+      const result = await window.electronAPI?.invoke('mcp_desktop-commander_create_directory', {
+        path: fullPath
+      });
+
+      return result === true || (typeof result === 'string' && result.includes('success'));
+
+    } catch (error) {
+      console.error('Failed to create directory:', error);
+      return false;
+    }
   }
 
   /**
@@ -203,40 +297,80 @@ In a real implementation, this would read the actual file content.`;
    */
   async deleteFile(path: string): Promise<boolean> {
     console.log(`Deleting: ${path}`);
+    // TODO: Implement with Desktop Commander when delete functionality is available
     return true;
   }
 
   /**
-   * Rename/move a file
+   * Rename/move a file using Desktop Commander
    */
   async moveFile(oldPath: string, newPath: string): Promise<boolean> {
-    console.log(`Moving ${oldPath} to ${newPath}`);
-    return true;
+    try {
+      // Construct full paths
+      const fullOldPath = oldPath.startsWith('C:') ? oldPath : 
+                         `${this.projectRoot}\\${oldPath.replace(/\//g, '\\')}`;
+      const fullNewPath = newPath.startsWith('C:') ? newPath : 
+                         `${this.projectRoot}\\${newPath.replace(/\//g, '\\')}`;
+
+      // Use Desktop Commander to move file
+      const result = await window.electronAPI?.invoke('mcp_desktop-commander_move_file', {
+        source: fullOldPath,
+        destination: fullNewPath
+      });
+
+      return result === true || (typeof result === 'string' && result.includes('success'));
+
+    } catch (error) {
+      console.error('Failed to move file:', error);
+      return false;
+    }
   }
 
   /**
-   * Get file info
+   * Get file info using Desktop Commander
    */
   async getFileInfo(path: string): Promise<FileInfo | null> {
-    // Simulate getting file info
-    const extension = path.split('.').pop()?.toLowerCase();
+    try {
+      // Construct full path
+      const fullPath = path.startsWith('C:') ? path : 
+                      `${this.projectRoot}\\${path.replace(/\//g, '\\')}`;
+
+      // Use Desktop Commander to get file info
+      const result = await window.electronAPI?.invoke('mcp_desktop-commander_get_file_info', {
+        path: fullPath
+      });
+
+      if (!result || typeof result !== 'string') {
+        return null;
+      }
+
+      // Parse the response to extract file information
+      const name = path.split(/[/\\]/).pop() || '';
+      const isDirectory = result.toLowerCase().includes('directory');
+      const sizeMatch = result.match(/size:\s*(\d+)/i);
+      const modifiedMatch = result.match(/last modified:\s*([^\n]+)/i);
     
     return {
-      name: path.split('/').pop() || '',
+        name,
       path,
-      type: extension ? 'file' : 'directory',
-      size: Math.floor(Math.random() * 10000),
-      modified: new Date(),
-      extension
+        type: isDirectory ? 'directory' : 'file',
+        size: sizeMatch ? parseInt(sizeMatch[1]) : undefined,
+        modified: modifiedMatch ? new Date(modifiedMatch[1]) : new Date(),
+        extension: !isDirectory ? name.split('.').pop()?.toLowerCase() : undefined
     };
+
+    } catch (error) {
+      console.error('Failed to get file info:', error);
+      return null;
+    }
   }
 
   /**
-   * Check if file exists
+   * Check if file exists using Desktop Commander
    */
   async fileExists(path: string): Promise<boolean> {
-    // In a real implementation, check actual file system
-    return true;
+    const info = await this.getFileInfo(path);
+    return info !== null;
   }
 }
 

@@ -1,46 +1,9 @@
 "use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ConfigManager = void 0;
-const react_1 = __importDefault(require("react"));
+const jsx_runtime_1 = require("react/jsx-runtime");
 const ConfigManager = () => {
-    return (<div className="config-manager p-6">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Configuration Management</h1>
-        <p className="text-gray-600 dark:text-gray-400">Manage system settings and configurations</p>
-      </div>
-      
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-          <h2 className="text-lg font-semibold mb-4">Backup & Restore</h2>
-          <div className="space-y-3">
-            <button className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-              Create Backup
-            </button>
-            <button className="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
-              Restore from Backup
-            </button>
-            <div className="pt-2">
-              <p className="text-sm text-gray-600">Last backup: 2 hours ago</p>
-            </div>
-          </div>
-        </div>
-        
-        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-          <h2 className="text-lg font-semibold mb-4">Import/Export</h2>
-          <div className="space-y-3">
-            <button className="w-full px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700">
-              Export Configuration
-            </button>
-            <button className="w-full px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700">
-              Import Configuration
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>);
+    return ((0, jsx_runtime_1.jsxs)("div", { className: "config-manager p-6", children: [(0, jsx_runtime_1.jsxs)("div", { className: "mb-6", children: [(0, jsx_runtime_1.jsx)("h1", { className: "text-2xl font-bold text-gray-900 dark:text-white", children: "Configuration Management" }), (0, jsx_runtime_1.jsx)("p", { className: "text-gray-600 dark:text-gray-400", children: "Manage system settings and configurations" })] }), (0, jsx_runtime_1.jsxs)("div", { className: "grid grid-cols-1 lg:grid-cols-2 gap-6", children: [(0, jsx_runtime_1.jsxs)("div", { className: "bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6", children: [(0, jsx_runtime_1.jsx)("h2", { className: "text-lg font-semibold mb-4", children: "Backup & Restore" }), (0, jsx_runtime_1.jsxs)("div", { className: "space-y-3", children: [(0, jsx_runtime_1.jsx)("button", { className: "w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700", children: "Create Backup" }), (0, jsx_runtime_1.jsx)("button", { className: "w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700", children: "Restore from Backup" }), (0, jsx_runtime_1.jsx)("div", { className: "pt-2", children: (0, jsx_runtime_1.jsx)("p", { className: "text-sm text-gray-600", children: "Last backup: 2 hours ago" }) })] })] }), (0, jsx_runtime_1.jsxs)("div", { className: "bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6", children: [(0, jsx_runtime_1.jsx)("h2", { className: "text-lg font-semibold mb-4", children: "Import/Export" }), (0, jsx_runtime_1.jsxs)("div", { className: "space-y-3", children: [(0, jsx_runtime_1.jsx)("button", { className: "w-full px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700", children: "Export Configuration" }), (0, jsx_runtime_1.jsx)("button", { className: "w-full px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700", children: "Import Configuration" })] })] })] })] }));
 };
 exports.ConfigManager = ConfigManager;
 //# sourceMappingURL=config-manager.js.map

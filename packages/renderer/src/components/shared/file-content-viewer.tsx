@@ -1,287 +1,177 @@
 import React, { useState, useEffect } from 'react';
-import { fileService, FileInfo, FileContent } from '../../services/file-service';
+import { FileNode } from '../../stores/app-store';
+import { fileService } from '../../services/file-service';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
+import { Button } from '../ui/button';
+import { Badge } from '../ui/badge';
+import { ScrollArea } from '../ui/scroll-area';
+import { X, File, Folder, Download, Copy } from 'lucide-react';
 
 interface FileContentViewerProps {
-  selectedFile: FileInfo | null;
   isVisible: boolean;
+  selectedFile: FileNode | null;
   onClose: () => void;
 }
 
 export const FileContentViewer: React.FC<FileContentViewerProps> = ({
-  selectedFile,
   isVisible,
+  selectedFile,
   onClose
 }) => {
-  const [content, setContent] = useState<FileContent | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
-  const [editedContent, setEditedContent] = useState('');
+  const [content, setContent] = useState<string>('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (selectedFile && selectedFile.type === 'file') {
+    if (isVisible && selectedFile && selectedFile.type === 'file') {
       loadFileContent();
     }
-  }, [selectedFile]);
+  }, [isVisible, selectedFile]);
 
   const loadFileContent = async () => {
     if (!selectedFile) return;
     
-    setIsLoading(true);
+    setLoading(true);
+    setError(null);
+    
     try {
       const fileContent = await fileService.readFile(selectedFile.path);
       setContent(fileContent);
-      setEditedContent(fileContent.content);
-    } catch (error) {
-      console.error('Failed to load file content:', error);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load file content');
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
-  const handleSave = async () => {
-    if (!selectedFile || !content) return;
-    
-    try {
-      await fileService.writeFile(selectedFile.path, editedContent);
-      setContent({ ...content, content: editedContent });
-      setIsEditing(false);
-    } catch (error) {
-      console.error('Failed to save file:', error);
+  const getFileExtension = (filename: string) => {
+    return filename.split('.').pop()?.toLowerCase() || '';
+  };
+
+  const getLanguageFromExtension = (ext: string) => {
+    const langMap: Record<string, string> = {
+      'js': 'javascript',
+      'jsx': 'javascript', 
+      'ts': 'typescript',
+      'tsx': 'typescript',
+      'py': 'python',
+      'json': 'json',
+      'css': 'css',
+      'scss': 'scss',
+      'md': 'markdown',
+      'html': 'html'
+    };
+    return langMap[ext] || 'text';
+  };
+
+  const copyToClipboard = async () => {
+    if (content) {
+      await navigator.clipboard.writeText(content);
     }
   };
 
-  const getLanguageFromExtension = (extension?: string) => {
-    switch (extension) {
-      case 'tsx':
-      case 'ts': return 'typescript';
-      case 'js':
-      case 'jsx': return 'javascript';
-      case 'css': return 'css';
-      case 'json': return 'json';
-      case 'md': return 'markdown';
-      case 'html': return 'html';
-      default: return 'text';
-    }
+  const formatFileSize = (bytes: number) => {
+    if (bytes === 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
-  if (!isVisible || !selectedFile) return null;
+  if (!selectedFile) return null;
 
   return (
-    <div style={{
-      position: 'fixed',
-      top: '50%',
-      left: '50%',
-      transform: 'translate(-50%, -50%)',
-      width: '80%',
-      height: '80%',
-      backgroundColor: 'var(--color-bg-primary)',
-      border: '1px solid var(--color-border)',
-      borderRadius: 'var(--radius-lg)',
-      boxShadow: 'var(--shadow-lg)',
-      zIndex: 1000,
-      display: 'flex',
-      flexDirection: 'column',
-      overflow: 'hidden'
-    }}>
-      {/* Header */}
-      <div style={{
-        padding: '16px 20px',
-        borderBottom: '1px solid var(--color-border)',
-        backgroundColor: 'var(--color-bg-secondary)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between'
-      }}>
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '12px'
-        }}>
-          <span style={{ fontSize: '20px' }}>
-            {selectedFile.type === 'directory' ? '📁' : '📄'}
-          </span>
-          <div>
-            <div style={{
-              fontSize: '16px',
-              fontWeight: '600',
-              color: 'var(--color-text-primary)'
-            }}>
-              {selectedFile.name}
-            </div>
-            <div style={{
-              fontSize: '12px',
-              color: 'var(--color-text-muted)',
-              fontFamily: 'monospace'
-            }}>
-              {selectedFile.path}
-            </div>
-          </div>
-        </div>
-
-        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-          {selectedFile.type === 'file' && content && (
-            <>
-              {isEditing ? (
-                <>
-                  <button
-                    onClick={handleSave}
-                    className="btn btn-primary btn-sm"
-                    style={{ fontSize: '12px' }}
-                  >
-                    💾 Save
-                  </button>
-                  <button
-                    onClick={() => {
-                      setIsEditing(false);
-                      setEditedContent(content.content);
-                    }}
-                    className="btn btn-sm"
-                    style={{ fontSize: '12px' }}
-                  >
-                    Cancel
-                  </button>
-                </>
+    <Dialog open={isVisible} onOpenChange={onClose}>
+      <DialogContent className="max-w-4xl max-h-[80vh] p-0">
+        <DialogHeader className="px-6 py-4 border-b">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              {selectedFile.type === 'directory' ? (
+                <Folder className="h-5 w-5 text-blue-500" />
               ) : (
-                <button
-                  onClick={() => setIsEditing(true)}
-                  className="btn btn-sm"
-                  style={{ fontSize: '12px' }}
+                <File className="h-5 w-5 text-gray-500" />
+              )}
+              <div>
+                <DialogTitle className="text-lg font-semibold">
+                  {selectedFile.name}
+                </DialogTitle>
+                <div className="flex items-center gap-2 mt-1">
+                  <Badge variant="secondary" className="text-xs">
+                    {selectedFile.type}
+                  </Badge>
+                  {selectedFile.size && (
+                    <Badge variant="outline" className="text-xs">
+                      {formatFileSize(selectedFile.size)}
+                    </Badge>
+                  )}
+                  {selectedFile.type === 'file' && (
+                    <Badge variant="outline" className="text-xs">
+                      {getLanguageFromExtension(getFileExtension(selectedFile.name))}
+                    </Badge>
+                  )}
+                </div>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              {selectedFile.type === 'file' && content && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={copyToClipboard}
+                  className="h-8"
                 >
-                  ✏️ Edit
-                </button>
+                  <Copy className="h-4 w-4 mr-1" />
+                  Copy
+                </Button>
               )}
-            </>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onClose}
+                className="h-8 w-8 p-0"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        </DialogHeader>
+
+        <div className="flex-1 overflow-hidden">
+          {selectedFile.type === 'directory' ? (
+            <div className="p-6 text-center">
+              <Folder className="h-16 w-16 text-blue-500 mx-auto mb-4" />
+              <h3 className="text-lg font-medium mb-2">Directory</h3>
+              <p className="text-muted-foreground">
+                This is a directory. Use the file tree to explore its contents.
+              </p>
+            </div>
+          ) : loading ? (
+            <div className="p-6 text-center">
+              <div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
+              <p className="text-muted-foreground">Loading file content...</p>
+            </div>
+          ) : error ? (
+            <div className="p-6 text-center">
+              <div className="text-red-500 mb-4">⚠️</div>
+              <h3 className="text-lg font-medium mb-2 text-red-600">Error Loading File</h3>
+              <p className="text-muted-foreground">{error}</p>
+              <Button 
+                variant="outline" 
+                onClick={loadFileContent}
+                className="mt-4"
+              >
+                Try Again
+              </Button>
+            </div>
+          ) : (
+            <ScrollArea className="h-full">
+              <pre className="p-6 text-sm font-mono whitespace-pre-wrap break-words">
+                {content || 'File is empty'}
+              </pre>
+            </ScrollArea>
           )}
-          
-          <button
-            onClick={onClose}
-            style={{
-              background: 'none',
-              border: 'none',
-              fontSize: '20px',
-              cursor: 'pointer',
-              color: 'var(--color-text-muted)'
-            }}
-          >
-            ×
-          </button>
         </div>
-      </div>
-
-      {/* Content */}
-      <div style={{
-        flex: 1,
-        overflow: 'hidden',
-        display: 'flex',
-        flexDirection: 'column'
-      }}>
-        {isLoading ? (
-          <div style={{
-            flex: 1,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: 'var(--color-text-muted)'
-          }}>
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '12px'
-            }}>
-              <div style={{
-                width: '20px',
-                height: '20px',
-                border: '2px solid var(--color-accent)',
-                borderTop: '2px solid transparent',
-                borderRadius: '50%',
-                animation: 'spin 1s linear infinite'
-              }} />
-              Loading file content...
-            </div>
-          </div>
-        ) : selectedFile.type === 'directory' ? (
-          <div style={{
-            flex: 1,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: 'var(--color-text-muted)',
-            fontSize: '16px'
-          }}>
-            📁 Directory selected - choose a file to view content
-          </div>
-        ) : content ? (
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-            {/* File Info Bar */}
-            <div style={{
-              padding: '8px 16px',
-              backgroundColor: 'var(--color-bg-tertiary)',
-              borderBottom: '1px solid var(--color-border)',
-              fontSize: '12px',
-              color: 'var(--color-text-secondary)',
-              display: 'flex',
-              justifyContent: 'space-between'
-            }}>
-              <div>
-                Size: {(content.size / 1024).toFixed(2)} KB | 
-                Encoding: {content.encoding} |
-                Language: {getLanguageFromExtension(selectedFile.extension)}
-              </div>
-              <div>
-                Modified: {content.lastModified.toLocaleString()}
-              </div>
-            </div>
-
-            {/* Content Area */}
-            <div style={{ flex: 1, overflow: 'auto' }}>
-              {isEditing ? (
-                <textarea
-                  value={editedContent}
-                  onChange={(e) => setEditedContent(e.target.value)}
-                  style={{
-                    width: '100%',
-                    height: '100%',
-                    padding: '16px',
-                    border: 'none',
-                    outline: 'none',
-                    resize: 'none',
-                    fontFamily: 'Monaco, Menlo, Consolas, monospace',
-                    fontSize: '13px',
-                    lineHeight: '1.5',
-                    backgroundColor: 'var(--color-bg-primary)',
-                    color: 'var(--color-text-primary)'
-                  }}
-                />
-              ) : (
-                <pre style={{
-                  margin: 0,
-                  padding: '16px',
-                  fontFamily: 'Monaco, Menlo, Consolas, monospace',
-                  fontSize: '13px',
-                  lineHeight: '1.5',
-                  backgroundColor: 'var(--color-bg-primary)',
-                  color: 'var(--color-text-primary)',
-                  overflow: 'auto',
-                  whiteSpace: 'pre-wrap',
-                  wordBreak: 'break-word'
-                }}>
-                  {content.content}
-                </pre>
-              )}
-            </div>
-          </div>
-        ) : (
-          <div style={{
-            flex: 1,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: 'var(--color-text-muted)'
-          }}>
-            Failed to load file content
-          </div>
-        )}
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 };

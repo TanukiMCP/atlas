@@ -1,4 +1,7 @@
 import React, { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
+import { Input } from '../ui/input';
+import { Badge } from '../ui/badge';
 
 interface Tool {
   id: string;
@@ -50,16 +53,16 @@ export const ComprehensiveToolCatalog: React.FC = () => {
   };
 
   return (
-    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', backgroundColor: '#f9fafb' }}>
+    <div className="h-full flex flex-col bg-muted/30">
       {/* Header */}
-      <div style={{ padding: '20px', backgroundColor: 'white', borderBottom: '1px solid #e5e7eb' }}>
-        <h2 style={{ fontSize: '24px', fontWeight: '700', margin: '0 0 16px 0' }}>🛠️ Tool Catalog</h2>
-        <input
+      <div className="p-5 bg-background border-b border-border">
+        <h2 className="text-2xl font-bold mb-4">🛠️ Tool Catalog</h2>
+        <Input
           type="text"
           placeholder="Search tools..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          style={{ padding: '10px', border: '1px solid #d1d5db', borderRadius: '6px', width: '300px' }}
+          className="w-80"
         />
       </div>
 

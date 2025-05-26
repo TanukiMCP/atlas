@@ -33,8 +33,8 @@ __export(main_exports, {
   tanukiApp: () => tanukiApp
 });
 module.exports = __toCommonJS(main_exports);
-var import_electron4 = require("electron");
-var import_path3 = __toESM(require("path"));
+var import_electron11 = require("electron");
+var import_path6 = __toESM(require("path"));
 
 // src/window.ts
 var import_electron = require("electron");
@@ -50,12 +50,12 @@ function createWindow() {
     minHeight: 768,
     center: true,
     // Window appearance
-    titleBarStyle: "hiddenInset",
-    // macOS-style title bar
+    titleBarStyle: process.platform === "darwin" ? "hiddenInset" : "default",
     frame: true,
     transparent: false,
     backgroundColor: "#1a1a1a",
     // Dark theme background
+    vibrancy: process.platform === "darwin" ? "under-window" : void 0,
     // Security settings
     webPreferences: {
       nodeIntegration: false,
@@ -65,7 +65,6 @@ function createWindow() {
       sandbox: false,
       // Disable sandbox for better performance
       preload: import_path.default.join(__dirname, "preload.js"),
-      // Will be created later
       webSecurity: true,
       // Enable web security
       allowRunningInsecureContent: false,
@@ -79,6 +78,8 @@ function createWindow() {
     show: false,
     // Don't show until ready
     paintWhenInitiallyHidden: false,
+    backgroundThrottling: false,
+    // Keep app responsive when in background
     // Window behavior
     autoHideMenuBar: false,
     // Keep menu bar visible for IDE functionality
@@ -850,9 +851,9 @@ function setupAppHandlers() {
     return process.env.npm_package_version || "1.0.0";
   });
   import_electron3.ipcMain.handle("app:getPath", async (event, name) => {
-    const { app: app4 } = require("electron");
+    const { app: app8 } = require("electron");
     try {
-      return app4.getPath(name);
+      return app8.getPath(name);
     } catch (error) {
       console.error(`Failed to get path for ${name}:`, error);
       throw error;
@@ -1896,6 +1897,603 @@ var ContextManager = class {
   }
 };
 
+// src/services/system-tray.ts
+var import_electron4 = require("electron");
+var import_path3 = __toESM(require("path"));
+var SystemTrayService = class {
+  tray = null;
+  mainWindow = null;
+  constructor(mainWindow) {
+    this.mainWindow = mainWindow;
+    this.createTray();
+  }
+  createTray() {
+    try {
+      const iconPath = import_path3.default.join(__dirname, "../../../assets/TanukiMCPLogo.png");
+      const trayIcon = import_electron4.nativeImage.createFromPath(iconPath);
+      const resizedIcon = trayIcon.resize({ width: 16, height: 16 });
+      this.tray = new import_electron4.Tray(resizedIcon);
+      this.tray.setToolTip("TanukiMCP Atlas - AI Agentic IDE");
+      this.setupTrayMenu();
+      this.setupTrayEvents();
+      console.log("\u2705 System tray created successfully");
+    } catch (error) {
+      console.error("\u274C Failed to create system tray:", error);
+    }
+  }
+  setupTrayMenu() {
+    if (!this.tray)
+      return;
+    const contextMenu = import_electron4.Menu.buildFromTemplate([
+      {
+        label: "TanukiMCP Atlas",
+        type: "normal",
+        enabled: false
+      },
+      { type: "separator" },
+      {
+        label: "Show Atlas",
+        type: "normal",
+        click: () => this.showMainWindow()
+      },
+      {
+        label: "Hide Atlas",
+        type: "normal",
+        click: () => this.hideMainWindow()
+      },
+      { type: "separator" },
+      {
+        label: "New Project",
+        type: "normal",
+        accelerator: "CmdOrCtrl+N",
+        click: () => this.sendToRenderer("new-project")
+      },
+      {
+        label: "Open Project",
+        type: "normal",
+        accelerator: "CmdOrCtrl+O",
+        click: () => this.sendToRenderer("open-project")
+      },
+      { type: "separator" },
+      {
+        label: "AI Chat",
+        type: "normal",
+        accelerator: "CmdOrCtrl+Shift+C",
+        click: () => this.sendToRenderer("focus-chat")
+      },
+      {
+        label: "Command Palette",
+        type: "normal",
+        accelerator: "CmdOrCtrl+Shift+P",
+        click: () => this.sendToRenderer("command-palette")
+      },
+      { type: "separator" },
+      {
+        label: "Settings",
+        type: "normal",
+        click: () => this.sendToRenderer("open-settings")
+      },
+      {
+        label: "About",
+        type: "normal",
+        click: () => this.sendToRenderer("show-about")
+      },
+      { type: "separator" },
+      {
+        label: "Quit Atlas",
+        type: "normal",
+        accelerator: process.platform === "darwin" ? "Cmd+Q" : "Ctrl+Q",
+        click: () => {
+          import_electron4.app.quit();
+        }
+      }
+    ]);
+    this.tray.setContextMenu(contextMenu);
+  }
+  setupTrayEvents() {
+    if (!this.tray || !this.mainWindow)
+      return;
+    this.tray.on("double-click", () => {
+      if (this.mainWindow?.isVisible()) {
+        this.hideMainWindow();
+      } else {
+        this.showMainWindow();
+      }
+    });
+    if (process.platform === "win32") {
+      this.tray.on("click", () => {
+        if (this.mainWindow?.isVisible()) {
+          this.hideMainWindow();
+        } else {
+          this.showMainWindow();
+        }
+      });
+    }
+  }
+  showMainWindow() {
+    if (!this.mainWindow)
+      return;
+    if (this.mainWindow.isMinimized()) {
+      this.mainWindow.restore();
+    }
+    this.mainWindow.show();
+    this.mainWindow.focus();
+    if (process.platform === "win32") {
+      this.mainWindow.setAlwaysOnTop(true);
+      this.mainWindow.setAlwaysOnTop(false);
+    }
+  }
+  hideMainWindow() {
+    if (!this.mainWindow)
+      return;
+    this.mainWindow.hide();
+  }
+  sendToRenderer(action, data) {
+    if (!this.mainWindow)
+      return;
+    this.showMainWindow();
+    this.mainWindow.webContents.send("tray-action", { action, data });
+  }
+  updateTrayMenu() {
+    this.setupTrayMenu();
+  }
+  destroy() {
+    if (this.tray) {
+      this.tray.destroy();
+      this.tray = null;
+    }
+  }
+  setMainWindow(window) {
+    this.mainWindow = window;
+  }
+};
+
+// src/services/native-menu.ts
+var import_electron5 = require("electron");
+var NativeMenuService = class {
+  mainWindow = null;
+  constructor(mainWindow) {
+    this.mainWindow = mainWindow;
+    this.createApplicationMenu();
+  }
+  createApplicationMenu() {
+    const template = [
+      {
+        label: "File",
+        submenu: [
+          {
+            label: "New Project",
+            accelerator: "CmdOrCtrl+N",
+            click: () => this.sendToRenderer("new-project")
+          },
+          {
+            label: "Open Project",
+            accelerator: "CmdOrCtrl+O",
+            click: () => this.sendToRenderer("open-project")
+          },
+          { type: "separator" },
+          {
+            label: "Save",
+            accelerator: "CmdOrCtrl+S",
+            click: () => this.sendToRenderer("save-file")
+          },
+          {
+            label: "Save As...",
+            accelerator: "CmdOrCtrl+Shift+S",
+            click: () => this.sendToRenderer("save-file-as")
+          },
+          { type: "separator" },
+          {
+            label: "Exit",
+            accelerator: process.platform === "darwin" ? "Cmd+Q" : "Ctrl+Q",
+            click: () => import_electron5.app.quit()
+          }
+        ]
+      },
+      {
+        label: "Edit",
+        submenu: [
+          { role: "undo" },
+          { role: "redo" },
+          { type: "separator" },
+          { role: "cut" },
+          { role: "copy" },
+          { role: "paste" },
+          { role: "selectall" },
+          { type: "separator" },
+          {
+            label: "Find",
+            accelerator: "CmdOrCtrl+F",
+            click: () => this.sendToRenderer("find")
+          },
+          {
+            label: "Replace",
+            accelerator: "CmdOrCtrl+H",
+            click: () => this.sendToRenderer("replace")
+          }
+        ]
+      },
+      {
+        label: "View",
+        submenu: [
+          { role: "reload" },
+          { role: "forceReload" },
+          { role: "toggleDevTools" },
+          { type: "separator" },
+          { role: "resetZoom" },
+          { role: "zoomIn" },
+          { role: "zoomOut" },
+          { type: "separator" },
+          { role: "togglefullscreen" },
+          { type: "separator" },
+          {
+            label: "Command Palette",
+            accelerator: "CmdOrCtrl+Shift+P",
+            click: () => this.sendToRenderer("command-palette")
+          }
+        ]
+      },
+      {
+        label: "AI",
+        submenu: [
+          {
+            label: "Open Chat",
+            accelerator: "CmdOrCtrl+Shift+C",
+            click: () => this.sendToRenderer("focus-chat")
+          },
+          {
+            label: "New Agent",
+            accelerator: "CmdOrCtrl+Shift+A",
+            click: () => this.sendToRenderer("new-agent")
+          },
+          {
+            label: "Workflow Builder",
+            accelerator: "CmdOrCtrl+Shift+W",
+            click: () => this.sendToRenderer("workflow-builder")
+          }
+        ]
+      },
+      {
+        label: "Tools",
+        submenu: [
+          {
+            label: "MCP Servers",
+            click: () => this.sendToRenderer("mcp-servers")
+          },
+          {
+            label: "Model Manager",
+            click: () => this.sendToRenderer("model-manager")
+          },
+          { type: "separator" },
+          {
+            label: "Settings",
+            accelerator: "CmdOrCtrl+,",
+            click: () => this.sendToRenderer("open-settings")
+          }
+        ]
+      },
+      {
+        label: "Help",
+        submenu: [
+          {
+            label: "Documentation",
+            click: () => import_electron5.shell.openExternal("https://tanukimcp.com/docs")
+          },
+          {
+            label: "Community",
+            click: () => import_electron5.shell.openExternal("https://github.com/TanukiMCP/atlas")
+          },
+          { type: "separator" },
+          {
+            label: "About TanukiMCP Atlas",
+            click: () => this.sendToRenderer("show-about")
+          }
+        ]
+      }
+    ];
+    const menu = import_electron5.Menu.buildFromTemplate(template);
+    import_electron5.Menu.setApplicationMenu(menu);
+  }
+  sendToRenderer(action, data) {
+    if (!this.mainWindow)
+      return;
+    this.mainWindow.webContents.send("menu-action", { action, data });
+  }
+  setMainWindow(window) {
+    this.mainWindow = window;
+  }
+};
+
+// src/services/auto-updater.ts
+var import_electron_updater = require("electron-updater");
+var import_electron6 = require("electron");
+var AutoUpdaterService = class {
+  mainWindow = null;
+  updateAvailable = false;
+  constructor(mainWindow) {
+    this.mainWindow = mainWindow;
+    this.setupAutoUpdater();
+  }
+  setupAutoUpdater() {
+    import_electron_updater.autoUpdater.autoDownload = false;
+    import_electron_updater.autoUpdater.autoInstallOnAppQuit = true;
+    import_electron_updater.autoUpdater.on("checking-for-update", () => {
+      console.log("\u{1F50D} Checking for updates...");
+      this.sendToRenderer("update-checking");
+    });
+    import_electron_updater.autoUpdater.on("update-available", (info) => {
+      console.log("\u{1F4E6} Update available:", info.version);
+      this.updateAvailable = true;
+      this.showUpdateAvailableNotification(info);
+      this.sendToRenderer("update-available", info);
+    });
+    import_electron_updater.autoUpdater.on("update-not-available", (info) => {
+      console.log("\u2705 No updates available");
+      this.sendToRenderer("update-not-available", info);
+    });
+    import_electron_updater.autoUpdater.on("error", (err) => {
+      console.error("\u274C Update error:", err);
+      this.sendToRenderer("update-error", err.message);
+    });
+    import_electron_updater.autoUpdater.on("download-progress", (progressObj) => {
+      const message = `Downloaded ${progressObj.percent.toFixed(1)}%`;
+      console.log("\u{1F4E5}", message);
+      this.sendToRenderer("update-download-progress", progressObj);
+    });
+    import_electron_updater.autoUpdater.on("update-downloaded", (info) => {
+      console.log("\u2705 Update downloaded:", info.version);
+      this.showUpdateReadyNotification(info);
+      this.sendToRenderer("update-downloaded", info);
+    });
+  }
+  showUpdateAvailableNotification(info) {
+    if (import_electron6.Notification.isSupported()) {
+      const notification = new import_electron6.Notification({
+        title: "TanukiMCP Atlas Update Available",
+        body: `Version ${info.version} is available. Click to download.`,
+        icon: require("path").join(__dirname, "../../../assets/TanukiMCPLogo.png")
+      });
+      notification.on("click", () => {
+        this.downloadUpdate();
+      });
+      notification.show();
+    }
+  }
+  showUpdateReadyNotification(info) {
+    if (import_electron6.Notification.isSupported()) {
+      const notification = new import_electron6.Notification({
+        title: "TanukiMCP Atlas Update Ready",
+        body: `Version ${info.version} has been downloaded. Restart to apply.`,
+        icon: require("path").join(__dirname, "../../../assets/TanukiMCPLogo.png")
+      });
+      notification.on("click", () => {
+        this.installUpdate();
+      });
+      notification.show();
+    }
+  }
+  async checkForUpdates() {
+    try {
+      await import_electron_updater.autoUpdater.checkForUpdates();
+    } catch (error) {
+      console.error("Failed to check for updates:", error);
+    }
+  }
+  async downloadUpdate() {
+    try {
+      await import_electron_updater.autoUpdater.downloadUpdate();
+    } catch (error) {
+      console.error("Failed to download update:", error);
+    }
+  }
+  installUpdate() {
+    import_electron_updater.autoUpdater.quitAndInstall();
+  }
+  sendToRenderer(action, data) {
+    if (!this.mainWindow)
+      return;
+    this.mainWindow.webContents.send("updater-action", { action, data });
+  }
+  setMainWindow(window) {
+    this.mainWindow = window;
+  }
+};
+
+// src/services/notification-service.ts
+var import_electron7 = require("electron");
+var import_path4 = __toESM(require("path"));
+var NotificationService = class {
+  mainWindow = null;
+  defaultIcon;
+  constructor(mainWindow) {
+    this.mainWindow = mainWindow;
+    this.defaultIcon = import_path4.default.join(__dirname, "../../../assets/TanukiMCPLogo.png");
+  }
+  showNotification(options) {
+    if (!import_electron7.Notification.isSupported()) {
+      console.warn("Notifications not supported on this platform");
+      return;
+    }
+    const notification = new import_electron7.Notification({
+      title: options.title,
+      body: options.body,
+      icon: options.icon || this.defaultIcon,
+      silent: options.silent || false
+    });
+    if (options.onClick) {
+      notification.on("click", options.onClick);
+    }
+    notification.show();
+  }
+  showBuildComplete(projectName) {
+    this.showNotification({
+      title: "Build Complete",
+      body: `${projectName} has been built successfully`,
+      onClick: () => this.focusMainWindow()
+    });
+  }
+  showError(title, message) {
+    this.showNotification({
+      title: `Error: ${title}`,
+      body: message,
+      onClick: () => this.focusMainWindow()
+    });
+  }
+  focusMainWindow() {
+    if (!this.mainWindow)
+      return;
+    if (this.mainWindow.isMinimized()) {
+      this.mainWindow.restore();
+    }
+    this.mainWindow.show();
+    this.mainWindow.focus();
+  }
+  setMainWindow(window) {
+    this.mainWindow = window;
+  }
+};
+
+// src/services/crash-reporter.ts
+var import_electron8 = require("electron");
+var import_fs = require("fs");
+var import_path5 = require("path");
+var import_electron9 = require("electron");
+var CrashReporterService = class {
+  mainWindow = null;
+  crashLogDir;
+  constructor(mainWindow) {
+    this.mainWindow = mainWindow;
+    this.crashLogDir = (0, import_path5.join)(import_electron9.app.getPath("userData"), "crash-logs");
+    this.setupCrashReporter();
+  }
+  setupCrashReporter() {
+    if (!(0, import_fs.existsSync)(this.crashLogDir)) {
+      (0, import_fs.mkdirSync)(this.crashLogDir, { recursive: true });
+    }
+    import_electron8.crashReporter.start({
+      productName: "TanukiMCP Atlas",
+      companyName: "TanukiMCP",
+      submitURL: "",
+      uploadToServer: false,
+      ignoreSystemCrashHandler: false,
+      rateLimit: true,
+      compress: true
+    });
+    console.log("\u2705 Crash reporter initialized");
+  }
+  logCrash(error, context) {
+    const timestamp = (/* @__PURE__ */ new Date()).toISOString();
+    const crashLog = {
+      timestamp,
+      context: context || "Unknown",
+      error: {
+        name: error.name,
+        message: error.message,
+        stack: error.stack
+      },
+      system: {
+        platform: process.platform,
+        arch: process.arch,
+        version: process.version,
+        appVersion: import_electron9.app.getVersion()
+      }
+    };
+    const logFile = (0, import_path5.join)(this.crashLogDir, `crash-${Date.now()}.json`);
+    try {
+      (0, import_fs.writeFileSync)(logFile, JSON.stringify(crashLog, null, 2));
+      console.log("\u{1F4A5} Crash logged to:", logFile);
+    } catch (writeError) {
+      console.error("Failed to write crash log:", writeError);
+    }
+  }
+  async showCrashDialog(error) {
+    const result = await import_electron8.dialog.showMessageBox(this.mainWindow, {
+      type: "error",
+      title: "Application Error",
+      message: "TanukiMCP Atlas encountered an unexpected error",
+      detail: `${error.message}
+
+The error has been logged for debugging.`,
+      buttons: ["Restart", "Close", "Report Issue"],
+      defaultId: 0,
+      cancelId: 1
+    });
+    switch (result.response) {
+      case 0:
+        import_electron9.app.relaunch();
+        import_electron9.app.exit();
+        break;
+      case 2:
+        require("electron").shell.openExternal("https://github.com/TanukiMCP/atlas/issues");
+        break;
+    }
+  }
+  setMainWindow(window) {
+    this.mainWindow = window;
+  }
+};
+
+// src/services/protocol-handler.ts
+var import_electron10 = require("electron");
+var ProtocolHandlerService = class {
+  mainWindow = null;
+  constructor(mainWindow) {
+    this.mainWindow = mainWindow;
+    this.setupProtocolHandler();
+  }
+  setupProtocolHandler() {
+    if (!import_electron10.app.isDefaultProtocolClient("tanukimcp")) {
+      import_electron10.app.setAsDefaultProtocolClient("tanukimcp");
+    }
+    import_electron10.app.on("second-instance", (event, commandLine, workingDirectory) => {
+      if (this.mainWindow) {
+        if (this.mainWindow.isMinimized()) {
+          this.mainWindow.restore();
+        }
+        this.mainWindow.focus();
+      }
+      const url = commandLine.find((arg) => arg.startsWith("tanukimcp://"));
+      if (url) {
+        this.handleProtocolUrl(url);
+      }
+    });
+    import_electron10.app.on("open-url", (event, url) => {
+      event.preventDefault();
+      this.handleProtocolUrl(url);
+    });
+    console.log("\u2705 Protocol handler registered for tanukimcp://");
+  }
+  handleProtocolUrl(url) {
+    console.log("\u{1F517} Handling protocol URL:", url);
+    try {
+      const parsedUrl = new URL(url);
+      const action = parsedUrl.hostname;
+      const params = Object.fromEntries(parsedUrl.searchParams);
+      this.focusMainWindow();
+      this.sendToRenderer("protocol-action", { action, params, url });
+    } catch (error) {
+      console.error("Failed to parse protocol URL:", error);
+    }
+  }
+  focusMainWindow() {
+    if (!this.mainWindow)
+      return;
+    if (this.mainWindow.isMinimized()) {
+      this.mainWindow.restore();
+    }
+    this.mainWindow.show();
+    this.mainWindow.focus();
+  }
+  sendToRenderer(action, data) {
+    if (!this.mainWindow)
+      return;
+    this.mainWindow.webContents.send("protocol-action", { action, data });
+  }
+  setMainWindow(window) {
+    this.mainWindow = window;
+  }
+};
+
 // src/main.ts
 var TanukiMCPApp = class {
   mainWindow = null;
@@ -1908,6 +2506,13 @@ var TanukiMCPApp = class {
   optimizationEngine;
   parameterTuner;
   contextManager;
+  // Phase 3: Desktop Integration Services
+  systemTrayService = null;
+  nativeMenuService = null;
+  autoUpdaterService = null;
+  notificationService = null;
+  crashReporterService = null;
+  protocolHandlerService = null;
   constructor() {
     this.setupEventHandlers();
     this.initializeServices();
@@ -1924,11 +2529,11 @@ var TanukiMCPApp = class {
     console.log("\u2705 Phase 2 services initialized");
   }
   setupEventHandlers() {
-    import_electron4.app.whenReady().then(() => this.onReady());
-    import_electron4.app.on("window-all-closed", this.onWindowAllClosed.bind(this));
-    import_electron4.app.on("activate", this.onActivate.bind(this));
-    import_electron4.app.on("before-quit", this.onBeforeQuit.bind(this));
-    import_electron4.app.on("certificate-error", (event, webContents, url, error, certificate, callback) => {
+    import_electron11.app.whenReady().then(() => this.onReady());
+    import_electron11.app.on("window-all-closed", this.onWindowAllClosed.bind(this));
+    import_electron11.app.on("activate", this.onActivate.bind(this));
+    import_electron11.app.on("before-quit", this.onBeforeQuit.bind(this));
+    import_electron11.app.on("certificate-error", (event, webContents, url, error, certificate, callback) => {
       if (url.startsWith("http://localhost")) {
         event.preventDefault();
         callback(true);
@@ -1948,6 +2553,9 @@ var TanukiMCPApp = class {
       console.log("\u2705 System assessment complete");
       console.log("\u{1FA9F} Creating main window...");
       this.mainWindow = createWindow();
+      console.log("\u{1F5A5}\uFE0F Initializing desktop integration...");
+      await this.initializeDesktopServices();
+      console.log("\u2705 Desktop integration ready");
       console.log("\u{1F50C} Setting up IPC handlers...");
       setupIPC();
       console.log("\u2705 IPC handlers ready");
@@ -1955,7 +2563,7 @@ var TanukiMCPApp = class {
       console.log("\u{1F389} TanukiMCP Atlas ready!");
     } catch (error) {
       console.error("\u274C Failed to initialize TanukiMCP Atlas:", error);
-      import_electron4.app.quit();
+      import_electron11.app.quit();
     }
   }
   async loadApplication() {
@@ -1978,23 +2586,44 @@ var TanukiMCPApp = class {
   async loadProductionFile() {
     if (!this.mainWindow)
       return;
-    const indexPath = import_path3.default.join(__dirname, "../renderer/dist/index.html");
+    const indexPath = import_path6.default.join(__dirname, "../renderer/dist/index.html");
     console.log(`\u{1F4C1} Loading from file: ${indexPath}`);
     await this.mainWindow.loadFile(indexPath);
   }
   onWindowAllClosed() {
     if (process.platform !== "darwin") {
-      import_electron4.app.quit();
+      import_electron11.app.quit();
     }
   }
   onActivate() {
-    if (import_electron4.BrowserWindow.getAllWindows().length === 0) {
+    if (import_electron11.BrowserWindow.getAllWindows().length === 0) {
       this.mainWindow = createWindow();
       this.loadApplication();
     }
   }
   onBeforeQuit() {
     this.isQuitting = true;
+  }
+  async initializeDesktopServices() {
+    if (!this.mainWindow)
+      return;
+    try {
+      this.crashReporterService = new CrashReporterService(this.mainWindow);
+      this.notificationService = new NotificationService(this.mainWindow);
+      this.systemTrayService = new SystemTrayService(this.mainWindow);
+      this.nativeMenuService = new NativeMenuService(this.mainWindow);
+      this.protocolHandlerService = new ProtocolHandlerService(this.mainWindow);
+      if (process.env.NODE_ENV === "production") {
+        this.autoUpdaterService = new AutoUpdaterService(this.mainWindow);
+        setTimeout(() => {
+          this.autoUpdaterService?.checkForUpdates();
+        }, 5e3);
+      }
+      console.log("\u2705 Desktop integration services initialized");
+    } catch (error) {
+      console.error("\u274C Failed to initialize desktop services:", error);
+      this.crashReporterService?.logCrash(error, "Desktop Services Initialization");
+    }
   }
   async assessSystemCapabilities() {
     try {
@@ -2032,16 +2661,26 @@ var TanukiMCPApp = class {
       hardwareAssessor: this.hardwareAssessor,
       optimizationEngine: this.optimizationEngine,
       parameterTuner: this.parameterTuner,
-      contextManager: this.contextManager
+      contextManager: this.contextManager,
+      systemTray: this.systemTrayService,
+      nativeMenu: this.nativeMenuService,
+      autoUpdater: this.autoUpdaterService,
+      notification: this.notificationService,
+      crashReporter: this.crashReporterService,
+      protocolHandler: this.protocolHandlerService
     };
   }
 };
 var tanukiApp = new TanukiMCPApp();
 process.on("uncaughtException", (error) => {
   console.error("Uncaught Exception:", error);
+  tanukiApp.getServices().crashReporter?.logCrash(error, "Uncaught Exception");
+  tanukiApp.getServices().crashReporter?.showCrashDialog(error);
 });
 process.on("unhandledRejection", (reason, promise) => {
   console.error("Unhandled Rejection at:", promise, "reason:", reason);
+  const error = reason instanceof Error ? reason : new Error(String(reason));
+  tanukiApp.getServices().crashReporter?.logCrash(error, "Unhandled Rejection");
 });
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {

@@ -1,8 +1,8 @@
 import React from 'react';
-import { FileInfo } from '../../services/file-service';
+import { FileNode } from '../../stores/app-store';
 interface FileContentViewerProps {
-    selectedFile: FileInfo | null;
     isVisible: boolean;
+    selectedFile: FileNode | null;
     onClose: () => void;
 }
 export declare const FileContentViewer: React.FC<FileContentViewerProps>;

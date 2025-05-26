@@ -1,44 +1,12 @@
 "use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.EnhancedIDELayout = void 0;
+const jsx_runtime_1 = require("react/jsx-runtime");
 /**
  * Enhanced IDE Layout with Complete Workflow Generation Integration
  * Integrates all workflow components following wireframe specifications
  */
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || (function () {
-    var ownKeys = function(o) {
-        ownKeys = Object.getOwnPropertyNames || function (o) {
-            var ar = [];
-            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
-            return ar;
-        };
-        return ownKeys(o);
-    };
-    return function (mod) {
-        if (mod && mod.__esModule) return mod;
-        var result = {};
-        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
-        __setModuleDefault(result, mod);
-        return result;
-    };
-})();
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.EnhancedIDELayout = void 0;
-const react_1 = __importStar(require("react"));
+const react_1 = require("react");
 const menu_bar_1 = require("./menu-bar");
 const toolbar_1 = require("./toolbar");
 const status_bar_1 = require("./status-bar");
@@ -195,52 +163,12 @@ const EnhancedIDELayout = () => {
             setShowAtSymbol(true);
         }
     };
-    return (<div className="ide-container h-screen flex flex-col bg-gray-50 dark:bg-gray-900">
-      {/* Menu Bar */}
-      <menu_bar_1.MenuBar onNewChat={handleNewChat} onOpenProject={handleOpenProject} onSaveChat={handleSaveChat} onSubjectModeChange={switchMode} currentMode={currentMode} onOpenMCPManager={() => setShowManagementCenter(true)} onOpenLLMPromptManagement={() => setShowLLMPromptManagement(true)}/>
-      
-      {/* Toolbar */}
-      <toolbar_1.Toolbar currentMode={currentMode} onModeChange={switchMode} onAtSymbolTrigger={() => setShowAtSymbol(true)}/>
-      
-      {/* Main Content Area */}
-      <div className="flex-1 flex overflow-hidden">
-        <panel_manager_1.PanelManager layout={layout} onLayoutChange={updateLayout} panels={{
-            fileExplorer: <file_tree_1.FileExplorer />,
-            chatInterface: (<enhanced_chat_interface_1.EnhancedChatInterface onAtSymbolTrigger={handleAtSymbolTrigger}/>),
-            workflowManager: <div>Workflow Manager Panel</div>,
-            toolOutput: <div>Tool Output Panel</div>
-        }}/>
-      </div>
-      
-      {/* Status Bar */}
-      <status_bar_1.StatusBar currentMode={currentMode} connectionStatus="connected" activeTools={[]} workflowExecutionService={workflowExecutionServiceRef.current}/>
-      
-      {/* Enhanced @ Symbol Dropdown with Workflow Support */}
-      {showAtSymbol && workflowGenerationServiceRef.current && (<enhanced_at_symbol_dropdown_1.EnhancedAtSymbolDropdown isOpen={showAtSymbol} onClose={() => setShowAtSymbol(false)} onToolSelect={handleToolSelect} onWorkflowSelect={handleWorkflowSelect} context={getExecutionContext()} position={atSymbolPosition} toolRouter={toolRouterRef.current} workflowService={workflowGenerationServiceRef.current}/>)}
-
-      {/* Workflow Parameter Dialog */}
-      {showWorkflowParameterDialog && selectedWorkflowForExecution && (<workflow_parameter_dialog_1.WorkflowParameterDialog isOpen={showWorkflowParameterDialog} workflow={selectedWorkflowForExecution} onExecute={handleWorkflowParameterSubmit} onCancel={handleWorkflowParameterCancel}/>)}
-
-      {/* Management Center */}
-      {showManagementCenter && (<management_center_modal_1.ManagementCenterModal isOpen={showManagementCenter} onClose={() => setShowManagementCenter(false)}/>)}
-
-      {/* LLM Prompt Management */}
-      {showLLMPromptManagement && (<div className="fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center">
-          <div className="bg-white dark:bg-gray-900 rounded-lg shadow-xl w-[95vw] h-[90vh] max-w-7xl">
-            <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-                LLM System Prompt Management
-              </h2>
-              <button onClick={() => setShowLLMPromptManagement(false)} className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
-                ✕
-              </button>
-            </div>
-            <div className="h-[calc(90vh-4rem)]">
-              <llm_prompt_management_1.LLMPromptManagement />
-            </div>
-          </div>
-        </div>)}
-    </div>);
+    return ((0, jsx_runtime_1.jsxs)("div", { className: "ide-container h-screen flex flex-col bg-gray-50 dark:bg-gray-900", children: [(0, jsx_runtime_1.jsx)(menu_bar_1.MenuBar, { onNewChat: handleNewChat, onOpenProject: handleOpenProject, onSaveChat: handleSaveChat, onSubjectModeChange: switchMode, currentMode: currentMode, onOpenMCPManager: () => setShowManagementCenter(true), onOpenLLMPromptManagement: () => setShowLLMPromptManagement(true) }), (0, jsx_runtime_1.jsx)(toolbar_1.Toolbar, { currentMode: currentMode, onModeChange: switchMode, onAtSymbolTrigger: () => setShowAtSymbol(true) }), (0, jsx_runtime_1.jsx)("div", { className: "flex-1 flex overflow-hidden", children: (0, jsx_runtime_1.jsx)(panel_manager_1.PanelManager, { layout: layout, onLayoutChange: updateLayout, panels: {
+                        fileExplorer: (0, jsx_runtime_1.jsx)(file_tree_1.FileExplorer, {}),
+                        chatInterface: ((0, jsx_runtime_1.jsx)(enhanced_chat_interface_1.EnhancedChatInterface, { onAtSymbolTrigger: handleAtSymbolTrigger })),
+                        workflowManager: (0, jsx_runtime_1.jsx)("div", { children: "Workflow Manager Panel" }),
+                        toolOutput: (0, jsx_runtime_1.jsx)("div", { children: "Tool Output Panel" })
+                    } }) }), (0, jsx_runtime_1.jsx)(status_bar_1.StatusBar, { currentMode: currentMode, connectionStatus: "connected", activeTools: [], workflowExecutionService: workflowExecutionServiceRef.current }), showAtSymbol && workflowGenerationServiceRef.current && ((0, jsx_runtime_1.jsx)(enhanced_at_symbol_dropdown_1.EnhancedAtSymbolDropdown, { isOpen: showAtSymbol, onClose: () => setShowAtSymbol(false), onToolSelect: handleToolSelect, onWorkflowSelect: handleWorkflowSelect, context: getExecutionContext(), position: atSymbolPosition, toolRouter: toolRouterRef.current, workflowService: workflowGenerationServiceRef.current })), showWorkflowParameterDialog && selectedWorkflowForExecution && ((0, jsx_runtime_1.jsx)(workflow_parameter_dialog_1.WorkflowParameterDialog, { isOpen: showWorkflowParameterDialog, workflow: selectedWorkflowForExecution, onExecute: handleWorkflowParameterSubmit, onCancel: handleWorkflowParameterCancel })), showManagementCenter && ((0, jsx_runtime_1.jsx)(management_center_modal_1.ManagementCenterModal, { isOpen: showManagementCenter, onClose: () => setShowManagementCenter(false) })), showLLMPromptManagement && ((0, jsx_runtime_1.jsx)("div", { className: "fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center", children: (0, jsx_runtime_1.jsxs)("div", { className: "bg-white dark:bg-gray-900 rounded-lg shadow-xl w-[95vw] h-[90vh] max-w-7xl", children: [(0, jsx_runtime_1.jsxs)("div", { className: "flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700", children: [(0, jsx_runtime_1.jsx)("h2", { className: "text-lg font-semibold text-gray-900 dark:text-white", children: "LLM System Prompt Management" }), (0, jsx_runtime_1.jsx)("button", { onClick: () => setShowLLMPromptManagement(false), className: "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200", children: "\u2715" })] }), (0, jsx_runtime_1.jsx)("div", { className: "h-[calc(90vh-4rem)]", children: (0, jsx_runtime_1.jsx)(llm_prompt_management_1.LLMPromptManagement, {}) })] }) }))] }));
 };
 exports.EnhancedIDELayout = EnhancedIDELayout;
 //# sourceMappingURL=enhanced-ide-layout.js.map

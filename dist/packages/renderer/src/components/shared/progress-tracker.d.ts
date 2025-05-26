@@ -1,16 +1,17 @@
 import React from 'react';
-interface Task {
+interface ProgressStep {
     id: string;
-    title: string;
-    status: 'pending' | 'active' | 'completed' | 'failed';
-    progress: number;
+    label: string;
+    status: 'pending' | 'running' | 'completed' | 'failed';
+    progress?: number;
+    details?: string;
 }
 interface ProgressTrackerProps {
     isVisible: boolean;
-    currentTier: 'ATOMIC' | 'MODERATE' | 'COMPLEX' | 'EXPERT';
-    overallProgress: number;
-    tasks: Task[];
-    qualityScore?: number;
+    title: string;
+    steps: ProgressStep[];
+    currentTier: 'basic' | 'advanced' | 'premium';
+    onClose: () => void;
 }
 export declare const ProgressTracker: React.FC<ProgressTrackerProps>;
 export {};

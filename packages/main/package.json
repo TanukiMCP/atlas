@@ -5,8 +5,8 @@
   "private": true,
   "description": "TanukiMCP Atlas Electron main process",
   "scripts": {
-    "build": "esbuild src/main.ts --bundle --platform=node --outfile=dist/main.js --external:electron --external:better-sqlite3 --external:drizzle-orm --sourcemap",
-    "dev": "esbuild src/main.ts --bundle --platform=node --outfile=dist/main.js --external:electron --external:better-sqlite3 --external:drizzle-orm --watch --sourcemap",
+    "build": "esbuild src/main.ts --bundle --platform=node --outfile=dist/main.js --external:electron --external:better-sqlite3 --external:drizzle-orm --external:electron-updater --sourcemap && esbuild src/preload.ts --bundle --platform=node --outfile=dist/preload.js --external:electron --sourcemap",
+    "dev": "esbuild src/main.ts --bundle --platform=node --outfile=dist/main.js --external:electron --external:better-sqlite3 --external:drizzle-orm --external:electron-updater --watch --sourcemap & esbuild src/preload.ts --bundle --platform=node --outfile=dist/preload.js --external:electron --watch --sourcemap",
     "type-check": "tsc --noEmit",
     "clean": "rimraf dist",
     "test:phase2": "ts-node src/test-phase2.ts",
@@ -15,6 +15,7 @@
   "dependencies": {
     "better-sqlite3": "^9.2.2",
     "drizzle-orm": "^0.29.0",
+    "electron-updater": "^6.1.7",
     "uuid": "^9.0.1"
   },
   "devDependencies": {

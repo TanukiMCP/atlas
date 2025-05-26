@@ -1,11 +1,18 @@
 import React from 'react';
-import { EnhancedDropdown } from '../shared/enhanced-dropdown';
+import { MenuDropdown } from '../shared/menu-dropdown';
 import { SubjectModeDropdown } from '../shared/subject-mode-dropdown';
 import { useAppStore } from '../../stores/app-store';
 import { AppView } from './ide-layout';
 import { fileMenuService } from '../../services/file-menu-service';
 import { editMenuService } from '../../services/edit-menu-service';
 import { viewMenuService } from '../../services/view-menu-service';
+import { 
+  NavigationMenu, 
+  NavigationMenuContent, 
+  NavigationMenuItem, 
+  NavigationMenuList, 
+  NavigationMenuTrigger 
+} from '../ui/navigation-menu';
 
 interface MenuBarProps {
   onNewChat: () => void;
@@ -566,52 +573,34 @@ export const MenuBar: React.FC<MenuBarProps> = ({
   ];
 
   return (
-    <div style={{
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      width: '100%',
-      gap: '16px',
-      backgroundColor: 'var(--color-bg-primary)',
-      borderBottom: '1px solid var(--color-border)',
-      padding: '0 16px',
-      height: '48px'
-    }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-        <div className="tanuki-brand">
+    <div className="flex items-center justify-between w-full gap-4 bg-background border-b border-border px-4 h-12">
+      <div className="flex items-center gap-3">
+        <div className="tanuki-brand flex items-center">
           <img 
             src="/assets/TanukiMCPLogo.png" 
             alt="TanukiMCP Logo" 
-            className="tanuki-logo-img"
-            style={{
-              height: '24px',
-              width: 'auto',
-              marginRight: '8px'
-            }}
+            className="h-6 w-auto mr-2"
           />
-          <div className="tanuki-text">
-            Tanuki<span className="mcp">MCP</span> Atlas
+          <div className="tanuki-text font-semibold text-foreground">
+            Tanuki<span className="text-orange-600">MCP</span> Atlas
           </div>
         </div>
         
-        <div style={{ 
-          width: '1px', 
-          height: '20px', 
-          backgroundColor: 'var(--color-border)',
-          margin: '0 4px'
-        }} />
+        <div className="w-px h-5 bg-border mx-1" />
         
-        <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
-          {menuItems.map(menu => (
-            <EnhancedDropdown 
-              key={menu.label} 
-              label={menu.label} 
-              items={menu.items}
-              triggerMode="hover"
-              className="menu-dropdown"
-            />
-          ))}
-        </div>
+        <NavigationMenu>
+          <NavigationMenuList className="gap-1">
+            {menuItems.map(menu => (
+              <NavigationMenuItem key={menu.label}>
+                <MenuDropdown 
+                  label={menu.label} 
+                  items={menu.items}
+                  className="menu-dropdown"
+                />
+              </NavigationMenuItem>
+            ))}
+          </NavigationMenuList>
+        </NavigationMenu>
       </div>
       
       <div>

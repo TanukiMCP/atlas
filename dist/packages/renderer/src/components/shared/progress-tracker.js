@@ -1,192 +1,44 @@
 "use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ProgressTracker = void 0;
-const react_1 = __importDefault(require("react"));
-const ProgressTracker = ({ isVisible, currentTier, overallProgress, tasks, qualityScore }) => {
-    if (!isVisible)
-        return null;
-    const getTierIcon = (tier) => {
-        switch (tier) {
-            case 'ATOMIC': return '⚡';
-            case 'MODERATE': return '🔧';
-            case 'COMPLEX': return '🧠';
-            case 'EXPERT': return '🎓';
-            default: return '⚙️';
-        }
-    };
-    const getTierColor = (tier) => {
-        switch (tier) {
-            case 'ATOMIC': return '#4CAF50';
-            case 'MODERATE': return '#FF9800';
-            case 'COMPLEX': return '#2196F3';
-            case 'EXPERT': return '#9C27B0';
-            default: return 'var(--color-accent)';
-        }
+const jsx_runtime_1 = require("react/jsx-runtime");
+const card_1 = require("../ui/card");
+const progress_1 = require("../ui/progress");
+const badge_1 = require("../ui/badge");
+const button_1 = require("../ui/button");
+const lucide_react_1 = require("lucide-react");
+const ProgressTracker = ({ isVisible, title, steps, currentTier, onClose }) => {
+    const getTierConfig = (tier) => {
+        const configs = {
+            basic: { color: 'bg-blue-500', icon: '🔵', label: 'Basic' },
+            advanced: { color: 'bg-purple-500', icon: '🟣', label: 'Advanced' },
+            premium: { color: 'bg-orange-500', icon: '🟠', label: 'Premium' }
+        };
+        return configs[tier] || configs.basic;
     };
     const getStatusIcon = (status) => {
         switch (status) {
-            case 'pending': return '⏳';
-            case 'active': return '▶️';
-            case 'completed': return '✅';
-            case 'failed': return '❌';
-            default: return '⚪';
+            case 'running': return (0, jsx_runtime_1.jsx)(lucide_react_1.Clock, { className: "h-4 w-4 text-blue-500 animate-spin" });
+            case 'completed': return (0, jsx_runtime_1.jsx)(lucide_react_1.CheckCircle, { className: "h-4 w-4 text-green-500" });
+            case 'failed': return (0, jsx_runtime_1.jsx)(lucide_react_1.XCircle, { className: "h-4 w-4 text-red-500" });
+            default: return (0, jsx_runtime_1.jsx)("div", { className: "h-4 w-4 rounded-full bg-gray-300" });
         }
     };
-    return (<div style={{
-            position: 'fixed',
-            top: '100px',
-            right: '20px',
-            width: '300px',
-            backgroundColor: 'var(--color-bg-primary)',
-            border: '1px solid var(--color-border)',
-            borderRadius: 'var(--radius-lg)',
-            boxShadow: 'var(--shadow-lg)',
-            zIndex: 100,
-            overflow: 'hidden'
-        }}>
-      {/* Header */}
-      <div style={{
-            padding: '12px 16px',
-            backgroundColor: 'var(--color-bg-secondary)',
-            borderBottom: '1px solid var(--color-border)'
-        }}>
-        <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            marginBottom: '8px'
-        }}>
-          <div style={{
-            fontSize: '14px',
-            fontWeight: '600',
-            color: 'var(--color-text-primary)'
-        }}>
-            Processing Status
-          </div>
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-            padding: '4px 8px',
-            backgroundColor: getTierColor(currentTier),
-            color: 'white',
-            borderRadius: 'var(--radius-sm)',
-            fontSize: '12px',
-            fontWeight: '500'
-        }}>
-            <span>{getTierIcon(currentTier)}</span>
-            <span>{currentTier}</span>
-          </div>
-        </div>
-
-        {/* Overall Progress */}
-        <div style={{
-            marginBottom: '8px'
-        }}>
-          <div style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            marginBottom: '4px'
-        }}>
-            <span style={{
-            fontSize: '12px',
-            color: 'var(--color-text-secondary)'
-        }}>
-              Overall Progress
-            </span>
-            <span style={{
-            fontSize: '12px',
-            fontWeight: '500',
-            color: 'var(--color-text-primary)'
-        }}>
-              {Math.round(overallProgress * 100)}%
-            </span>
-          </div>
-          <div style={{
-            width: '100%',
-            height: '6px',
-            backgroundColor: 'var(--color-bg-quaternary)',
-            borderRadius: '3px',
-            overflow: 'hidden'
-        }}>
-            <div style={{
-            width: `${overallProgress * 100}%`,
-            height: '100%',
-            backgroundColor: 'var(--color-accent)',
-            transition: 'width 0.3s ease'
-        }}/>
-          </div>
-        </div>
-
-        {/* Quality Score */}
-        {qualityScore !== undefined && (<div style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                fontSize: '12px'
-            }}>
-            <span style={{ color: 'var(--color-text-secondary)' }}>
-              Quality Score
-            </span>
-            <span style={{
-                fontWeight: '500',
-                color: qualityScore > 0.8 ? 'var(--color-success)' :
-                    qualityScore > 0.6 ? 'var(--color-warning)' : 'var(--color-error)'
-            }}>
-              {Math.round(qualityScore * 100)}%
-            </span>
-          </div>)}
-      </div>
-
-      {/* Task List */}
-      <div style={{
-            maxHeight: '200px',
-            overflowY: 'auto',
-            padding: '8px'
-        }}>
-        {tasks.map((task) => (<div key={task.id} style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                padding: '8px',
-                borderRadius: 'var(--radius-md)',
-                backgroundColor: task.status === 'active' ? 'var(--color-bg-tertiary)' : 'transparent',
-                marginBottom: '4px'
-            }}>
-            <span style={{ fontSize: '14px' }}>
-              {getStatusIcon(task.status)}
-            </span>
-            <div style={{ flex: 1 }}>
-              <div style={{
-                fontSize: '13px',
-                fontWeight: task.status === 'active' ? '500' : '400',
-                color: 'var(--color-text-primary)',
-                marginBottom: '2px'
-            }}>
-                {task.title}
-              </div>
-              {task.status === 'active' && (<div style={{
-                    width: '100%',
-                    height: '3px',
-                    backgroundColor: 'var(--color-bg-quaternary)',
-                    borderRadius: '1.5px',
-                    overflow: 'hidden'
-                }}>
-                  <div style={{
-                    width: `${task.progress * 100}%`,
-                    height: '100%',
-                    backgroundColor: 'var(--color-accent)',
-                    transition: 'width 0.3s ease'
-                }}/>
-                </div>)}
-            </div>
-          </div>))}
-      </div>
-    </div>);
+    const getStatusColor = (status) => {
+        switch (status) {
+            case 'running': return 'text-blue-600';
+            case 'completed': return 'text-green-600';
+            case 'failed': return 'text-red-600';
+            default: return 'text-gray-500';
+        }
+    };
+    const overallProgress = steps.length > 0
+        ? (steps.filter(s => s.status === 'completed').length / steps.length) * 100
+        : 0;
+    const tierConfig = getTierConfig(currentTier);
+    if (!isVisible)
+        return null;
+    return ((0, jsx_runtime_1.jsx)("div", { className: "fixed top-24 right-5 w-80 z-50", children: (0, jsx_runtime_1.jsxs)(card_1.Card, { className: "shadow-lg", children: [(0, jsx_runtime_1.jsxs)(card_1.CardHeader, { className: "pb-3", children: [(0, jsx_runtime_1.jsxs)("div", { className: "flex items-center justify-between", children: [(0, jsx_runtime_1.jsx)(card_1.CardTitle, { className: "text-sm font-semibold", children: title || 'Processing Status' }), (0, jsx_runtime_1.jsx)(button_1.Button, { variant: "ghost", size: "sm", onClick: onClose, className: "h-6 w-6 p-0", children: (0, jsx_runtime_1.jsx)(lucide_react_1.X, { className: "h-4 w-4" }) })] }), (0, jsx_runtime_1.jsxs)("div", { className: "flex items-center justify-between", children: [(0, jsx_runtime_1.jsxs)(badge_1.Badge, { className: `${tierConfig.color} text-white text-xs`, children: [(0, jsx_runtime_1.jsx)("span", { className: "mr-1", children: tierConfig.icon }), tierConfig.label, " Tier"] }), (0, jsx_runtime_1.jsxs)("span", { className: "text-xs text-muted-foreground", children: [Math.round(overallProgress), "% Complete"] })] }), (0, jsx_runtime_1.jsx)(progress_1.Progress, { value: overallProgress, className: "h-2" })] }), (0, jsx_runtime_1.jsxs)(card_1.CardContent, { className: "space-y-3", children: [steps.map((step, index) => ((0, jsx_runtime_1.jsxs)("div", { className: "flex items-start gap-3", children: [(0, jsx_runtime_1.jsx)("div", { className: "mt-0.5", children: getStatusIcon(step.status) }), (0, jsx_runtime_1.jsxs)("div", { className: "flex-1 min-w-0", children: [(0, jsx_runtime_1.jsx)("div", { className: `text-sm font-medium ${getStatusColor(step.status)}`, children: step.label }), step.details && ((0, jsx_runtime_1.jsx)("div", { className: "text-xs text-muted-foreground mt-1", children: step.details })), step.status === 'running' && step.progress !== undefined && ((0, jsx_runtime_1.jsx)(progress_1.Progress, { value: step.progress, className: "h-1 mt-2" }))] })] }, step.id))), steps.length === 0 && ((0, jsx_runtime_1.jsx)("div", { className: "text-center py-4 text-muted-foreground text-sm", children: "No active processes" }))] })] }) }));
 };
 exports.ProgressTracker = ProgressTracker;
 //# sourceMappingURL=progress-tracker.js.map

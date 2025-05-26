@@ -6,6 +6,12 @@ import { HardwareAssessor } from './services/hardware-assessor';
 import { OptimizationEngine } from './services/optimization-engine';
 import { ParameterTuner } from './services/parameter-tuner';
 import { ContextManager } from './services/context-manager';
+import { SystemTrayService } from './services/system-tray';
+import { NativeMenuService } from './services/native-menu';
+import { AutoUpdaterService } from './services/auto-updater';
+import { NotificationService } from './services/notification-service';
+import { CrashReporterService } from './services/crash-reporter';
+import { ProtocolHandlerService } from './services/protocol-handler';
 declare class TanukiMCPApp {
     private mainWindow;
     private isQuitting;
@@ -16,6 +22,12 @@ declare class TanukiMCPApp {
     private optimizationEngine;
     private parameterTuner;
     private contextManager;
+    private systemTrayService;
+    private nativeMenuService;
+    private autoUpdaterService;
+    private notificationService;
+    private crashReporterService;
+    private protocolHandlerService;
     constructor();
     private initializeServices;
     private setupEventHandlers;
@@ -25,6 +37,7 @@ declare class TanukiMCPApp {
     private onWindowAllClosed;
     private onActivate;
     private onBeforeQuit;
+    private initializeDesktopServices;
     private assessSystemCapabilities;
     getMainWindow(): BrowserWindow | null;
     getServices(): {
@@ -35,6 +48,12 @@ declare class TanukiMCPApp {
         optimizationEngine: OptimizationEngine;
         parameterTuner: ParameterTuner;
         contextManager: ContextManager;
+        systemTray: SystemTrayService | null;
+        nativeMenu: NativeMenuService | null;
+        autoUpdater: AutoUpdaterService | null;
+        notification: NotificationService | null;
+        crashReporter: CrashReporterService | null;
+        protocolHandler: ProtocolHandlerService | null;
     };
 }
 declare const tanukiApp: TanukiMCPApp;

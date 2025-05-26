@@ -5,6 +5,7 @@
 
 import React, { useState, useMemo } from 'react';
 import { SystemPrompt, PromptSearchFilters, PromptSearchResult } from '../../types/prompt-types';
+import { Checkbox } from '../ui/checkbox';
 import { usePromptStore } from '../../stores/prompt-store';
 
 interface PromptListPanelProps {
@@ -113,11 +114,9 @@ export const PromptListPanel: React.FC<PromptListPanelProps> = ({
           {/* Filters */}
           <div className="flex items-center space-x-2">
             <label className="flex items-center space-x-2 cursor-pointer">
-              <input
-                type="checkbox"
+              <Checkbox
                 checked={showModifiedOnly}
-                onChange={(e) => setShowModifiedOnly(e.target.checked)}
-                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                onCheckedChange={(checked) => setShowModifiedOnly(checked === true)}
               />
               <span className="text-sm text-gray-700 dark:text-gray-300">
                 Modified only
@@ -144,11 +143,9 @@ export const PromptListPanel: React.FC<PromptListPanelProps> = ({
                 key={category.id}
                 className="flex items-center space-x-2 cursor-pointer text-sm"
               >
-                <input
-                  type="checkbox"
+                <Checkbox
                   checked={selectedCategories.includes(category.id)}
-                  onChange={() => toggleCategoryFilter(category.id)}
-                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  onCheckedChange={() => toggleCategoryFilter(category.id)}
                 />
                 <span className="text-gray-700 dark:text-gray-300">
                   {category.name}

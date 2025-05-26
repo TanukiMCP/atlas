@@ -1,216 +1,132 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
-// Define the app state interface
+export interface FileNode {
+  id: string;
+  name: string;
+  type: 'file' | 'folder';
+  path: string;
+  size?: number;
+  modified: Date;
+  children?: FileNode[];
+  isExpanded?: boolean;
+}
+
+interface ChatMessage {
+  id: string;
+  type: 'user' | 'assistant' | 'system';
+  content: string;
+  timestamp: Date;
+  tools?: string[];
+}
+
 interface AppState {
-  // Theme management
+  // Theme
   theme: 'light' | 'dark';
   setTheme: (theme: 'light' | 'dark') => void;
   
-  // App initialization state
-  isInitialized: boolean;
-  setInitialized: (initialized: boolean) => void;
+  // Layout
+  sidebarCollapsed: boolean;
+  setSidebarCollapsed: (collapsed: boolean) => void;
+  activeTab: string;
+  setActiveTab: (tab: string) => void;
   
-  // Current project
-  currentProject: {
-    id: string;
-    name: string;
-    path: string;
-  } | null;
-  setCurrentProject: (project: AppState['currentProject']) => void;
+  // Files
+  files: FileNode[];
+  selectedFile: FileNode | null;
+  setFiles: (files: FileNode[]) => void;
+  setSelectedFile: (file: FileNode | null) => void;
   
-  // UI state
-  sidebarVisible: boolean;
-  setSidebarVisible: (visible: boolean) => void;
+  // Chat
+  messages: ChatMessage[];
+  addMessage: (message: ChatMessage) => void;
+  clearMessages: () => void;
   
-  sidebarWidth: number;
-  setSidebarWidth: (width: number) => void;
+  // Tools
+  showToolSelector: boolean;
+  setShowToolSelector: (show: boolean) => void;
   
-  // Current view
-  currentView: 'welcome' | 'chat' | 'files' | 'settings';
-  setCurrentView: (view: AppState['currentView']) => void;
-  
-  // Chat state
-  currentChatSession: string | null;
-  setCurrentChatSession: (sessionId: string | null) => void;
-  
-  // Subject mode
+  // Subject Mode
   currentSubjectMode: string;
   setCurrentSubjectMode: (mode: string) => void;
-  
-  // Notification system
-  notifications: Array<{
-    id: string;
-    type: 'info' | 'success' | 'warning' | 'error';
-    title: string;
-    message: string;
-    timestamp: number;
-    read: boolean;
-  }>;
-  addNotification: (notification: Omit<AppState['notifications'][0], 'id' | 'timestamp' | 'read'>) => void;
-  removeNotification: (id: string) => void;
-  markNotificationRead: (id: string) => void;
-  
-  // Loading states
-  loading: {
-    [key: string]: boolean;
-  };
-  setLoading: (key: string, loading: boolean) => void;
-  
-  // Error states
-  errors: {
-    [key: string]: string | null;
-  };
-  setError: (key: string, error: string | null) => void;
-  
-  // Actions
-  reset: () => void;
 }
 
-// Create the store with persistence
 export const useAppStore = create<AppState>()(
   persist(
     (set, get) => ({
-      // Theme management
+      // Theme
       theme: 'dark',
-      setTheme: (theme) => {
-        set({ theme });
-        // Also save to Electron settings if available
-        if (typeof window !== 'undefined' && window.electronAPI) {
-          window.electronAPI.invoke('settings:set', 'app.theme', theme)
-            .catch(err => console.warn('Failed to save theme setting:', err));
+      setTheme: (theme) => set({ theme }),
+      
+      // Layout
+      sidebarCollapsed: false,
+      setSidebarCollapsed: (collapsed) => set({ sidebarCollapsed: collapsed }),
+      activeTab: 'chat',
+      setActiveTab: (tab) => set({ activeTab: tab }),
+      
+      // Files
+      files: [],
+      selectedFile: null,
+      setFiles: (files) => set({ files }),
+      setSelectedFile: (file) => set({ selectedFile: file }),
+      
+      // Chat
+      messages: [
+        {
+          id: '1',
+          type: 'system',
+          content: 'Welcome to TanukiMCP Atlas! I\'m here to help you with AI-driven development workflows.',
+          timestamp: new Date(Date.now() - 300000),
         }
-      },
+      ],
+      addMessage: (message) => set((state) => ({ 
+        messages: [...state.messages, message] 
+      })),
+      clearMessages: () => set({ messages: [] }),
       
-      // App initialization
-      isInitialized: false,
-      setInitialized: (initialized) => set({ isInitialized: initialized }),
+      // Tools
+      showToolSelector: false,
+      setShowToolSelector: (show) => set({ showToolSelector: show }),
       
-      // Project management
-      currentProject: null,
-      setCurrentProject: (project) => set({ currentProject: project }),
-      
-      // UI state
-      sidebarVisible: true,
-      setSidebarVisible: (visible) => set({ sidebarVisible: visible }),
-      
-      sidebarWidth: 280,
-      setSidebarWidth: (width) => set({ sidebarWidth: Math.max(200, Math.min(600, width)) }),
-      
-      // View management
-      currentView: 'welcome',
-      setCurrentView: (view) => set({ currentView: view }),
-      
-      // Chat management
-      currentChatSession: null,
-      setCurrentChatSession: (sessionId) => set({ currentChatSession: sessionId }),
-      
-      // Subject mode
-      currentSubjectMode: 'general',
+      // Subject Mode
+      currentSubjectMode: 'Mathematics',
       setCurrentSubjectMode: (mode) => set({ currentSubjectMode: mode }),
-      
-      // Notification system
-      notifications: [],
-      addNotification: (notification) => {
-        const id = `notification_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-        const newNotification = {
-          ...notification,
-          id,
-          timestamp: Date.now(),
-          read: false
-        };
-        
-        set(state => ({
-          notifications: [newNotification, ...state.notifications].slice(0, 50) // Keep max 50 notifications
-        }));
-        
-        // Auto-remove info notifications after 5 seconds
-        if (notification.type === 'info') {
-          setTimeout(() => {
-            get().removeNotification(id);
-          }, 5000);
-        }
-      },
-      
-      removeNotification: (id) => {
-        set(state => ({
-          notifications: state.notifications.filter(n => n.id !== id)
-        }));
-      },
-      
-      markNotificationRead: (id) => {
-        set(state => ({
-          notifications: state.notifications.map(n => 
-            n.id === id ? { ...n, read: true } : n
-          )
-        }));
-      },
-      
-      // Loading states
-      loading: {},
-      setLoading: (key, loading) => {
-        set(state => ({
-          loading: { ...state.loading, [key]: loading }
-        }));
-      },
-      
-      // Error states
-      errors: {},
-      setError: (key, error) => {
-        set(state => ({
-          errors: { ...state.errors, [key]: error }
-        }));
-      },
-      
-      // Reset function
-      reset: () => {
-        set({
-          isInitialized: false,
-          currentProject: null,
-          currentView: 'welcome',
-          currentChatSession: null,
-          currentSubjectMode: 'general',
-          notifications: [],
-          loading: {},
-          errors: {}
-        });
-      }
     }),
     {
-      name: 'tanukimcp-app-store',
+      name: 'tanukimcp-atlas-store',
       partialize: (state) => ({
-        // Only persist certain parts of the state
         theme: state.theme,
-        sidebarVisible: state.sidebarVisible,
-        sidebarWidth: state.sidebarWidth,
+        sidebarCollapsed: state.sidebarCollapsed,
         currentSubjectMode: state.currentSubjectMode,
-        currentProject: state.currentProject
-      })
+      }),
     }
   )
 );
 
 // Convenience hooks for specific parts of the store
 export const useTheme = () => useAppStore(state => ({ theme: state.theme, setTheme: state.setTheme }));
-export const useCurrentProject = () => useAppStore(state => ({ 
-  currentProject: state.currentProject, 
-  setCurrentProject: state.setCurrentProject 
+export const useFiles = () => useAppStore(state => ({ 
+  files: state.files, 
+  selectedFile: state.selectedFile,
+  setFiles: state.setFiles,
+  setSelectedFile: state.setSelectedFile
 }));
-export const useCurrentView = () => useAppStore(state => ({ 
-  currentView: state.currentView, 
-  setCurrentView: state.setCurrentView 
+export const useChat = () => useAppStore(state => ({ 
+  messages: state.messages,
+  addMessage: state.addMessage,
+  clearMessages: state.clearMessages
 }));
-export const useNotifications = () => useAppStore(state => ({
-  notifications: state.notifications,
-  addNotification: state.addNotification,
-  removeNotification: state.removeNotification,
-  markNotificationRead: state.markNotificationRead
+export const useLayout = () => useAppStore(state => ({
+  sidebarCollapsed: state.sidebarCollapsed,
+  setSidebarCollapsed: state.setSidebarCollapsed,
+  activeTab: state.activeTab,
+  setActiveTab: state.setActiveTab
 }));
-export const useLoading = () => useAppStore(state => ({
-  loading: state.loading,
-  setLoading: state.setLoading
+export const useTools = () => useAppStore(state => ({
+  showToolSelector: state.showToolSelector,
+  setShowToolSelector: state.setShowToolSelector
 }));
-export const useErrors = () => useAppStore(state => ({
-  errors: state.errors,
-  setError: state.setError
+export const useSubjectMode = () => useAppStore(state => ({
+  currentSubjectMode: state.currentSubjectMode,
+  setCurrentSubjectMode: state.setCurrentSubjectMode
 })); 

@@ -6,6 +6,9 @@ interface ChatInterfaceProps {
     }) => void;
     operationalMode?: 'agent' | 'chat';
 }
-export declare const ChatInterface: React.FC<ChatInterfaceProps>;
+export interface ChatInterfaceHandle {
+    insertText: (text: string) => void;
+}
+export declare const ChatInterface: React.ForwardRefExoticComponent<ChatInterfaceProps & React.RefAttributes<ChatInterfaceHandle>>;
 export {};
 //# sourceMappingURL=chat-interface.d.ts.map

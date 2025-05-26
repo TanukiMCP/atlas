@@ -1,40 +1,10 @@
 "use strict";
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || (function () {
-    var ownKeys = function(o) {
-        ownKeys = Object.getOwnPropertyNames || function (o) {
-            var ar = [];
-            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
-            return ar;
-        };
-        return ownKeys(o);
-    };
-    return function (mod) {
-        if (mod && mod.__esModule) return mod;
-        var result = {};
-        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
-        __setModuleDefault(result, mod);
-        return result;
-    };
-})();
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AnalyticsDashboard = void 0;
-const react_1 = __importStar(require("react"));
+const jsx_runtime_1 = require("react/jsx-runtime");
+const react_1 = require("react");
+const card_1 = require("../ui/card");
+const badge_1 = require("../ui/badge");
 const METRICS = [
     { title: 'Total Tasks Completed', value: '1,247', change: '+12%', trend: 'up', icon: '✅' },
     { title: 'Workflow Executions', value: '856', change: '+8%', trend: 'up', icon: '⚡' },
@@ -48,64 +18,7 @@ const ACTIVITIES = [
 ];
 const AnalyticsDashboard = () => {
     const [selectedPeriod, setSelectedPeriod] = (0, react_1.useState)('7d');
-    return (<div style={{ height: '100%', display: 'flex', flexDirection: 'column', backgroundColor: '#f9fafb' }}>
-      <div style={{ padding: '20px', backgroundColor: 'white', borderBottom: '1px solid #e5e7eb' }}>
-        <h2 style={{ fontSize: '24px', fontWeight: '700', margin: '0 0 4px 0' }}>📊 Analytics Dashboard</h2>
-        <p style={{ color: '#6b7280', margin: 0 }}>Performance metrics and insights</p>
-      </div>
-
-      <div style={{ flex: 1, padding: '20px', overflowY: 'auto' }}>
-        <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-            gap: '16px',
-            marginBottom: '24px'
-        }}>
-          {METRICS.map((metric, index) => (<div key={index} style={{
-                backgroundColor: 'white',
-                border: '1px solid #e5e7eb',
-                borderRadius: '12px',
-                padding: '20px'
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-                <span style={{ fontSize: '24px' }}>{metric.icon}</span>
-                <span style={{
-                fontSize: '12px',
-                color: metric.trend === 'up' ? '#059669' : metric.trend === 'down' ? '#dc2626' : '#6b7280'
-            }}>
-                  {metric.change}
-                </span>
-              </div>
-              <div style={{ fontSize: '28px', fontWeight: '700', marginBottom: '4px' }}>
-                {metric.value}
-              </div>
-              <div style={{ fontSize: '14px', color: '#6b7280' }}>
-                {metric.title}
-              </div>
-            </div>))}
-        </div>
-
-        <div style={{ backgroundColor: 'white', borderRadius: '12px', border: '1px solid #e5e7eb' }}>
-          <div style={{ padding: '20px', borderBottom: '1px solid #e5e7eb' }}>
-            <h3 style={{ fontSize: '18px', fontWeight: '600', margin: 0 }}>Recent Activities</h3>
-          </div>
-          <div style={{ padding: '20px' }}>
-            {ACTIVITIES.map(activity => (<div key={activity.id} style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
-                <div style={{
-                width: '8px',
-                height: '8px',
-                borderRadius: '50%',
-                backgroundColor: activity.status === 'success' ? '#059669' : '#3b82f6'
-            }}/>
-                <div>
-                  <div style={{ fontSize: '14px' }}>{activity.action}</div>
-                  <div style={{ fontSize: '12px', color: '#6b7280' }}>{activity.time}</div>
-                </div>
-              </div>))}
-          </div>
-        </div>
-      </div>
-    </div>);
+    return ((0, jsx_runtime_1.jsxs)("div", { className: "h-full flex flex-col bg-muted/30", children: [(0, jsx_runtime_1.jsxs)("div", { className: "p-5 bg-background border-b border-border", children: [(0, jsx_runtime_1.jsx)("h2", { className: "text-2xl font-bold mb-1", children: "\uD83D\uDCCA Analytics Dashboard" }), (0, jsx_runtime_1.jsx)("p", { className: "text-muted-foreground", children: "Performance metrics and insights" })] }), (0, jsx_runtime_1.jsxs)("div", { className: "flex-1 p-5 overflow-y-auto", children: [(0, jsx_runtime_1.jsx)("div", { className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6", children: METRICS.map((metric, index) => ((0, jsx_runtime_1.jsx)(card_1.Card, { children: (0, jsx_runtime_1.jsxs)(card_1.CardContent, { className: "p-5", children: [(0, jsx_runtime_1.jsxs)("div", { className: "flex items-center justify-between mb-2", children: [(0, jsx_runtime_1.jsx)("span", { className: "text-2xl", children: metric.icon }), (0, jsx_runtime_1.jsx)(badge_1.Badge, { variant: metric.trend === 'up' ? 'default' : metric.trend === 'down' ? 'destructive' : 'secondary', className: "text-xs", children: metric.change })] }), (0, jsx_runtime_1.jsx)("div", { className: "text-3xl font-bold mb-1", children: metric.value }), (0, jsx_runtime_1.jsx)("div", { className: "text-sm text-muted-foreground", children: metric.title })] }) }, index))) }), (0, jsx_runtime_1.jsxs)(card_1.Card, { children: [(0, jsx_runtime_1.jsx)(card_1.CardHeader, { children: (0, jsx_runtime_1.jsx)(card_1.CardTitle, { className: "text-lg", children: "Recent Activities" }) }), (0, jsx_runtime_1.jsx)(card_1.CardContent, { children: (0, jsx_runtime_1.jsx)("div", { className: "space-y-4", children: ACTIVITIES.map(activity => ((0, jsx_runtime_1.jsxs)("div", { className: "flex items-center gap-3", children: [(0, jsx_runtime_1.jsx)("div", { className: `w-2 h-2 rounded-full ${activity.status === 'success' ? 'bg-green-500' : 'bg-blue-500'}` }), (0, jsx_runtime_1.jsxs)("div", { children: [(0, jsx_runtime_1.jsx)("div", { className: "text-sm font-medium", children: activity.action }), (0, jsx_runtime_1.jsx)("div", { className: "text-xs text-muted-foreground", children: activity.time })] })] }, activity.id))) }) })] })] })] }));
 };
 exports.AnalyticsDashboard = AnalyticsDashboard;
 //# sourceMappingURL=analytics-dashboard.js.map

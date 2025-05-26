@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { MenuBar } from './menu-bar';
 import { Toolbar } from './toolbar';
 import { StatusBar } from './status-bar';
 import { PanelManager } from './panel-manager';
-import { ChatInterface } from '../chat/chat-interface';
+import { ChatInterface, ChatInterfaceHandle } from '../chat/chat-interface';
 import { WorkingFileTree } from '../file-explorer/working-file-tree';
 import { VisualWorkflowBuilder } from '../workflows/visual-workflow-builder';
 import { ComprehensiveToolCatalog } from '../tools/comprehensive-tool-catalog';
@@ -19,6 +19,7 @@ import { FileContentViewer } from '../shared/file-content-viewer';
 import { ProcessingTierIndicator, ProcessingTier } from '../shared/processing-tier-indicator';
 import { ToolExecutionPanel } from '../shared/tool-execution-panel';
 import { FileInfo } from '../../services/file-service';
+import { MCPTool } from '../../services/mcp-service';
 
 export type AppView = 
   | 'chat' 
@@ -33,6 +34,7 @@ export type AppView =
 
 export const IDELayout: React.FC = () => {
   const [showAtSymbol, setShowAtSymbol] = useState(false);
+  const chatRef = useRef<ChatInterfaceHandle>(null);
   const [atSymbolPosition, setAtSymbolPosition] = useState({ x: 0, y: 0 });
   const [showManagementCenter, setShowManagementCenter] = useState(false);
   const [operationalMode, setOperationalMode] = useState<'agent' | 'chat'>('agent');
@@ -54,18 +56,25 @@ export const IDELayout: React.FC = () => {
   const handleSaveChat = () => console.log('Save Chat');
   const handleSaveAsWorkflow = () => console.log('Save as Workflow');
   const handleToggleFullscreen = () => console.log('Toggle Fullscreen');
-  const handleToolSelect = (tool: any) => {
+  const handleToolSelect = (tool: MCPTool) => {
     console.log('Tool selected:', tool);
     setShowAtSymbol(false);
-    // TODO: Integrate with chat interface to add tool to message
+    chatRef.current?.insertText(`@${tool.name} `);
   };
-  const handleOperationalModeChange = (mode: string) => {
+  const handleOperationalModeChange = (mode: 'agent' | 'chat') => {
     console.log('Switching to', mode, 'mode');
     setOperationalMode(mode);
   };
   
-  const handleFileSelect = (file: FileInfo) => {
-    setSelectedFile(file);
+  const handleFileSelect = (file: any) => {
+    // Map the file explorer's FileItem to FileInfo for FileContentViewer
+    const fileInfo: FileInfo = {
+      name: file.name,
+      path: file.name,
+      type: file.type,
+      modified: new Date(),
+    };
+    setSelectedFile(fileInfo);
     if (file.type === 'file') {
       setActiveMainView('editor');
     }
@@ -180,20 +189,18 @@ export const IDELayout: React.FC = () => {
             // Main panel content will now be dynamic based on activeMainView
             centerPanel: (
               <>
-                {activeMainView === 'chat' && <ChatInterface onAtSymbolTrigger={handleAtSymbolTrigger} operationalMode={operationalMode} />}
+                {activeMainView === 'chat' && <ChatInterface ref={chatRef} onAtSymbolTrigger={handleAtSymbolTrigger} operationalMode={operationalMode} />}
                 {activeMainView === 'workflow-manager' && <WorkflowManager /> /* Assuming WorkflowManager is the component */}
                 {activeMainView === 'settings' && <div>Settings View Placeholder</div>}
                 {activeMainView === 'llm-prompt-management' && <div>LLM Prompt Management Placeholder</div>}
                 {activeMainView === 'mcp-servers' && <div>MCP Servers Placeholder</div>}
                 {activeMainView === 'editor' && selectedFile && (
-                  <FileContentViewer 
-                    selectedFile={selectedFile} 
-                    // isVisible prop is no longer needed if it's part of main content flow
-                    // The component itself should be visible if rendered.
-                    // Ensure FileContentViewer is styled to fill its container.
+                  <FileContentViewer
+                    selectedFile={selectedFile}
+                    isVisible={true}
                     onClose={() => {
-                      setSelectedFile(null); // Clear selected file
-                      setActiveMainView('chat'); // Revert to chat or previous view
+                      setSelectedFile(null);
+                      setActiveMainView('chat');
                     }}
                   />
                 )}

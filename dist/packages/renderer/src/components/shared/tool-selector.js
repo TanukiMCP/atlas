@@ -1,41 +1,15 @@
 "use strict";
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || (function () {
-    var ownKeys = function(o) {
-        ownKeys = Object.getOwnPropertyNames || function (o) {
-            var ar = [];
-            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
-            return ar;
-        };
-        return ownKeys(o);
-    };
-    return function (mod) {
-        if (mod && mod.__esModule) return mod;
-        var result = {};
-        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
-        __setModuleDefault(result, mod);
-        return result;
-    };
-})();
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ToolSelector = void 0;
-const react_1 = __importStar(require("react"));
+const jsx_runtime_1 = require("react/jsx-runtime");
+const react_1 = require("react");
 const mcp_service_1 = require("../../services/mcp-service");
+const card_1 = require("../ui/card");
+const input_1 = require("../ui/input");
+const badge_1 = require("../ui/badge");
+const scroll_area_1 = require("../ui/scroll-area");
+const button_1 = require("../ui/button");
+const lucide_react_1 = require("lucide-react");
 const ToolSelector = ({ isOpen, position, operationalMode, onToolSelect, onClose }) => {
     const [searchQuery, setSearchQuery] = (0, react_1.useState)('');
     const [selectedIndex, setSelectedIndex] = (0, react_1.useState)(0);
@@ -48,174 +22,25 @@ const ToolSelector = ({ isOpen, position, operationalMode, onToolSelect, onClose
         }
     }, [isOpen, operationalMode]);
     const filteredTools = searchQuery
-        ? mcp_service_1.mcpService.searchTools(searchQuery, operationalMode)
+        ? availableTools.filter(tool => tool.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            tool.description?.toLowerCase().includes(searchQuery.toLowerCase()))
         : availableTools;
-    (0, react_1.useEffect)(() => {
-        if (isOpen) {
-            setSearchQuery('');
-            setSelectedIndex(0);
-        }
-    }, [isOpen]);
-    (0, react_1.useEffect)(() => {
-        const handleKeyDown = (e) => {
-            if (!isOpen)
-                return;
-            switch (e.key) {
-                case 'ArrowDown':
-                    e.preventDefault();
-                    setSelectedIndex(prev => (prev + 1) % filteredTools.length);
-                    break;
-                case 'ArrowUp':
-                    e.preventDefault();
-                    setSelectedIndex(prev => (prev - 1 + filteredTools.length) % filteredTools.length);
-                    break;
-                case 'Enter':
-                    e.preventDefault();
-                    if (filteredTools[selectedIndex]) {
-                        onToolSelect(filteredTools[selectedIndex]);
-                    }
-                    break;
-                case 'Escape':
-                    e.preventDefault();
-                    onClose();
-                    break;
-            }
+    const getCategoryColor = (category) => {
+        const colors = {
+            'file': 'bg-blue-100 text-blue-800',
+            'web': 'bg-green-100 text-green-800',
+            'data': 'bg-purple-100 text-purple-800',
+            'ai': 'bg-orange-100 text-orange-800',
+            'system': 'bg-gray-100 text-gray-800',
+            'thinking': 'bg-indigo-100 text-indigo-800'
         };
-        window.addEventListener('keydown', handleKeyDown);
-        return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [isOpen, filteredTools, selectedIndex, onToolSelect, onClose]);
+        return colors[category] || 'bg-gray-100 text-gray-800';
+    };
     if (!isOpen)
         return null;
-    const getCategoryColor = (category) => {
-        switch (category) {
-            case 'file': return 'var(--color-accent-secondary)';
-            case 'code': return 'var(--color-accent)';
-            case 'web': return '#4CAF50';
-            case 'task': return '#FF9800';
-            case 'project': return '#9C27B0';
-            case 'thinking': return '#607D8B';
-            default: return 'var(--color-text-muted)';
-        }
-    };
-    return (<div style={{
-            position: 'fixed',
-            left: position.x,
-            top: position.y,
-            zIndex: 1000,
-            backgroundColor: 'var(--color-bg-primary)',
-            border: '1px solid var(--color-border)',
-            borderRadius: 'var(--radius-lg)',
-            boxShadow: 'var(--shadow-lg)',
-            minWidth: '320px',
-            maxWidth: '400px',
-            maxHeight: '400px',
-            overflow: 'hidden'
-        }}>
-      <div style={{
-            padding: '12px 16px',
-            borderBottom: '1px solid var(--color-border)',
-            backgroundColor: 'var(--color-bg-secondary)'
-        }}>
-        <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            marginBottom: '8px'
-        }}>
-          <div style={{
-            fontSize: '14px',
-            fontWeight: '600',
-            color: 'var(--color-text-primary)'
-        }}>
-            Tool Selection ({operationalMode} mode)
-          </div>
-          <button onClick={onClose} style={{
-            background: 'none',
-            border: 'none',
-            fontSize: '16px',
-            cursor: 'pointer',
-            color: 'var(--color-text-muted)'
-        }}>
-            ×
-          </button>
-        </div>
-        
-        <input type="text" placeholder="Search tools..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="input" style={{
-            width: '100%',
-            fontSize: '13px',
-            padding: '6px 10px'
-        }} autoFocus/>
-      </div>
-
-      <div style={{
-            maxHeight: '300px',
-            overflowY: 'auto',
-            padding: '8px'
-        }}>
-        {filteredTools.length === 0 ? (<div style={{
-                padding: '16px',
-                textAlign: 'center',
-                color: 'var(--color-text-muted)',
-                fontSize: '13px'
-            }}>
-            No tools found matching "{searchQuery}"
-          </div>) : (filteredTools.map((tool, index) => (<div key={tool.name} onClick={() => onToolSelect(tool)} style={{
-                padding: '10px 12px',
-                borderRadius: 'var(--radius-md)',
-                cursor: 'pointer',
-                backgroundColor: index === selectedIndex ? 'var(--color-bg-tertiary)' : 'transparent',
-                border: index === selectedIndex ? '1px solid var(--color-accent)' : '1px solid transparent',
-                marginBottom: '4px',
-                transition: 'all 0.15s ease'
-            }}>
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '10px'
-            }}>
-                <span style={{ fontSize: '16px' }}>{tool.icon}</span>
-                <div style={{ flex: 1 }}>
-                  <div style={{
-                fontSize: '13px',
-                fontWeight: '500',
-                color: 'var(--color-text-primary)',
-                marginBottom: '2px'
-            }}>
-                    {tool.name}
-                  </div>
-                  <div style={{
-                fontSize: '12px',
-                color: 'var(--color-text-secondary)',
-                lineHeight: '1.3'
-            }}>
-                    {tool.description}
-                  </div>
-                </div>
-                <div style={{
-                fontSize: '10px',
-                padding: '2px 6px',
-                borderRadius: 'var(--radius-sm)',
-                backgroundColor: getCategoryColor(tool.category),
-                color: 'white',
-                fontWeight: '500',
-                textTransform: 'uppercase'
-            }}>
-                  {tool.category}
-                </div>
-              </div>
-            </div>)))}
-      </div>
-
-      <div style={{
-            padding: '8px 12px',
-            borderTop: '1px solid var(--color-border)',
-            backgroundColor: 'var(--color-bg-secondary)',
-            fontSize: '11px',
-            color: 'var(--color-text-muted)'
-        }}>
-        Use ↑↓ arrows to navigate, Enter to select, Esc to close
-      </div>
-    </div>);
+    return ((0, jsx_runtime_1.jsx)("div", { className: "fixed z-50", style: { left: position.x, top: position.y }, children: (0, jsx_runtime_1.jsxs)(card_1.Card, { className: "w-80 max-h-96 shadow-lg border", children: [(0, jsx_runtime_1.jsxs)(card_1.CardHeader, { className: "pb-3", children: [(0, jsx_runtime_1.jsxs)("div", { className: "flex items-center justify-between", children: [(0, jsx_runtime_1.jsxs)(card_1.CardTitle, { className: "text-sm font-semibold", children: ["Tool Selection (", operationalMode, " mode)"] }), (0, jsx_runtime_1.jsx)(button_1.Button, { variant: "ghost", size: "sm", onClick: onClose, className: "h-6 w-6 p-0", children: (0, jsx_runtime_1.jsx)(lucide_react_1.X, { className: "h-4 w-4" }) })] }), (0, jsx_runtime_1.jsxs)("div", { className: "relative", children: [(0, jsx_runtime_1.jsx)(lucide_react_1.Search, { className: "absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" }), (0, jsx_runtime_1.jsx)(input_1.Input, { placeholder: "Search tools...", value: searchQuery, onChange: (e) => setSearchQuery(e.target.value), className: "pl-8 h-9" })] })] }), (0, jsx_runtime_1.jsxs)(card_1.CardContent, { className: "p-0", children: [(0, jsx_runtime_1.jsx)(scroll_area_1.ScrollArea, { className: "h-64", children: (0, jsx_runtime_1.jsx)("div", { className: "p-3 space-y-2", children: filteredTools.length === 0 ? ((0, jsx_runtime_1.jsx)("div", { className: "text-center py-6 text-muted-foreground text-sm", children: searchQuery ? `No tools found matching "${searchQuery}"` : 'No tools available' })) : (filteredTools.map((tool, index) => ((0, jsx_runtime_1.jsx)("div", { onClick: () => onToolSelect(tool), className: `p-3 rounded-lg cursor-pointer transition-colors border ${index === selectedIndex
+                                        ? 'bg-accent border-accent-foreground/20'
+                                        : 'hover:bg-muted border-transparent'}`, children: (0, jsx_runtime_1.jsxs)("div", { className: "flex items-start gap-3", children: [(0, jsx_runtime_1.jsx)("div", { className: "mt-0.5", children: (0, jsx_runtime_1.jsx)(lucide_react_1.Zap, { className: "h-4 w-4 text-orange-500" }) }), (0, jsx_runtime_1.jsxs)("div", { className: "flex-1 min-w-0", children: [(0, jsx_runtime_1.jsxs)("div", { className: "flex items-center gap-2 mb-1", children: [(0, jsx_runtime_1.jsx)("span", { className: "font-medium text-sm truncate", children: tool.name }), tool.category && ((0, jsx_runtime_1.jsx)(badge_1.Badge, { variant: "secondary", className: `text-xs px-1.5 py-0.5 ${getCategoryColor(tool.category)}`, children: tool.category }))] }), tool.description && ((0, jsx_runtime_1.jsx)("p", { className: "text-xs text-muted-foreground line-clamp-2", children: tool.description }))] })] }) }, tool.name)))) }) }), (0, jsx_runtime_1.jsx)("div", { className: "border-t bg-muted/30 px-3 py-2", children: (0, jsx_runtime_1.jsxs)("p", { className: "text-xs text-muted-foreground text-center", children: ["Click to select \u2022 ", filteredTools.length, " tools available"] }) })] })] }) }));
 };
 exports.ToolSelector = ToolSelector;
 //# sourceMappingURL=tool-selector.js.map

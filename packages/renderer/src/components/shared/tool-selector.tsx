@@ -1,5 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { mcpService, MCPTool } from '../../services/mcp-service';
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
+import { Input } from '../ui/input';
+import { Badge } from '../ui/badge';
+import { ScrollArea } from '../ui/scroll-area';
+import { Button } from '../ui/button';
+import { X, Search, Zap } from 'lucide-react';
 
 interface ToolSelectorProps {
   isOpen: boolean;
@@ -28,203 +34,112 @@ export const ToolSelector: React.FC<ToolSelectorProps> = ({
     }
   }, [isOpen, operationalMode]);
 
-  const filteredTools = searchQuery 
-    ? mcpService.searchTools(searchQuery, operationalMode)
+  const filteredTools = searchQuery
+    ? availableTools.filter(tool => 
+        tool.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        tool.description?.toLowerCase().includes(searchQuery.toLowerCase())
+      )
     : availableTools;
 
-  useEffect(() => {
-    if (isOpen) {
-      setSearchQuery('');
-      setSelectedIndex(0);
-    }
-  }, [isOpen]);
-
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (!isOpen) return;
-      
-      switch (e.key) {
-        case 'ArrowDown':
-          e.preventDefault();
-          setSelectedIndex(prev => (prev + 1) % filteredTools.length);
-          break;
-        case 'ArrowUp':
-          e.preventDefault();
-          setSelectedIndex(prev => (prev - 1 + filteredTools.length) % filteredTools.length);
-          break;
-        case 'Enter':
-          e.preventDefault();
-          if (filteredTools[selectedIndex]) {
-            onToolSelect(filteredTools[selectedIndex]);
-          }
-          break;
-        case 'Escape':
-          e.preventDefault();
-          onClose();
-          break;
-      }
+  const getCategoryColor = (category: string) => {
+    const colors = {
+      'file': 'bg-blue-100 text-blue-800',
+      'web': 'bg-green-100 text-green-800', 
+      'data': 'bg-purple-100 text-purple-800',
+      'ai': 'bg-orange-100 text-orange-800',
+      'system': 'bg-gray-100 text-gray-800',
+      'thinking': 'bg-indigo-100 text-indigo-800'
     };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, filteredTools, selectedIndex, onToolSelect, onClose]);
+    return colors[category as keyof typeof colors] || 'bg-gray-100 text-gray-800';
+  };
 
   if (!isOpen) return null;
 
-  const getCategoryColor = (category: string) => {
-    switch (category) {
-      case 'file': return 'var(--color-accent-secondary)';
-      case 'code': return 'var(--color-accent)';
-      case 'web': return '#4CAF50';
-      case 'task': return '#FF9800';
-      case 'project': return '#9C27B0';
-      case 'thinking': return '#607D8B';
-      default: return 'var(--color-text-muted)';
-    }
-  };
-
   return (
     <div 
-      style={{
-        position: 'fixed',
-        left: position.x,
-        top: position.y,
-        zIndex: 1000,
-        backgroundColor: 'var(--color-bg-primary)',
-        border: '1px solid var(--color-border)',
-        borderRadius: 'var(--radius-lg)',
-        boxShadow: 'var(--shadow-lg)',
-        minWidth: '320px',
-        maxWidth: '400px',
-        maxHeight: '400px',
-        overflow: 'hidden'
-      }}
+      className="fixed z-50"
+      style={{ left: position.x, top: position.y }}
     >
-      <div style={{
-        padding: '12px 16px',
-        borderBottom: '1px solid var(--color-border)',
-        backgroundColor: 'var(--color-bg-secondary)'
-      }}>
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          marginBottom: '8px'
-        }}>
-          <div style={{
-            fontSize: '14px',
-            fontWeight: '600',
-            color: 'var(--color-text-primary)'
-          }}>
-            Tool Selection ({operationalMode} mode)
-          </div>
-          <button
-            onClick={onClose}
-            style={{
-              background: 'none',
-              border: 'none',
-              fontSize: '16px',
-              cursor: 'pointer',
-              color: 'var(--color-text-muted)'
-            }}
-          >
-            ×
-          </button>
-        </div>
-        
-        <input
-          type="text"
-          placeholder="Search tools..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="input"
-          style={{
-            width: '100%',
-            fontSize: '13px',
-            padding: '6px 10px'
-          }}
-          autoFocus
-        />
-      </div>
-
-      <div style={{
-        maxHeight: '300px',
-        overflowY: 'auto',
-        padding: '8px'
-      }}>
-        {filteredTools.length === 0 ? (
-          <div style={{
-            padding: '16px',
-            textAlign: 'center',
-            color: 'var(--color-text-muted)',
-            fontSize: '13px'
-          }}>
-            No tools found matching "{searchQuery}"
-          </div>
-        ) : (
-          filteredTools.map((tool, index) => (
-            <div
-              key={tool.name}
-              onClick={() => onToolSelect(tool)}
-              style={{
-                padding: '10px 12px',
-                borderRadius: 'var(--radius-md)',
-                cursor: 'pointer',
-                backgroundColor: index === selectedIndex ? 'var(--color-bg-tertiary)' : 'transparent',
-                border: index === selectedIndex ? '1px solid var(--color-accent)' : '1px solid transparent',
-                marginBottom: '4px',
-                transition: 'all 0.15s ease'
-              }}
+      <Card className="w-80 max-h-96 shadow-lg border">
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-sm font-semibold">
+              Tool Selection ({operationalMode} mode)
+            </CardTitle>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onClose}
+              className="h-6 w-6 p-0"
             >
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '10px'
-              }}>
-                <span style={{ fontSize: '16px' }}>{tool.icon}</span>
-                <div style={{ flex: 1 }}>
-                  <div style={{
-                    fontSize: '13px',
-                    fontWeight: '500',
-                    color: 'var(--color-text-primary)',
-                    marginBottom: '2px'
-                  }}>
-                    {tool.name}
-                  </div>
-                  <div style={{
-                    fontSize: '12px',
-                    color: 'var(--color-text-secondary)',
-                    lineHeight: '1.3'
-                  }}>
-                    {tool.description}
-                  </div>
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+          <div className="relative">
+            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search tools..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-8 h-9"
+            />
+          </div>
+        </CardHeader>
+        <CardContent className="p-0">
+          <ScrollArea className="h-64">
+            <div className="p-3 space-y-2">
+              {filteredTools.length === 0 ? (
+                <div className="text-center py-6 text-muted-foreground text-sm">
+                  {searchQuery ? `No tools found matching "${searchQuery}"` : 'No tools available'}
                 </div>
-                <div style={{
-                  fontSize: '10px',
-                  padding: '2px 6px',
-                  borderRadius: 'var(--radius-sm)',
-                  backgroundColor: getCategoryColor(tool.category),
-                  color: 'white',
-                  fontWeight: '500',
-                  textTransform: 'uppercase'
-                }}>
-                  {tool.category}
-                </div>
-              </div>
+              ) : (
+                filteredTools.map((tool, index) => (
+                  <div
+                    key={tool.name}
+                    onClick={() => onToolSelect(tool)}
+                    className={`p-3 rounded-lg cursor-pointer transition-colors border ${
+                      index === selectedIndex 
+                        ? 'bg-accent border-accent-foreground/20' 
+                        : 'hover:bg-muted border-transparent'
+                    }`}
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className="mt-0.5">
+                        <Zap className="h-4 w-4 text-orange-500" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="font-medium text-sm truncate">
+                            {tool.name}
+                          </span>
+                          {tool.category && (
+                            <Badge 
+                              variant="secondary" 
+                              className={`text-xs px-1.5 py-0.5 ${getCategoryColor(tool.category)}`}
+                            >
+                              {tool.category}
+                            </Badge>
+                          )}
+                        </div>
+                        {tool.description && (
+                          <p className="text-xs text-muted-foreground line-clamp-2">
+                            {tool.description}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
-          ))
-        )}
-      </div>
-
-      <div style={{
-        padding: '8px 12px',
-        borderTop: '1px solid var(--color-border)',
-        backgroundColor: 'var(--color-bg-secondary)',
-        fontSize: '11px',
-        color: 'var(--color-text-muted)'
-      }}>
-        Use ↑↓ arrows to navigate, Enter to select, Esc to close
-      </div>
+          </ScrollArea>
+          <div className="border-t bg-muted/30 px-3 py-2">
+            <p className="text-xs text-muted-foreground text-center">
+              Click to select • {filteredTools.length} tools available
+            </p>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };

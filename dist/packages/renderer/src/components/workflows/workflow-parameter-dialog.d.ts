@@ -3,7 +3,7 @@
  * Collects required parameters before executing a workflow
  */
 import React from 'react';
-import { WorkflowTemplate } from '../../types/workflow-types';
+import { WorkflowTemplate } from '../../services/workflow-execution/workflow-types';
 interface WorkflowParameterDialogProps {
     isOpen: boolean;
     workflow: WorkflowTemplate;

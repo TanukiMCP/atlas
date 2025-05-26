@@ -1,40 +1,8 @@
 "use strict";
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || (function () {
-    var ownKeys = function(o) {
-        ownKeys = Object.getOwnPropertyNames || function (o) {
-            var ar = [];
-            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
-            return ar;
-        };
-        return ownKeys(o);
-    };
-    return function (mod) {
-        if (mod && mod.__esModule) return mod;
-        var result = {};
-        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
-        __setModuleDefault(result, mod);
-        return result;
-    };
-})();
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.VisualWorkflowBuilder = void 0;
-const react_1 = __importStar(require("react"));
+const jsx_runtime_1 = require("react/jsx-runtime");
+const react_1 = require("react");
 const NODE_TYPES = {
     START: { icon: '🚀', color: '#10b981', label: 'Start' },
     ACTION: { icon: '⚡', color: '#3b82f6', label: 'Action' },
@@ -111,22 +79,11 @@ const VisualWorkflowBuilder = ({ onWorkflowSave, onWorkflowTest }) => {
         const nodeType = NODE_TYPES[node.type];
         const isSelected = selectedNode === node.id;
         const isDragged = draggedNode === node.id;
-        return (<div key={node.id} style={{
-                position: 'absolute',
+        return ((0, jsx_runtime_1.jsxs)("div", { className: `absolute w-36 min-h-20 bg-white rounded-xl p-3 cursor-pointer transition-all duration-150 ${isSelected ? 'border-2 z-[100]' : 'border-2 border-gray-200 z-[1]'} ${isDragged ? 'shadow-2xl scale-105 z-[1000]' : 'shadow-md'}`, style: {
                 left: node.position.x,
                 top: node.position.y,
-                width: '140px',
-                minHeight: '80px',
-                backgroundColor: 'white',
-                border: `2px solid ${isSelected ? nodeType.color : '#e5e7eb'}`,
-                borderRadius: '12px',
-                padding: '12px',
-                cursor: 'pointer',
-                boxShadow: isDragged ? '0 10px 25px rgba(0,0,0,0.2)' : '0 2px 8px rgba(0,0,0,0.1)',
-                transform: isDragged ? 'scale(1.05)' : 'scale(1)',
-                transition: 'all 0.15s ease',
-                zIndex: isDragged ? 1000 : isSelected ? 100 : 1
-            }} onClick={(e) => {
+                borderColor: isSelected ? nodeType.color : undefined
+            }, onClick: (e) => {
                 e.stopPropagation();
                 if (isConnecting && connectionStart !== node.id) {
                     endConnection(node.id);
@@ -134,7 +91,7 @@ const VisualWorkflowBuilder = ({ onWorkflowSave, onWorkflowTest }) => {
                 else {
                     setSelectedNode(node.id);
                 }
-            }} onMouseDown={(e) => {
+            }, onMouseDown: (e) => {
                 e.preventDefault();
                 setDraggedNode(node.id);
                 setSelectedNode(node.id);
@@ -152,87 +109,39 @@ const VisualWorkflowBuilder = ({ onWorkflowSave, onWorkflowTest }) => {
                 };
                 document.addEventListener('mousemove', handleMouseMove);
                 document.addEventListener('mouseup', handleMouseUp);
-            }}>
-        {/* Node Header */}
-        <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                marginBottom: '8px'
-            }}>
-          <span style={{
-                fontSize: '18px',
-                width: '24px',
-                height: '24px',
-                borderRadius: '50%',
-                backgroundColor: nodeType.color,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-            }}>
-            {nodeType.icon}
-          </span>
-          <span style={{
-                fontSize: '12px',
-                fontWeight: '600',
-                color: '#374151',
-                flex: 1
-            }}>
-            {node.data.label}
-          </span>
-          
-          {/* Connection Handle */}
-          <button style={{
-                width: '16px',
-                height: '16px',
-                borderRadius: '50%',
-                border: '2px solid #6b7280',
-                backgroundColor: 'white',
-                cursor: 'pointer',
-                fontSize: '8px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-            }} onClick={(e) => {
-                e.stopPropagation();
-                startConnection(node.id);
-            }}>
-            ➤
-          </button>
-        </div>
-
-        {/* Node Content */}
-        <div style={{
-                fontSize: '11px',
-                color: '#6b7280',
-                lineHeight: '1.3'
-            }}>
-          {node.data.description}
-        </div>
-
-        {/* Delete Button */}
-        {isSelected && node.type !== 'START' && (<button style={{
-                    position: 'absolute',
-                    top: '-8px',
-                    right: '-8px',
-                    width: '20px',
-                    height: '20px',
-                    borderRadius: '50%',
-                    backgroundColor: '#ef4444',
-                    color: 'white',
-                    border: 'none',
-                    cursor: 'pointer',
-                    fontSize: '12px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center'
-                }} onClick={(e) => {
-                    e.stopPropagation();
-                    deleteNode(node.id);
-                }}>
-            ✕
-          </button>)}
-      </div>);
+            }, children: [(0, jsx_runtime_1.jsxs)("div", { className: "flex items-center gap-2 mb-2", children: [(0, jsx_runtime_1.jsx)("span", { className: "text-lg w-6 h-6 rounded-full flex items-center justify-center text-white text-sm", style: { backgroundColor: nodeType.color }, children: nodeType.icon }), (0, jsx_runtime_1.jsx)("span", { className: "text-xs font-semibold text-gray-700 flex-1", children: node.data.label }), (0, jsx_runtime_1.jsx)("button", { style: {
+                                width: '16px',
+                                height: '16px',
+                                borderRadius: '50%',
+                                border: '2px solid #6b7280',
+                                backgroundColor: 'white',
+                                cursor: 'pointer',
+                                fontSize: '8px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center'
+                            }, onClick: (e) => {
+                                e.stopPropagation();
+                                startConnection(node.id);
+                            }, children: "\u27A4" })] }), (0, jsx_runtime_1.jsx)("div", { className: "text-xs text-gray-500 leading-tight", children: node.data.description }), isSelected && node.type !== 'START' && ((0, jsx_runtime_1.jsx)("button", { style: {
+                        position: 'absolute',
+                        top: '-8px',
+                        right: '-8px',
+                        width: '20px',
+                        height: '20px',
+                        borderRadius: '50%',
+                        backgroundColor: '#ef4444',
+                        color: 'white',
+                        border: 'none',
+                        cursor: 'pointer',
+                        fontSize: '12px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                    }, onClick: (e) => {
+                        e.stopPropagation();
+                        deleteNode(node.id);
+                    }, children: "\u2715" }))] }, node.id));
     };
     const saveWorkflow = () => {
         const workflow = {
@@ -253,155 +162,104 @@ const VisualWorkflowBuilder = ({ onWorkflowSave, onWorkflowTest }) => {
         };
         onWorkflowSave?.(workflow);
     };
-    return (<div style={{
+    return ((0, jsx_runtime_1.jsxs)("div", { style: {
             height: '100%',
             display: 'flex',
             flexDirection: 'column',
             backgroundColor: '#f9fafb'
-        }}>
-      {/* Toolbar */}
-      <div style={{
-            padding: '16px',
-            backgroundColor: 'white',
-            borderBottom: '1px solid #e5e7eb',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: '16px'
-        }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <input type="text" value={workflowName} onChange={(e) => setWorkflowName(e.target.value)} style={{
-            padding: '8px 12px',
-            border: '1px solid #d1d5db',
-            borderRadius: '6px',
-            fontSize: '14px',
-            fontWeight: '600'
-        }}/>
-          <div style={{ display: 'flex', gap: '8px' }}>
-            {Object.entries(NODE_TYPES).map(([type, config]) => (<button key={type} style={{
-                padding: '8px 12px',
-                border: '1px solid #d1d5db',
-                borderRadius: '6px',
-                backgroundColor: 'white',
-                cursor: 'pointer',
-                fontSize: '12px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '4px'
-            }} onClick={() => addNode(type, {
-                x: 200 + Math.random() * 300,
-                y: 150 + Math.random() * 200
-            })}>
-                {config.icon} {config.label}
-              </button>))}
-          </div>
-        </div>
-
-        <div style={{ display: 'flex', gap: '8px' }}>
-          <button onClick={saveWorkflow} style={{
-            padding: '8px 16px',
-            backgroundColor: '#10b981',
-            color: 'white',
-            border: 'none',
-            borderRadius: '6px',
-            cursor: 'pointer',
-            fontSize: '14px',
-            fontWeight: '500'
-        }}>
-            💾 Save Workflow
-          </button>
-          <button onClick={() => onWorkflowTest?.({
-            id: 'test',
-            name: workflowName,
-            nodes,
-            connections,
-            parameters: [],
-            triggers: [],
-            description: 'Test workflow',
-            category: 'test',
-            version: '1.0.0',
-            metadata: { created: new Date().toISOString(), author: 'test', tags: [] }
-        })} style={{
-            padding: '8px 16px',
-            backgroundColor: '#3b82f6',
-            color: 'white',
-            border: 'none',
-            borderRadius: '6px',
-            cursor: 'pointer',
-            fontSize: '14px',
-            fontWeight: '500'
-        }}>
-            ▶️ Test Run
-          </button>
-        </div>
-      </div>
-
-      {/* Canvas */}
-      <div ref={canvasRef} style={{
-            flex: 1,
-            position: 'relative',
-            overflow: 'hidden',
-            backgroundColor: '#f9fafb',
-            backgroundImage: `
+        }, children: [(0, jsx_runtime_1.jsxs)("div", { style: {
+                    padding: '16px',
+                    backgroundColor: 'white',
+                    borderBottom: '1px solid #e5e7eb',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: '16px'
+                }, children: [(0, jsx_runtime_1.jsxs)("div", { style: { display: 'flex', alignItems: 'center', gap: '12px' }, children: [(0, jsx_runtime_1.jsx)("input", { type: "text", value: workflowName, onChange: (e) => setWorkflowName(e.target.value), style: {
+                                    padding: '8px 12px',
+                                    border: '1px solid #d1d5db',
+                                    borderRadius: '6px',
+                                    fontSize: '14px',
+                                    fontWeight: '600'
+                                } }), (0, jsx_runtime_1.jsx)("div", { style: { display: 'flex', gap: '8px' }, children: Object.entries(NODE_TYPES).map(([type, config]) => ((0, jsx_runtime_1.jsxs)("button", { style: {
+                                        padding: '8px 12px',
+                                        border: '1px solid #d1d5db',
+                                        borderRadius: '6px',
+                                        backgroundColor: 'white',
+                                        cursor: 'pointer',
+                                        fontSize: '12px',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '4px'
+                                    }, onClick: () => addNode(type, {
+                                        x: 200 + Math.random() * 300,
+                                        y: 150 + Math.random() * 200
+                                    }), children: [config.icon, " ", config.label] }, type))) })] }), (0, jsx_runtime_1.jsxs)("div", { style: { display: 'flex', gap: '8px' }, children: [(0, jsx_runtime_1.jsx)("button", { onClick: saveWorkflow, style: {
+                                    padding: '8px 16px',
+                                    backgroundColor: '#10b981',
+                                    color: 'white',
+                                    border: 'none',
+                                    borderRadius: '6px',
+                                    cursor: 'pointer',
+                                    fontSize: '14px',
+                                    fontWeight: '500'
+                                }, children: "\uD83D\uDCBE Save Workflow" }), (0, jsx_runtime_1.jsx)("button", { onClick: () => onWorkflowTest?.({
+                                    id: 'test',
+                                    name: workflowName,
+                                    nodes,
+                                    connections,
+                                    parameters: [],
+                                    triggers: [],
+                                    description: 'Test workflow',
+                                    category: 'test',
+                                    version: '1.0.0',
+                                    metadata: { created: new Date().toISOString(), author: 'test', tags: [] }
+                                }), style: {
+                                    padding: '8px 16px',
+                                    backgroundColor: '#3b82f6',
+                                    color: 'white',
+                                    border: 'none',
+                                    borderRadius: '6px',
+                                    cursor: 'pointer',
+                                    fontSize: '14px',
+                                    fontWeight: '500'
+                                }, children: "\u25B6\uFE0F Test Run" })] })] }), (0, jsx_runtime_1.jsxs)("div", { ref: canvasRef, style: {
+                    flex: 1,
+                    position: 'relative',
+                    overflow: 'hidden',
+                    backgroundColor: '#f9fafb',
+                    backgroundImage: `
             radial-gradient(circle, #d1d5db 1px, transparent 1px)
           `,
-            backgroundSize: '20px 20px'
-        }} onClick={handleCanvasClick}>
-        {/* Render Connections */}
-        <svg style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            width: '100%',
-            height: '100%',
-            pointerEvents: 'none',
-            zIndex: 0
-        }}>
-          {connections.map(connection => {
-            const sourceNode = nodes.find(n => n.id === connection.source);
-            const targetNode = nodes.find(n => n.id === connection.target);
-            if (!sourceNode || !targetNode)
-                return null;
-            const startX = sourceNode.position.x + 140;
-            const startY = sourceNode.position.y + 40;
-            const endX = targetNode.position.x;
-            const endY = targetNode.position.y + 40;
-            return (<path key={connection.id} d={`M ${startX} ${startY} Q ${startX + 50} ${startY} ${endX - 20} ${endY}`} stroke="#6b7280" strokeWidth="2" fill="none" markerEnd="url(#arrowhead)"/>);
-        })}
-          
-          {/* Arrow marker */}
-          <defs>
-            <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-              <polygon points="0 0, 10 3.5, 0 7" fill="#6b7280"/>
-            </marker>
-          </defs>
-        </svg>
-
-        {/* Render Nodes */}
-        {nodes.map(renderNode)}
-
-        {/* Instructions */}
-        {nodes.length === 1 && (<div style={{
-                position: 'absolute',
-                top: '50%',
-                left: '50%',
-                transform: 'translate(-50%, -50%)',
-                textAlign: 'center',
-                color: '#6b7280',
-                fontSize: '16px',
-                maxWidth: '400px'
-            }}>
-            <div style={{ fontSize: '48px', marginBottom: '16px' }}>🎨</div>
-            <div style={{ marginBottom: '8px', fontWeight: '600' }}>
-              Create Your Workflow
-            </div>
-            <div style={{ fontSize: '14px', lineHeight: '1.5' }}>
-              Add nodes using the toolbar above, drag them to position, 
-              and click the arrow buttons to create connections.
-            </div>
-          </div>)}
-      </div>
-    </div>);
+                    backgroundSize: '20px 20px'
+                }, onClick: handleCanvasClick, children: [(0, jsx_runtime_1.jsxs)("svg", { style: {
+                            position: 'absolute',
+                            top: 0,
+                            left: 0,
+                            width: '100%',
+                            height: '100%',
+                            pointerEvents: 'none',
+                            zIndex: 0
+                        }, children: [connections.map(connection => {
+                                const sourceNode = nodes.find(n => n.id === connection.source);
+                                const targetNode = nodes.find(n => n.id === connection.target);
+                                if (!sourceNode || !targetNode)
+                                    return null;
+                                const startX = sourceNode.position.x + 140;
+                                const startY = sourceNode.position.y + 40;
+                                const endX = targetNode.position.x;
+                                const endY = targetNode.position.y + 40;
+                                return ((0, jsx_runtime_1.jsx)("path", { d: `M ${startX} ${startY} Q ${startX + 50} ${startY} ${endX - 20} ${endY}`, stroke: "#6b7280", strokeWidth: "2", fill: "none", markerEnd: "url(#arrowhead)" }, connection.id));
+                            }), (0, jsx_runtime_1.jsx)("defs", { children: (0, jsx_runtime_1.jsx)("marker", { id: "arrowhead", markerWidth: "10", markerHeight: "7", refX: "9", refY: "3.5", orient: "auto", children: (0, jsx_runtime_1.jsx)("polygon", { points: "0 0, 10 3.5, 0 7", fill: "#6b7280" }) }) })] }), nodes.map(renderNode), nodes.length === 1 && ((0, jsx_runtime_1.jsxs)("div", { style: {
+                            position: 'absolute',
+                            top: '50%',
+                            left: '50%',
+                            transform: 'translate(-50%, -50%)',
+                            textAlign: 'center',
+                            color: '#6b7280',
+                            fontSize: '16px',
+                            maxWidth: '400px'
+                        }, children: [(0, jsx_runtime_1.jsx)("div", { style: { fontSize: '48px', marginBottom: '16px' }, children: "\uD83C\uDFA8" }), (0, jsx_runtime_1.jsx)("div", { style: { marginBottom: '8px', fontWeight: '600' }, children: "Create Your Workflow" }), (0, jsx_runtime_1.jsx)("div", { style: { fontSize: '14px', lineHeight: '1.5' }, children: "Add nodes using the toolbar above, drag them to position, and click the arrow buttons to create connections." })] }))] })] }));
 };
 exports.VisualWorkflowBuilder = VisualWorkflowBuilder;
 //# sourceMappingURL=visual-workflow-builder.js.map

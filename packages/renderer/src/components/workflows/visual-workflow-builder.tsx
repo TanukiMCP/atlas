@@ -107,21 +107,15 @@ export const VisualWorkflowBuilder: React.FC<VisualWorkflowBuilderProps> = ({
     return (
       <div
         key={node.id}
+        className={`absolute w-36 min-h-20 bg-white rounded-xl p-3 cursor-pointer transition-all duration-150 ${
+          isSelected ? 'border-2 z-[100]' : 'border-2 border-gray-200 z-[1]'
+        } ${
+          isDragged ? 'shadow-2xl scale-105 z-[1000]' : 'shadow-md'
+        }`}
         style={{
-          position: 'absolute',
           left: node.position.x,
           top: node.position.y,
-          width: '140px',
-          minHeight: '80px',
-          backgroundColor: 'white',
-          border: `2px solid ${isSelected ? nodeType.color : '#e5e7eb'}`,
-          borderRadius: '12px',
-          padding: '12px',
-          cursor: 'pointer',
-          boxShadow: isDragged ? '0 10px 25px rgba(0,0,0,0.2)' : '0 2px 8px rgba(0,0,0,0.1)',
-          transform: isDragged ? 'scale(1.05)' : 'scale(1)',
-          transition: 'all 0.15s ease',
-          zIndex: isDragged ? 1000 : isSelected ? 100 : 1
+          borderColor: isSelected ? nodeType.color : undefined
         }}
         onClick={(e) => {
           e.stopPropagation();
@@ -156,30 +150,14 @@ export const VisualWorkflowBuilder: React.FC<VisualWorkflowBuilderProps> = ({
         }}
       >
         {/* Node Header */}
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px',
-          marginBottom: '8px'
-        }}>
-          <span style={{
-            fontSize: '18px',
-            width: '24px',
-            height: '24px',
-            borderRadius: '50%',
-            backgroundColor: nodeType.color,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center'
-          }}>
+        <div className="flex items-center gap-2 mb-2">
+          <span 
+            className="text-lg w-6 h-6 rounded-full flex items-center justify-center text-white text-sm"
+            style={{ backgroundColor: nodeType.color }}
+          >
             {nodeType.icon}
           </span>
-          <span style={{
-            fontSize: '12px',
-            fontWeight: '600',
-            color: '#374151',
-            flex: 1
-          }}>
+          <span className="text-xs font-semibold text-gray-700 flex-1">
             {node.data.label}
           </span>
           
@@ -207,11 +185,7 @@ export const VisualWorkflowBuilder: React.FC<VisualWorkflowBuilderProps> = ({
         </div>
 
         {/* Node Content */}
-        <div style={{
-          fontSize: '11px',
-          color: '#6b7280',
-          lineHeight: '1.3'
-        }}>
+        <div className="text-xs text-gray-500 leading-tight">
           {node.data.description}
         </div>
 

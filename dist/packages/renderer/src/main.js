@@ -3,6 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+const jsx_runtime_1 = require("react/jsx-runtime");
 const react_1 = __importDefault(require("react"));
 const client_1 = __importDefault(require("react-dom/client"));
 const App_1 = __importDefault(require("./App"));
@@ -22,27 +23,14 @@ class ErrorBoundary extends react_1.default.Component {
     }
     render() {
         if (this.state.hasError) {
-            return (<div className="error-boundary">
-          <h2>Something went wrong</h2>
-          <details style={{ whiteSpace: 'pre-wrap' }}>
-            <summary>Error details</summary>
-            {this.state.error && this.state.error.toString()}
-          </details>
-          <button onClick={() => window.location.reload()}>
-            Reload Application
-          </button>
-        </div>);
+            return ((0, jsx_runtime_1.jsxs)("div", { className: "error-boundary", children: [(0, jsx_runtime_1.jsx)("h2", { children: "Something went wrong" }), (0, jsx_runtime_1.jsxs)("details", { style: { whiteSpace: 'pre-wrap' }, children: [(0, jsx_runtime_1.jsx)("summary", { children: "Error details" }), this.state.error && this.state.error.toString()] }), (0, jsx_runtime_1.jsx)("button", { onClick: () => window.location.reload(), children: "Reload Application" })] }));
         }
         return this.props.children;
     }
 }
 // Render the application
 const root = client_1.default.createRoot(document.getElementById('root'));
-root.render(<react_1.default.StrictMode>
-    <ErrorBoundary>
-      <App_1.default />
-    </ErrorBoundary>
-  </react_1.default.StrictMode>);
+root.render((0, jsx_runtime_1.jsx)(react_1.default.StrictMode, { children: (0, jsx_runtime_1.jsx)(ErrorBoundary, { children: (0, jsx_runtime_1.jsx)(App_1.default, {}) }) }));
 // Development hot reload
 if (import.meta.hot) {
     import.meta.hot.accept();

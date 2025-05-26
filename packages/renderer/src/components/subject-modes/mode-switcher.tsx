@@ -21,15 +21,10 @@ export const ModeSwitcher: React.FC<ModeSwitcherProps> = ({
 }) => {
   return (
     <div className="mode-switcher">
-      <span style={{
-        fontSize: '13px',
-        fontWeight: '500',
-        color: 'var(--color-text-secondary)',
-        marginRight: '8px'
-      }}>
+      <span className="text-sm font-medium text-muted-foreground mr-2">
         Subject Mode:
       </span>
-      <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+      <div className="flex gap-1.5 flex-wrap">
         {SUBJECT_MODES.map(mode => (
           <button
             key={mode.id}

@@ -1,34 +1,9 @@
 "use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.WorkflowManager = void 0;
-const react_1 = __importDefault(require("react"));
+const jsx_runtime_1 = require("react/jsx-runtime");
 const WorkflowManager = () => {
-    return (<div className="workflow-manager h-full p-4">
-      <h3 className="text-lg font-semibold mb-4">Workflow Manager</h3>
-      <div className="space-y-3">
-        <button className="w-full p-3 text-left bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-lg">
-          <div className="font-medium">Code Review Workflow</div>
-          <div className="text-sm text-gray-600 dark:text-gray-400">Automated code analysis and suggestions</div>
-        </button>
-        
-        <button className="w-full p-3 text-left bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-lg">
-          <div className="font-medium">Documentation Generator</div>
-          <div className="text-sm text-gray-600 dark:text-gray-400">Generate docs from code</div>
-        </button>
-        
-        <button className="w-full p-3 text-left bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-lg">
-          <div className="font-medium">Test Suite Creator</div>
-          <div className="text-sm text-gray-600 dark:text-gray-400">Create comprehensive test suites</div>
-        </button>
-        
-        <button className="w-full mt-4 p-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-          + Create New Workflow
-        </button>
-      </div>
-    </div>);
+    return ((0, jsx_runtime_1.jsxs)("div", { className: "workflow-manager h-full p-4", children: [(0, jsx_runtime_1.jsx)("h3", { className: "text-lg font-semibold mb-4", children: "Workflow Manager" }), (0, jsx_runtime_1.jsxs)("div", { className: "space-y-3", children: [(0, jsx_runtime_1.jsxs)("button", { className: "w-full p-3 text-left bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-lg", children: [(0, jsx_runtime_1.jsx)("div", { className: "font-medium", children: "Code Review Workflow" }), (0, jsx_runtime_1.jsx)("div", { className: "text-sm text-gray-600 dark:text-gray-400", children: "Automated code analysis and suggestions" })] }), (0, jsx_runtime_1.jsxs)("button", { className: "w-full p-3 text-left bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-lg", children: [(0, jsx_runtime_1.jsx)("div", { className: "font-medium", children: "Documentation Generator" }), (0, jsx_runtime_1.jsx)("div", { className: "text-sm text-gray-600 dark:text-gray-400", children: "Generate docs from code" })] }), (0, jsx_runtime_1.jsxs)("button", { className: "w-full p-3 text-left bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-lg", children: [(0, jsx_runtime_1.jsx)("div", { className: "font-medium", children: "Test Suite Creator" }), (0, jsx_runtime_1.jsx)("div", { className: "text-sm text-gray-600 dark:text-gray-400", children: "Create comprehensive test suites" })] }), (0, jsx_runtime_1.jsx)("button", { className: "w-full mt-4 p-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700", children: "+ Create New Workflow" })] })] }));
 };
 exports.WorkflowManager = WorkflowManager;
 //# sourceMappingURL=workflow-manager.js.map

@@ -1,14 +1,14 @@
 "use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.MenuBar = void 0;
-const react_1 = __importDefault(require("react"));
-const enhanced_dropdown_1 = require("../shared/enhanced-dropdown");
+const jsx_runtime_1 = require("react/jsx-runtime");
+const menu_dropdown_1 = require("../shared/menu-dropdown");
 const subject_mode_dropdown_1 = require("../shared/subject-mode-dropdown");
 const app_store_1 = require("../../stores/app-store");
 const file_menu_service_1 = require("../../services/file-menu-service");
+const edit_menu_service_1 = require("../../services/edit-menu-service");
+const view_menu_service_1 = require("../../services/view-menu-service");
+const navigation_menu_1 = require("../ui/navigation-menu");
 const MenuBar = ({ onNewChat, onOpenProject, onSaveChat, onSubjectModeChange, currentMode, onOpenMCPManager, onOpenLLMPromptManagement, onNavigate }) => {
     const { theme, setTheme } = (0, app_store_1.useAppStore)();
     // File Menu Actions - Production Quality Implementation
@@ -80,123 +80,183 @@ const MenuBar = ({ onNewChat, onOpenProject, onSaveChat, onSubjectModeChange, cu
             console.error('Failed to exit application:', error);
         }
     };
-    // Edit Menu Actions - Enhanced implementations
-    const handleUndo = () => {
-        // TODO: Implement undo functionality
-        console.log('Undo action');
-        app_store_1.useAppStore.getState().addNotification({
-            type: 'info',
-            title: 'Undo',
-            message: 'Undo functionality will be implemented in a future update.'
-        });
-    };
-    const handleRedo = () => {
-        // TODO: Implement redo functionality
-        console.log('Redo action');
-        app_store_1.useAppStore.getState().addNotification({
-            type: 'info',
-            title: 'Redo',
-            message: 'Redo functionality will be implemented in a future update.'
-        });
-    };
-    const handleCut = () => {
-        // Use browser's built-in cut functionality
-        document.execCommand('cut');
-        app_store_1.useAppStore.getState().addNotification({
-            type: 'success',
-            title: 'Cut',
-            message: 'Selected text has been cut to clipboard.'
-        });
-    };
-    const handleCopy = () => {
-        // Use browser's built-in copy functionality
-        document.execCommand('copy');
-        app_store_1.useAppStore.getState().addNotification({
-            type: 'success',
-            title: 'Copy',
-            message: 'Selected text has been copied to clipboard.'
-        });
-    };
-    const handlePaste = () => {
-        // Use browser's built-in paste functionality
-        document.execCommand('paste');
-        app_store_1.useAppStore.getState().addNotification({
-            type: 'success',
-            title: 'Paste',
-            message: 'Content has been pasted from clipboard.'
-        });
-    };
-    const handleFind = () => {
-        // TODO: Implement search functionality
-        console.log('Find action');
-        app_store_1.useAppStore.getState().addNotification({
-            type: 'info',
-            title: 'Find',
-            message: 'Search functionality will be implemented in a future update.'
-        });
-    };
-    const handleReplace = () => {
-        // TODO: Implement replace functionality
-        console.log('Replace action');
-        app_store_1.useAppStore.getState().addNotification({
-            type: 'info',
-            title: 'Replace',
-            message: 'Replace functionality will be implemented in a future update.'
-        });
-    };
-    // View Menu Actions
-    const openCommandPalette = () => {
-        console.log('Command palette');
-        app_store_1.useAppStore.getState().addNotification({
-            type: 'info',
-            title: 'Command Palette',
-            message: 'Command palette will be implemented in a future update.'
-        });
-    };
-    const toggleFileExplorer = () => {
-        const { sidebarVisible, setSidebarVisible } = app_store_1.useAppStore.getState();
-        setSidebarVisible(!sidebarVisible);
-        app_store_1.useAppStore.getState().addNotification({
-            type: 'success',
-            title: 'File Explorer',
-            message: `File Explorer ${!sidebarVisible ? 'shown' : 'hidden'}.`
-        });
-    };
-    const toggleChatHistory = () => {
-        console.log('Toggle chat history');
-        app_store_1.useAppStore.getState().addNotification({
-            type: 'info',
-            title: 'Chat History',
-            message: 'Chat history panel will be implemented in a future update.'
-        });
-    };
-    const toggleFullscreen = () => {
-        if (document.fullscreenElement) {
-            document.exitFullscreen();
+    // Edit Menu Actions - Production Quality Implementation using EditMenuService
+    const handleUndo = async () => {
+        try {
+            await edit_menu_service_1.editMenuService.undo();
         }
-        else {
-            document.documentElement.requestFullscreen();
+        catch (error) {
+            console.error('Undo failed:', error);
         }
     };
-    const handleZoomIn = () => {
-        const currentZoom = parseFloat(document.body.style.zoom || '1');
-        const newZoom = Math.min(currentZoom + 0.1, 3);
-        document.body.style.zoom = newZoom.toString();
-        app_store_1.useAppStore.getState().addNotification({
-            type: 'success',
-            title: 'Zoom In',
-            message: `Zoom level: ${Math.round(newZoom * 100)}%`
-        });
+    const handleRedo = async () => {
+        try {
+            await edit_menu_service_1.editMenuService.redo();
+        }
+        catch (error) {
+            console.error('Redo failed:', error);
+        }
     };
-    const handleZoomOut = () => {
-        const currentZoom = parseFloat(document.body.style.zoom || '1');
-        const newZoom = Math.max(currentZoom - 0.1, 0.5);
-        document.body.style.zoom = newZoom.toString();
-        app_store_1.useAppStore.getState().addNotification({
-            type: 'success',
-            title: 'Zoom Out',
-            message: `Zoom level: ${Math.round(newZoom * 100)}%`
-        });
+    const handleCut = async () => {
+        try {
+            await edit_menu_service_1.editMenuService.cut();
+        }
+        catch (error) {
+            console.error('Cut failed:', error);
+        }
+    };
+    const handleCopy = async () => {
+        try {
+            await edit_menu_service_1.editMenuService.copy();
+        }
+        catch (error) {
+            console.error('Copy failed:', error);
+        }
+    };
+    const handlePaste = async () => {
+        try {
+            await edit_menu_service_1.editMenuService.paste();
+        }
+        catch (error) {
+            console.error('Paste failed:', error);
+        }
+    };
+    const handleSelectAll = async () => {
+        try {
+            await edit_menu_service_1.editMenuService.selectAll();
+        }
+        catch (error) {
+            console.error('Select All failed:', error);
+        }
+    };
+    const handleFind = async () => {
+        try {
+            await edit_menu_service_1.editMenuService.find();
+        }
+        catch (error) {
+            console.error('Find failed:', error);
+        }
+    };
+    const handleReplace = async () => {
+        try {
+            await edit_menu_service_1.editMenuService.replace();
+        }
+        catch (error) {
+            console.error('Replace failed:', error);
+        }
+    };
+    // View Menu Actions - Production Quality Implementation using ViewMenuService
+    const openCommandPalette = async () => {
+        try {
+            await view_menu_service_1.viewMenuService.openCommandPalette();
+        }
+        catch (error) {
+            console.error('Command palette failed:', error);
+        }
+    };
+    const toggleFileExplorer = async () => {
+        try {
+            await view_menu_service_1.viewMenuService.toggleFileExplorer();
+        }
+        catch (error) {
+            console.error('File explorer toggle failed:', error);
+        }
+    };
+    const toggleChatHistory = async () => {
+        try {
+            await view_menu_service_1.viewMenuService.toggleChatHistory();
+        }
+        catch (error) {
+            console.error('Chat history toggle failed:', error);
+        }
+    };
+    const toggleTerminalPanel = async () => {
+        try {
+            await view_menu_service_1.viewMenuService.toggleTerminalPanel();
+        }
+        catch (error) {
+            console.error('Terminal panel toggle failed:', error);
+        }
+    };
+    const toggleOutputPanel = async () => {
+        try {
+            await view_menu_service_1.viewMenuService.toggleOutputPanel();
+        }
+        catch (error) {
+            console.error('Output panel toggle failed:', error);
+        }
+    };
+    const toggleFullscreen = async () => {
+        try {
+            await view_menu_service_1.viewMenuService.toggleFullscreen();
+        }
+        catch (error) {
+            console.error('Fullscreen toggle failed:', error);
+        }
+    };
+    const handleZoomIn = async () => {
+        try {
+            await view_menu_service_1.viewMenuService.zoomIn();
+        }
+        catch (error) {
+            console.error('Zoom in failed:', error);
+        }
+    };
+    const handleZoomOut = async () => {
+        try {
+            await view_menu_service_1.viewMenuService.zoomOut();
+        }
+        catch (error) {
+            console.error('Zoom out failed:', error);
+        }
+    };
+    const handleResetZoom = async () => {
+        try {
+            await view_menu_service_1.viewMenuService.resetZoom();
+        }
+        catch (error) {
+            console.error('Reset zoom failed:', error);
+        }
+    };
+    const toggleZenMode = async () => {
+        try {
+            await view_menu_service_1.viewMenuService.setLayoutMode('zen');
+        }
+        catch (error) {
+            console.error('Zen mode toggle failed:', error);
+        }
+    };
+    const togglePresentationMode = async () => {
+        try {
+            await view_menu_service_1.viewMenuService.setLayoutMode('presentation');
+        }
+        catch (error) {
+            console.error('Presentation mode toggle failed:', error);
+        }
+    };
+    const toggleTheme = async () => {
+        try {
+            await view_menu_service_1.viewMenuService.toggleTheme();
+        }
+        catch (error) {
+            console.error('Theme toggle failed:', error);
+        }
+    };
+    const toggleCompactMode = async () => {
+        try {
+            await view_menu_service_1.viewMenuService.toggleCompactMode();
+        }
+        catch (error) {
+            console.error('Compact mode toggle failed:', error);
+        }
+    };
+    const toggleMinimap = async () => {
+        try {
+            await view_menu_service_1.viewMenuService.toggleMinimap();
+        }
+        catch (error) {
+            console.error('Minimap toggle failed:', error);
+        }
     };
     // Tools Menu Actions  
     const openToolBrowser = () => onNavigate('tool-catalog');
@@ -315,6 +375,12 @@ const MenuBar = ({ onNewChat, onOpenProject, onSaveChat, onSubjectModeChange, cu
                     action: handlePaste,
                     icon: '📌'
                 },
+                {
+                    label: 'Select All',
+                    shortcut: 'Ctrl+A',
+                    action: handleSelectAll,
+                    icon: '🔘'
+                },
                 { type: 'separator' },
                 {
                     label: 'Find',
@@ -352,6 +418,17 @@ const MenuBar = ({ onNewChat, onOpenProject, onSaveChat, onSubjectModeChange, cu
                     action: toggleChatHistory,
                     icon: '💬'
                 },
+                {
+                    label: 'Terminal',
+                    shortcut: 'Ctrl+`',
+                    action: toggleTerminalPanel,
+                    icon: '💻'
+                },
+                {
+                    label: 'Output',
+                    action: toggleOutputPanel,
+                    icon: '📤'
+                },
                 { type: 'separator' },
                 {
                     label: 'Toggle Fullscreen',
@@ -359,6 +436,18 @@ const MenuBar = ({ onNewChat, onOpenProject, onSaveChat, onSubjectModeChange, cu
                     action: toggleFullscreen,
                     icon: '⛶'
                 },
+                {
+                    label: 'Zen Mode',
+                    shortcut: 'Ctrl+K Z',
+                    action: toggleZenMode,
+                    icon: '🧘'
+                },
+                {
+                    label: 'Presentation Mode',
+                    action: togglePresentationMode,
+                    icon: '📺'
+                },
+                { type: 'separator' },
                 {
                     label: 'Zoom In',
                     shortcut: 'Ctrl++',
@@ -370,6 +459,28 @@ const MenuBar = ({ onNewChat, onOpenProject, onSaveChat, onSubjectModeChange, cu
                     shortcut: 'Ctrl+-',
                     action: handleZoomOut,
                     icon: '🔍'
+                },
+                {
+                    label: 'Reset Zoom',
+                    shortcut: 'Ctrl+0',
+                    action: handleResetZoom,
+                    icon: '🔍'
+                },
+                { type: 'separator' },
+                {
+                    label: 'Toggle Theme',
+                    action: toggleTheme,
+                    icon: '🎨'
+                },
+                {
+                    label: 'Compact Mode',
+                    action: toggleCompactMode,
+                    icon: '📱'
+                },
+                {
+                    label: 'Minimap',
+                    action: toggleMinimap,
+                    icon: '🗺️'
                 }
             ]
         },
@@ -429,45 +540,7 @@ const MenuBar = ({ onNewChat, onOpenProject, onSaveChat, onSubjectModeChange, cu
             ]
         }
     ];
-    return (<div style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            width: '100%',
-            gap: '16px',
-            backgroundColor: 'var(--color-bg-primary)',
-            borderBottom: '1px solid var(--color-border)',
-            padding: '0 16px',
-            height: '48px'
-        }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-        <div className="tanuki-brand">
-          <img src="/assets/TanukiMCPLogo.png" alt="TanukiMCP Logo" className="tanuki-logo-img" style={{
-            height: '24px',
-            width: 'auto',
-            marginRight: '8px'
-        }}/>
-          <div className="tanuki-text">
-            Tanuki<span className="mcp">MCP</span> Atlas
-          </div>
-        </div>
-        
-        <div style={{
-            width: '1px',
-            height: '20px',
-            backgroundColor: 'var(--color-border)',
-            margin: '0 4px'
-        }}/>
-        
-        <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
-          {menuItems.map(menu => (<enhanced_dropdown_1.EnhancedDropdown key={menu.label} label={menu.label} items={menu.items} triggerMode="hover" className="menu-dropdown"/>))}
-        </div>
-      </div>
-      
-      <div>
-        <subject_mode_dropdown_1.SubjectModeDropdown currentMode={currentMode} onModeChange={onSubjectModeChange}/>
-      </div>
-    </div>);
+    return ((0, jsx_runtime_1.jsxs)("div", { className: "flex items-center justify-between w-full gap-4 bg-background border-b border-border px-4 h-12", children: [(0, jsx_runtime_1.jsxs)("div", { className: "flex items-center gap-3", children: [(0, jsx_runtime_1.jsxs)("div", { className: "tanuki-brand flex items-center", children: [(0, jsx_runtime_1.jsx)("img", { src: "/assets/TanukiMCPLogo.png", alt: "TanukiMCP Logo", className: "h-6 w-auto mr-2" }), (0, jsx_runtime_1.jsxs)("div", { className: "tanuki-text font-semibold text-foreground", children: ["Tanuki", (0, jsx_runtime_1.jsx)("span", { className: "text-orange-600", children: "MCP" }), " Atlas"] })] }), (0, jsx_runtime_1.jsx)("div", { className: "w-px h-5 bg-border mx-1" }), (0, jsx_runtime_1.jsx)(navigation_menu_1.NavigationMenu, { children: (0, jsx_runtime_1.jsx)(navigation_menu_1.NavigationMenuList, { className: "gap-1", children: menuItems.map(menu => ((0, jsx_runtime_1.jsx)(navigation_menu_1.NavigationMenuItem, { children: (0, jsx_runtime_1.jsx)(menu_dropdown_1.MenuDropdown, { label: menu.label, items: menu.items, className: "menu-dropdown" }) }, menu.label))) }) })] }), (0, jsx_runtime_1.jsx)("div", { children: (0, jsx_runtime_1.jsx)(subject_mode_dropdown_1.SubjectModeDropdown, { currentMode: currentMode, onModeChange: onSubjectModeChange }) })] }));
 };
 exports.MenuBar = MenuBar;
 //# sourceMappingURL=menu-bar.js.map

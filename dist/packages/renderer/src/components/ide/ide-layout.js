@@ -1,40 +1,8 @@
 "use strict";
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || (function () {
-    var ownKeys = function(o) {
-        ownKeys = Object.getOwnPropertyNames || function (o) {
-            var ar = [];
-            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
-            return ar;
-        };
-        return ownKeys(o);
-    };
-    return function (mod) {
-        if (mod && mod.__esModule) return mod;
-        var result = {};
-        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
-        __setModuleDefault(result, mod);
-        return result;
-    };
-})();
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.IDELayout = void 0;
-const react_1 = __importStar(require("react"));
+const jsx_runtime_1 = require("react/jsx-runtime");
+const react_1 = require("react");
 const menu_bar_1 = require("./menu-bar");
 const toolbar_1 = require("./toolbar");
 const status_bar_1 = require("./status-bar");
@@ -56,6 +24,7 @@ const processing_tier_indicator_1 = require("../shared/processing-tier-indicator
 const tool_execution_panel_1 = require("../shared/tool-execution-panel");
 const IDELayout = () => {
     const [showAtSymbol, setShowAtSymbol] = (0, react_1.useState)(false);
+    const chatRef = (0, react_1.useRef)(null);
     const [atSymbolPosition, setAtSymbolPosition] = (0, react_1.useState)({ x: 0, y: 0 });
     const [showManagementCenter, setShowManagementCenter] = (0, react_1.useState)(false);
     const [operationalMode, setOperationalMode] = (0, react_1.useState)('agent');
@@ -78,14 +47,21 @@ const IDELayout = () => {
     const handleToolSelect = (tool) => {
         console.log('Tool selected:', tool);
         setShowAtSymbol(false);
-        // TODO: Integrate with chat interface to add tool to message
+        chatRef.current?.insertText(`@${tool.name} `);
     };
     const handleOperationalModeChange = (mode) => {
         console.log('Switching to', mode, 'mode');
         setOperationalMode(mode);
     };
     const handleFileSelect = (file) => {
-        setSelectedFile(file);
+        // Map the file explorer's FileItem to FileInfo for FileContentViewer
+        const fileInfo = {
+            name: file.name,
+            path: file.name,
+            type: file.type,
+            modified: new Date(),
+        };
+        setSelectedFile(fileInfo);
         if (file.type === 'file') {
             setActiveMainView('editor');
         }
@@ -141,113 +117,40 @@ const IDELayout = () => {
             }
         });
     }, [showToolPanel, updateLayout]);
-    return (<div className="ide-container flex flex-col h-full w-full overflow-hidden">
-      {/* Menu Bar */}
-      <div className="menu-bar flex-shrink-0">
-        <menu_bar_1.MenuBar onNewChat={handleNewChat} onOpenProject={handleOpenProject} onSaveChat={handleSaveChat} onSubjectModeChange={switchMode} currentMode={currentMode} onOpenMCPManager={handleOpenMCPManager} // Already uses setActiveMainView
-     onOpenLLMPromptManagement={handleOpenLLMPromptManagement} // Already uses setActiveMainView
-     onNavigate={handleNavigate} // Pass the new navigator function
-    />
-      </div>
-      
-      {/* Toolbar - Contextual based on activeMainView */}
-      <div className="toolbar flex-shrink-0">
-        {activeMainView === 'chat' && (<toolbar_1.Toolbar currentMode={currentMode} onModeChange={switchMode} onAtSymbolTrigger={() => setShowAtSymbol(true)} operationalMode={operationalMode} onOperationalModeChange={handleOperationalModeChange} onEmergencyStop={handleEmergencyStop} onShowProcessingTier={() => setShowProcessingTier(!showProcessingTier)} onShowToolPanel={() => setShowToolPanel(!showToolPanel)} isProcessing={isProcessing}/>)}
-        {/* Add other contextual toolbars here, e.g., for WorkflowManager */}
-        {activeMainView === 'workflow-manager' && (<div> {/* Placeholder for Workflow Manager Toolbar */} 
-            Workflow Manager Toolbar Content Here
-          </div>)}
-      </div>
-      
-      {/* Main Content Area */}
-      <div className="main-content-area flex-grow flex overflow-hidden">
-        <panel_manager_1.PanelManager layout={layout} onLayoutChange={updateLayout} panels={{
-            fileExplorer: <working_file_tree_1.WorkingFileTree onFileSelect={handleFileSelect}/>,
-            // Main panel content will now be dynamic based on activeMainView
-            centerPanel: (<>
-                {activeMainView === 'chat' && <chat_interface_1.ChatInterface onAtSymbolTrigger={handleAtSymbolTrigger} operationalMode={operationalMode}/>}
-                {activeMainView === 'workflow-manager' && <workflow_manager_1.WorkflowManager /> /* Assuming WorkflowManager is the component */}
-                {activeMainView === 'settings' && <div>Settings View Placeholder</div>}
-                {activeMainView === 'llm-prompt-management' && <div>LLM Prompt Management Placeholder</div>}
-                {activeMainView === 'mcp-servers' && <div>MCP Servers Placeholder</div>}
-                {activeMainView === 'editor' && selectedFile && (<file_content_viewer_1.FileContentViewer selectedFile={selectedFile} 
-                // isVisible prop is no longer needed if it's part of main content flow
-                // The component itself should be visible if rendered.
-                // Ensure FileContentViewer is styled to fill its container.
-                onClose={() => {
-                        setSelectedFile(null); // Clear selected file
-                        setActiveMainView('chat'); // Revert to chat or previous view
-                    }}/>)}
-                {activeMainView === 'editor' && !selectedFile && (<div style={{ padding: '20px', textAlign: 'center', color: 'var(--color-text-muted)' }}>
-                    Select a file from the explorer to view its content.
-                  </div>)}
-                {/* Add other views here */}
-              </>),
-            rightPanel: (<div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-                {/* Right Panel Tabs */}
-                <div style={{
-                    display: 'flex',
-                    backgroundColor: 'var(--color-bg-secondary)', // Use theme variable
-                    borderBottom: '1px solid var(--color-border)' // Use theme variable
-                }}>
-                  {[
-                    { id: 'workflow', label: 'Workflows', icon: '⚡' },
-                    { id: 'tools', label: 'Tools', icon: '🛠️' },
-                    { id: 'agents', label: 'Agents', icon: '🤖' },
-                    { id: 'analytics', label: 'Analytics', icon: '📊' }
-                ].map(tab => (<button key={tab.id} onClick={() => setActiveRightPanel(tab.id)} style={{
-                        flex: 1,
-                        padding: '10px 8px', // Adjusted padding
-                        border: 'none',
-                        backgroundColor: activeRightPanel === tab.id ? 'var(--color-bg-tertiary)' : 'transparent',
-                        color: activeRightPanel === tab.id ? 'var(--color-accent)' : 'var(--color-text-secondary)',
-                        cursor: 'pointer',
-                        fontSize: '12px',
-                        fontWeight: activeRightPanel === tab.id ? '600' : '500',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: '4px',
-                        borderBottom: activeRightPanel === tab.id ? '2px solid var(--color-accent)' : '2px solid transparent',
-                        transition: 'all 0.15s ease'
-                    }}>
-                      {tab.icon} {tab.label}
-                    </button>))}
-                </div>
-                
-                {/* Right Panel Content */}
-                <div style={{ flex: 1, overflowY: 'auto' }}> {/* Added overflowY */}
-                  {activeRightPanel === 'workflow' && <visual_workflow_builder_1.VisualWorkflowBuilder />}
-                  {activeRightPanel === 'tools' && <comprehensive_tool_catalog_1.ComprehensiveToolCatalog />}
-                  {activeRightPanel === 'agents' && <specialized_agent_templates_1.SpecializedAgentTemplates />}
-                  {activeRightPanel === 'analytics' && <analytics_dashboard_1.AnalyticsDashboard />}
-                </div>
-              </div>),
-            bottomPanel: showToolPanel ? (<tool_execution_panel_1.ToolExecutionPanel isVisible={showToolPanel} onClose={() => setShowToolPanel(false)}/>) : null
-        }}/>
-      </div>
-      
-      {/* Status Bar */}
-      <div className="status-bar flex-shrink-0">
-        <status_bar_1.StatusBar currentMode={currentMode} connectionStatus="connected" activeTools={[]}/>
-      </div>
-      
-      {/* Tool Selector */}
-      <tool_selector_1.ToolSelector isOpen={showAtSymbol} position={atSymbolPosition} operationalMode={operationalMode} onToolSelect={handleToolSelect} onClose={() => setShowAtSymbol(false)}/>
-      
-      {/* File Content Viewer - Old Modal Style - To be removed if editor view replaces it fully */}
-      {/* <FileContentViewer
-          selectedFile={selectedFile}
-          isVisible={showFileViewer} // This state variable is no longer the primary control for editor
-          onClose={() => setShowFileViewer(false)}
-        /> */}
-
-      {/* Processing Tier Indicator */}
-      {showProcessingTier && (<processing_tier_indicator_1.ProcessingTierIndicator currentTier={currentTier} complexity={6} estimatedDuration={45} isActive={isProcessing} onTierSwitch={handleTierSwitch}/>)}
-
-      {/* Management Center Modal */}
-      <management_center_modal_1.ManagementCenterModal isOpen={showManagementCenter} onClose={() => setShowManagementCenter(false)}/>
-    </div>);
+    return ((0, jsx_runtime_1.jsxs)("div", { className: "ide-container flex flex-col h-full w-full overflow-hidden", children: [(0, jsx_runtime_1.jsx)("div", { className: "menu-bar flex-shrink-0", children: (0, jsx_runtime_1.jsx)(menu_bar_1.MenuBar, { onNewChat: handleNewChat, onOpenProject: handleOpenProject, onSaveChat: handleSaveChat, onSubjectModeChange: switchMode, currentMode: currentMode, onOpenMCPManager: handleOpenMCPManager, onOpenLLMPromptManagement: handleOpenLLMPromptManagement, onNavigate: handleNavigate }) }), (0, jsx_runtime_1.jsxs)("div", { className: "toolbar flex-shrink-0", children: [activeMainView === 'chat' && ((0, jsx_runtime_1.jsx)(toolbar_1.Toolbar, { currentMode: currentMode, onModeChange: switchMode, onAtSymbolTrigger: () => setShowAtSymbol(true), operationalMode: operationalMode, onOperationalModeChange: handleOperationalModeChange, onEmergencyStop: handleEmergencyStop, onShowProcessingTier: () => setShowProcessingTier(!showProcessingTier), onShowToolPanel: () => setShowToolPanel(!showToolPanel), isProcessing: isProcessing })), activeMainView === 'workflow-manager' && ((0, jsx_runtime_1.jsxs)("div", { children: [" ", "Workflow Manager Toolbar Content Here"] }))] }), (0, jsx_runtime_1.jsx)("div", { className: "main-content-area flex-grow flex overflow-hidden", children: (0, jsx_runtime_1.jsx)(panel_manager_1.PanelManager, { layout: layout, onLayoutChange: updateLayout, panels: {
+                        fileExplorer: (0, jsx_runtime_1.jsx)(working_file_tree_1.WorkingFileTree, { onFileSelect: handleFileSelect }),
+                        // Main panel content will now be dynamic based on activeMainView
+                        centerPanel: ((0, jsx_runtime_1.jsxs)(jsx_runtime_1.Fragment, { children: [activeMainView === 'chat' && (0, jsx_runtime_1.jsx)(chat_interface_1.ChatInterface, { ref: chatRef, onAtSymbolTrigger: handleAtSymbolTrigger, operationalMode: operationalMode }), activeMainView === 'workflow-manager' && (0, jsx_runtime_1.jsx)(workflow_manager_1.WorkflowManager, {}) /* Assuming WorkflowManager is the component */, activeMainView === 'settings' && (0, jsx_runtime_1.jsx)("div", { children: "Settings View Placeholder" }), activeMainView === 'llm-prompt-management' && (0, jsx_runtime_1.jsx)("div", { children: "LLM Prompt Management Placeholder" }), activeMainView === 'mcp-servers' && (0, jsx_runtime_1.jsx)("div", { children: "MCP Servers Placeholder" }), activeMainView === 'editor' && selectedFile && ((0, jsx_runtime_1.jsx)(file_content_viewer_1.FileContentViewer, { selectedFile: selectedFile, isVisible: true, onClose: () => {
+                                        setSelectedFile(null);
+                                        setActiveMainView('chat');
+                                    } })), activeMainView === 'editor' && !selectedFile && ((0, jsx_runtime_1.jsx)("div", { style: { padding: '20px', textAlign: 'center', color: 'var(--color-text-muted)' }, children: "Select a file from the explorer to view its content." }))] })),
+                        rightPanel: ((0, jsx_runtime_1.jsxs)("div", { style: { height: '100%', display: 'flex', flexDirection: 'column' }, children: [(0, jsx_runtime_1.jsx)("div", { style: {
+                                        display: 'flex',
+                                        backgroundColor: 'var(--color-bg-secondary)', // Use theme variable
+                                        borderBottom: '1px solid var(--color-border)' // Use theme variable
+                                    }, children: [
+                                        { id: 'workflow', label: 'Workflows', icon: '⚡' },
+                                        { id: 'tools', label: 'Tools', icon: '🛠️' },
+                                        { id: 'agents', label: 'Agents', icon: '🤖' },
+                                        { id: 'analytics', label: 'Analytics', icon: '📊' }
+                                    ].map(tab => ((0, jsx_runtime_1.jsxs)("button", { onClick: () => setActiveRightPanel(tab.id), style: {
+                                            flex: 1,
+                                            padding: '10px 8px', // Adjusted padding
+                                            border: 'none',
+                                            backgroundColor: activeRightPanel === tab.id ? 'var(--color-bg-tertiary)' : 'transparent',
+                                            color: activeRightPanel === tab.id ? 'var(--color-accent)' : 'var(--color-text-secondary)',
+                                            cursor: 'pointer',
+                                            fontSize: '12px',
+                                            fontWeight: activeRightPanel === tab.id ? '600' : '500',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            gap: '4px',
+                                            borderBottom: activeRightPanel === tab.id ? '2px solid var(--color-accent)' : '2px solid transparent',
+                                            transition: 'all 0.15s ease'
+                                        }, children: [tab.icon, " ", tab.label] }, tab.id))) }), (0, jsx_runtime_1.jsxs)("div", { style: { flex: 1, overflowY: 'auto' }, children: [" ", activeRightPanel === 'workflow' && (0, jsx_runtime_1.jsx)(visual_workflow_builder_1.VisualWorkflowBuilder, {}), activeRightPanel === 'tools' && (0, jsx_runtime_1.jsx)(comprehensive_tool_catalog_1.ComprehensiveToolCatalog, {}), activeRightPanel === 'agents' && (0, jsx_runtime_1.jsx)(specialized_agent_templates_1.SpecializedAgentTemplates, {}), activeRightPanel === 'analytics' && (0, jsx_runtime_1.jsx)(analytics_dashboard_1.AnalyticsDashboard, {})] })] })),
+                        bottomPanel: showToolPanel ? ((0, jsx_runtime_1.jsx)(tool_execution_panel_1.ToolExecutionPanel, { isVisible: showToolPanel, onClose: () => setShowToolPanel(false) })) : null
+                    } }) }), (0, jsx_runtime_1.jsx)("div", { className: "status-bar flex-shrink-0", children: (0, jsx_runtime_1.jsx)(status_bar_1.StatusBar, { currentMode: currentMode, connectionStatus: "connected", activeTools: [] }) }), (0, jsx_runtime_1.jsx)(tool_selector_1.ToolSelector, { isOpen: showAtSymbol, position: atSymbolPosition, operationalMode: operationalMode, onToolSelect: handleToolSelect, onClose: () => setShowAtSymbol(false) }), showProcessingTier && ((0, jsx_runtime_1.jsx)(processing_tier_indicator_1.ProcessingTierIndicator, { currentTier: currentTier, complexity: 6, estimatedDuration: 45, isActive: isProcessing, onTierSwitch: handleTierSwitch })), (0, jsx_runtime_1.jsx)(management_center_modal_1.ManagementCenterModal, { isOpen: showManagementCenter, onClose: () => setShowManagementCenter(false) })] }));
 };
 exports.IDELayout = IDELayout;
 //# sourceMappingURL=ide-layout.js.map

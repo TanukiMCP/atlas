@@ -1,54 +1,9 @@
 "use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ServerConfigManager = void 0;
-const react_1 = __importDefault(require("react"));
+const jsx_runtime_1 = require("react/jsx-runtime");
 const ServerConfigManager = () => {
-    return (<div className="server-config-manager p-6">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Server Management</h1>
-        <p className="text-gray-600 dark:text-gray-400">Configure and manage MCP servers</p>
-      </div>
-      
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-          <h2 className="text-lg font-semibold mb-4">Built-in MCP Server</h2>
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <span>Status</span>
-              <span className="px-2 py-1 bg-green-100 text-green-800 rounded text-sm">Running</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span>Port</span>
-              <span>3001</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span>Tools</span>
-              <span>47</span>
-            </div>
-          </div>
-        </div>
-        
-        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-          <h2 className="text-lg font-semibold mb-4">External Servers</h2>
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <span>Connected</span>
-              <span>3</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span>Total Tools</span>
-              <span>152</span>
-            </div>
-            <button className="w-full mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-              Add New Server
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>);
+    return ((0, jsx_runtime_1.jsxs)("div", { className: "server-config-manager p-6", children: [(0, jsx_runtime_1.jsxs)("div", { className: "mb-6", children: [(0, jsx_runtime_1.jsx)("h1", { className: "text-2xl font-bold text-gray-900 dark:text-white", children: "Server Management" }), (0, jsx_runtime_1.jsx)("p", { className: "text-gray-600 dark:text-gray-400", children: "Configure and manage MCP servers" })] }), (0, jsx_runtime_1.jsxs)("div", { className: "grid grid-cols-1 lg:grid-cols-2 gap-6", children: [(0, jsx_runtime_1.jsxs)("div", { className: "bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6", children: [(0, jsx_runtime_1.jsx)("h2", { className: "text-lg font-semibold mb-4", children: "Built-in MCP Server" }), (0, jsx_runtime_1.jsxs)("div", { className: "space-y-3", children: [(0, jsx_runtime_1.jsxs)("div", { className: "flex items-center justify-between", children: [(0, jsx_runtime_1.jsx)("span", { children: "Status" }), (0, jsx_runtime_1.jsx)("span", { className: "px-2 py-1 bg-green-100 text-green-800 rounded text-sm", children: "Running" })] }), (0, jsx_runtime_1.jsxs)("div", { className: "flex items-center justify-between", children: [(0, jsx_runtime_1.jsx)("span", { children: "Port" }), (0, jsx_runtime_1.jsx)("span", { children: "3001" })] }), (0, jsx_runtime_1.jsxs)("div", { className: "flex items-center justify-between", children: [(0, jsx_runtime_1.jsx)("span", { children: "Tools" }), (0, jsx_runtime_1.jsx)("span", { children: "47" })] })] })] }), (0, jsx_runtime_1.jsxs)("div", { className: "bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6", children: [(0, jsx_runtime_1.jsx)("h2", { className: "text-lg font-semibold mb-4", children: "External Servers" }), (0, jsx_runtime_1.jsxs)("div", { className: "space-y-3", children: [(0, jsx_runtime_1.jsxs)("div", { className: "flex items-center justify-between", children: [(0, jsx_runtime_1.jsx)("span", { children: "Connected" }), (0, jsx_runtime_1.jsx)("span", { children: "3" })] }), (0, jsx_runtime_1.jsxs)("div", { className: "flex items-center justify-between", children: [(0, jsx_runtime_1.jsx)("span", { children: "Total Tools" }), (0, jsx_runtime_1.jsx)("span", { children: "152" })] }), (0, jsx_runtime_1.jsx)("button", { className: "w-full mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700", children: "Add New Server" })] })] })] })] }));
 };
 exports.ServerConfigManager = ServerConfigManager;
 //# sourceMappingURL=server-config-manager.js.map

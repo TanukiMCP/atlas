@@ -20,16 +20,17 @@ function createWindow() {
         minHeight: 768,
         center: true,
         // Window appearance
-        titleBarStyle: 'hiddenInset', // macOS-style title bar
+        titleBarStyle: process.platform === 'darwin' ? 'hiddenInset' : 'default',
         frame: true,
         transparent: false,
         backgroundColor: '#1a1a1a', // Dark theme background
+        vibrancy: process.platform === 'darwin' ? 'under-window' : undefined,
         // Security settings
         webPreferences: {
             nodeIntegration: false, // Disable node integration in renderer
             contextIsolation: true, // Enable context isolation
             sandbox: false, // Disable sandbox for better performance
-            preload: path_1.default.join(__dirname, 'preload.js'), // Will be created later
+            preload: path_1.default.join(__dirname, 'preload.js'),
             webSecurity: true, // Enable web security
             allowRunningInsecureContent: false,
             experimentalFeatures: false,
@@ -41,6 +42,7 @@ function createWindow() {
         // Performance settings
         show: false, // Don't show until ready
         paintWhenInitiallyHidden: false,
+        backgroundThrottling: false, // Keep app responsive when in background
         // Window behavior
         autoHideMenuBar: false, // Keep menu bar visible for IDE functionality
         fullscreenable: true,

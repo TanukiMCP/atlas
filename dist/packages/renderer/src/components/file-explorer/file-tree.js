@@ -1,40 +1,8 @@
 "use strict";
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || (function () {
-    var ownKeys = function(o) {
-        ownKeys = Object.getOwnPropertyNames || function (o) {
-            var ar = [];
-            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
-            return ar;
-        };
-        return ownKeys(o);
-    };
-    return function (mod) {
-        if (mod && mod.__esModule) return mod;
-        var result = {};
-        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
-        __setModuleDefault(result, mod);
-        return result;
-    };
-})();
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.FileExplorer = void 0;
-const react_1 = __importStar(require("react"));
+const jsx_runtime_1 = require("react/jsx-runtime");
+const react_1 = require("react");
 const file_service_1 = require("../../services/file-service");
 const FileExplorer = ({ onFileSelect }) => {
     const [selectedFile, setSelectedFile] = (0, react_1.useState)('src/App.tsx');
@@ -97,48 +65,27 @@ const FileExplorer = ({ onFileSelect }) => {
         const isSelected = selectedFile === item.path;
         const isExpanded = expandedFolders.has(item.path);
         const children = loadedDirectories.get(item.path) || [];
-        return (<div key={item.path}>
-        <div className={`file-item ${item.type} ${isSelected ? 'selected' : ''}`} style={{ paddingLeft: `${level * 24 + 12}px` }} onClick={() => handleFileClick(item)}>
-          <span style={{
-                fontSize: '14px',
-                color: item.type === 'directory'
-                    ? 'var(--color-accent-secondary)'
-                    : item.extension === 'tsx' || item.extension === 'ts'
-                        ? 'var(--color-accent)'
-                        : 'var(--color-text-muted)'
-            }}>
-            {getFileIcon(item)}
-          </span>
-          <span>{item.name}</span>
-          {item.type === 'file' && item.size && (<span style={{
-                    fontSize: '10px',
-                    color: 'var(--color-text-muted)',
-                    marginLeft: 'auto',
-                    opacity: 0.7
-                }}>
-              {(item.size / 1024).toFixed(1)}KB
-            </span>)}
-        </div>
-        
-        {item.type === 'directory' && isExpanded && children.length > 0 && (<div>
-            {children.map(child => renderFileItem(child, level + 1))}
-          </div>)}
-      </div>);
+        return ((0, jsx_runtime_1.jsxs)("div", { children: [(0, jsx_runtime_1.jsxs)("div", { className: `file-item ${item.type} ${isSelected ? 'selected' : ''}`, style: { paddingLeft: `${level * 24 + 12}px` }, onClick: () => handleFileClick(item), children: [(0, jsx_runtime_1.jsx)("span", { style: {
+                                fontSize: '14px',
+                                color: item.type === 'directory'
+                                    ? 'var(--color-accent-secondary)'
+                                    : item.extension === 'tsx' || item.extension === 'ts'
+                                        ? 'var(--color-accent)'
+                                        : 'var(--color-text-muted)'
+                            }, children: getFileIcon(item) }), (0, jsx_runtime_1.jsx)("span", { children: item.name }), item.type === 'file' && item.size && ((0, jsx_runtime_1.jsxs)("span", { style: {
+                                fontSize: '10px',
+                                color: 'var(--color-text-muted)',
+                                marginLeft: 'auto',
+                                opacity: 0.7
+                            }, children: [(item.size / 1024).toFixed(1), "KB"] }))] }), item.type === 'directory' && isExpanded && children.length > 0 && ((0, jsx_runtime_1.jsx)("div", { children: children.map(child => renderFileItem(child, level + 1)) }))] }, item.path));
     };
-    return (<div className="file-explorer">
-      <div className="file-tree custom-scrollbar">
-        {fileStructure.map(item => renderFileItem(item))}
-      </div>
-      {selectedFile && (<div style={{
-                padding: '12px',
-                borderTop: '1px solid var(--color-border)',
-                backgroundColor: 'var(--color-bg-tertiary)',
-                fontSize: '12px',
-                color: 'var(--color-text-muted)'
-            }}>
-          Selected: {selectedFile}
-        </div>)}
-    </div>);
+    return ((0, jsx_runtime_1.jsxs)("div", { className: "file-explorer", children: [(0, jsx_runtime_1.jsx)("div", { className: "file-tree custom-scrollbar", children: fileStructure.map(item => renderFileItem(item)) }), selectedFile && ((0, jsx_runtime_1.jsxs)("div", { style: {
+                    padding: '12px',
+                    borderTop: '1px solid var(--color-border)',
+                    backgroundColor: 'var(--color-bg-tertiary)',
+                    fontSize: '12px',
+                    color: 'var(--color-text-muted)'
+                }, children: ["Selected: ", selectedFile] }))] }));
 };
 exports.FileExplorer = FileExplorer;
 //# sourceMappingURL=file-tree.js.map

@@ -1,12 +1,10 @@
 import React from 'react';
-export type ProcessingTier = 'ATOMIC' | 'MODERATE' | 'COMPLEX' | 'EXPERT';
 interface ProcessingTierIndicatorProps {
-    currentTier: ProcessingTier;
-    complexity: number;
-    estimatedDuration: number;
-    actualDuration?: number;
+    currentTier: 'basic' | 'advanced' | 'premium' | 'enterprise';
     isActive: boolean;
-    onTierSwitch?: (tier: ProcessingTier) => void;
+    complexity: number;
+    estimatedTime?: string;
+    queuePosition?: number;
 }
 export declare const ProcessingTierIndicator: React.FC<ProcessingTierIndicatorProps>;
 export {};

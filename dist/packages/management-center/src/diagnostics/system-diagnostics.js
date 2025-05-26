@@ -1,44 +1,9 @@
 "use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.SystemDiagnostics = void 0;
-const react_1 = __importDefault(require("react"));
+const jsx_runtime_1 = require("react/jsx-runtime");
 const SystemDiagnostics = () => {
-    return (<div className="system-diagnostics p-6">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">System Diagnostics</h1>
-        <p className="text-gray-600 dark:text-gray-400">Advanced troubleshooting and system analysis</p>
-      </div>
-      
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-          <h2 className="text-lg font-semibold mb-4">System Logs</h2>
-          <div className="space-y-2 font-mono text-sm">
-            <div className="text-green-600">[INFO] System startup completed</div>
-            <div className="text-blue-600">[DEBUG] MCP server connection established</div>
-            <div className="text-yellow-600">[WARN] High memory usage detected</div>
-            <div className="text-gray-600">[INFO] Tool catalog refreshed</div>
-          </div>
-        </div>
-        
-        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-          <h2 className="text-lg font-semibold mb-4">Diagnostic Tools</h2>
-          <div className="space-y-3">
-            <button className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-              Run Health Check
-            </button>
-            <button className="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
-              Test All Connections
-            </button>
-            <button className="w-full px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700">
-              Generate Report
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>);
+    return ((0, jsx_runtime_1.jsxs)("div", { className: "system-diagnostics p-6", children: [(0, jsx_runtime_1.jsxs)("div", { className: "mb-6", children: [(0, jsx_runtime_1.jsx)("h1", { className: "text-2xl font-bold text-gray-900 dark:text-white", children: "System Diagnostics" }), (0, jsx_runtime_1.jsx)("p", { className: "text-gray-600 dark:text-gray-400", children: "Advanced troubleshooting and system analysis" })] }), (0, jsx_runtime_1.jsxs)("div", { className: "grid grid-cols-1 lg:grid-cols-2 gap-6", children: [(0, jsx_runtime_1.jsxs)("div", { className: "bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6", children: [(0, jsx_runtime_1.jsx)("h2", { className: "text-lg font-semibold mb-4", children: "System Logs" }), (0, jsx_runtime_1.jsxs)("div", { className: "space-y-2 font-mono text-sm", children: [(0, jsx_runtime_1.jsx)("div", { className: "text-green-600", children: "[INFO] System startup completed" }), (0, jsx_runtime_1.jsx)("div", { className: "text-blue-600", children: "[DEBUG] MCP server connection established" }), (0, jsx_runtime_1.jsx)("div", { className: "text-yellow-600", children: "[WARN] High memory usage detected" }), (0, jsx_runtime_1.jsx)("div", { className: "text-gray-600", children: "[INFO] Tool catalog refreshed" })] })] }), (0, jsx_runtime_1.jsxs)("div", { className: "bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6", children: [(0, jsx_runtime_1.jsx)("h2", { className: "text-lg font-semibold mb-4", children: "Diagnostic Tools" }), (0, jsx_runtime_1.jsxs)("div", { className: "space-y-3", children: [(0, jsx_runtime_1.jsx)("button", { className: "w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700", children: "Run Health Check" }), (0, jsx_runtime_1.jsx)("button", { className: "w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700", children: "Test All Connections" }), (0, jsx_runtime_1.jsx)("button", { className: "w-full px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700", children: "Generate Report" })] })] })] })] }));
 };
 exports.SystemDiagnostics = SystemDiagnostics;
 //# sourceMappingURL=system-diagnostics.js.map

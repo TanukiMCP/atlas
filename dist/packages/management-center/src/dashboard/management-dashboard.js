@@ -1,40 +1,8 @@
 "use strict";
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || (function () {
-    var ownKeys = function(o) {
-        ownKeys = Object.getOwnPropertyNames || function (o) {
-            var ar = [];
-            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
-            return ar;
-        };
-        return ownKeys(o);
-    };
-    return function (mod) {
-        if (mod && mod.__esModule) return mod;
-        var result = {};
-        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
-        __setModuleDefault(result, mod);
-        return result;
-    };
-})();
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ManagementDashboard = void 0;
-const react_1 = __importStar(require("react"));
+const jsx_runtime_1 = require("react/jsx-runtime");
+const react_1 = require("react");
 const system_overview_1 = require("./system-overview");
 const server_config_manager_1 = require("../server-management/server-config-manager");
 const tool_catalog_browser_1 = require("../tool-catalog/tool-catalog-browser");
@@ -69,52 +37,9 @@ const ManagementDashboard = () => {
     };
     const selectedComponent = navigationItems.find(item => item.id === selectedView)?.component;
     const SelectedComponent = selectedComponent || system_overview_1.SystemOverview;
-    return (<div className="management-dashboard h-screen flex bg-gray-50 dark:bg-gray-900">
-      {/* Sidebar Navigation */}
-      <div className="w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700">
-        <div className="p-6">
-          <div className="flex items-center space-x-3 mb-8">
-            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center text-white font-bold text-lg">
-              T
-            </div>
-            <div>
-              <h1 className="text-xl font-semibold">TanukiMCP</h1>
-              <p className="text-sm text-gray-500">Management Center</p>
-            </div>
-          </div>
-          
-          {/* System Status Card */}
-          <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium">System Status</span>
-              <div className={`w-2 h-2 rounded-full ${systemHealth?.status === 'healthy' ? 'bg-green-500' : 'bg-red-500'}`}/>
-            </div>
-            <div className="text-xs text-gray-600 dark:text-gray-400">
-              {systemHealth ? (<div className="space-y-1">
-                  <div>Uptime: {formatUptime(systemHealth.uptime)}</div>
-                  <div>CPU: {systemHealth.cpu.usage}%</div>
-                  <div>Memory: {systemHealth.memory.usage}%</div>
-                </div>) : (<div>Loading system status...</div>)}
-            </div>
-          </div>
-          
-          {/* Navigation Menu */}
-          <nav className="space-y-2">
-            {navigationItems.map((item) => (<button key={item.id} onClick={() => setSelectedView(item.id)} className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors ${selectedView === item.id
-                ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400'
-                : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'}`}>
-                <span className="text-lg">{item.icon}</span>
-                <span className="font-medium">{item.label}</span>
-              </button>))}
-          </nav>
-        </div>
-      </div>
-
-      {/* Main Content Area */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <SelectedComponent />
-      </div>
-    </div>);
+    return ((0, jsx_runtime_1.jsxs)("div", { className: "management-dashboard h-screen flex bg-gray-50 dark:bg-gray-900", children: [(0, jsx_runtime_1.jsx)("div", { className: "w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700", children: (0, jsx_runtime_1.jsxs)("div", { className: "p-6", children: [(0, jsx_runtime_1.jsxs)("div", { className: "flex items-center space-x-3 mb-8", children: [(0, jsx_runtime_1.jsx)("div", { className: "w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center text-white font-bold text-lg", children: "T" }), (0, jsx_runtime_1.jsxs)("div", { children: [(0, jsx_runtime_1.jsx)("h1", { className: "text-xl font-semibold", children: "TanukiMCP" }), (0, jsx_runtime_1.jsx)("p", { className: "text-sm text-gray-500", children: "Management Center" })] })] }), (0, jsx_runtime_1.jsxs)("div", { className: "mb-6 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg", children: [(0, jsx_runtime_1.jsxs)("div", { className: "flex items-center justify-between mb-2", children: [(0, jsx_runtime_1.jsx)("span", { className: "text-sm font-medium", children: "System Status" }), (0, jsx_runtime_1.jsx)("div", { className: `w-2 h-2 rounded-full ${systemHealth?.status === 'healthy' ? 'bg-green-500' : 'bg-red-500'}` })] }), (0, jsx_runtime_1.jsx)("div", { className: "text-xs text-gray-600 dark:text-gray-400", children: systemHealth ? ((0, jsx_runtime_1.jsxs)("div", { className: "space-y-1", children: [(0, jsx_runtime_1.jsxs)("div", { children: ["Uptime: ", formatUptime(systemHealth.uptime)] }), (0, jsx_runtime_1.jsxs)("div", { children: ["CPU: ", systemHealth.cpu.usage, "%"] }), (0, jsx_runtime_1.jsxs)("div", { children: ["Memory: ", systemHealth.memory.usage, "%"] })] })) : ((0, jsx_runtime_1.jsx)("div", { children: "Loading system status..." })) })] }), (0, jsx_runtime_1.jsx)("nav", { className: "space-y-2", children: navigationItems.map((item) => ((0, jsx_runtime_1.jsxs)("button", { onClick: () => setSelectedView(item.id), className: `w-full flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors ${selectedView === item.id
+                                    ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400'
+                                    : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'}`, children: [(0, jsx_runtime_1.jsx)("span", { className: "text-lg", children: item.icon }), (0, jsx_runtime_1.jsx)("span", { className: "font-medium", children: item.label })] }, item.id))) })] }) }), (0, jsx_runtime_1.jsx)("div", { className: "flex-1 flex flex-col overflow-hidden", children: (0, jsx_runtime_1.jsx)(SelectedComponent, {}) })] }));
 };
 exports.ManagementDashboard = ManagementDashboard;
 //# sourceMappingURL=management-dashboard.js.map

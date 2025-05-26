@@ -1,220 +1,126 @@
 import React from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
+import { Progress } from '../ui/progress';
+import { Badge } from '../ui/badge';
+import { Button } from '../ui/button';
+import { X, CheckCircle, XCircle, Clock, Zap } from 'lucide-react';
 
-interface Task {
+interface ProgressStep {
   id: string;
-  title: string;
-  status: 'pending' | 'active' | 'completed' | 'failed';
-  progress: number; // 0-1
+  label: string;
+  status: 'pending' | 'running' | 'completed' | 'failed';
+  progress?: number;
+  details?: string;
 }
 
 interface ProgressTrackerProps {
   isVisible: boolean;
-  currentTier: 'ATOMIC' | 'MODERATE' | 'COMPLEX' | 'EXPERT';
-  overallProgress: number; // 0-1
-  tasks: Task[];
-  qualityScore?: number; // 0-1
+  title: string;
+  steps: ProgressStep[];
+  currentTier: 'basic' | 'advanced' | 'premium';
+  onClose: () => void;
 }
 
 export const ProgressTracker: React.FC<ProgressTrackerProps> = ({
   isVisible,
+  title,
+  steps,
   currentTier,
-  overallProgress,
-  tasks,
-  qualityScore
+  onClose
 }) => {
-  if (!isVisible) return null;
-
-  const getTierIcon = (tier: string) => {
-    switch (tier) {
-      case 'ATOMIC': return '⚡';
-      case 'MODERATE': return '🔧';
-      case 'COMPLEX': return '🧠';
-      case 'EXPERT': return '🎓';
-      default: return '⚙️';
-    }
-  };
-
-  const getTierColor = (tier: string) => {
-    switch (tier) {
-      case 'ATOMIC': return '#4CAF50';
-      case 'MODERATE': return '#FF9800';
-      case 'COMPLEX': return '#2196F3';
-      case 'EXPERT': return '#9C27B0';
-      default: return 'var(--color-accent)';
-    }
+  const getTierConfig = (tier: string) => {
+    const configs = {
+      basic: { color: 'bg-blue-500', icon: '🔵', label: 'Basic' },
+      advanced: { color: 'bg-purple-500', icon: '🟣', label: 'Advanced' },
+      premium: { color: 'bg-orange-500', icon: '🟠', label: 'Premium' }
+    };
+    return configs[tier as keyof typeof configs] || configs.basic;
   };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'pending': return '⏳';
-      case 'active': return '▶️';
-      case 'completed': return '✅';
-      case 'failed': return '❌';
-      default: return '⚪';
+      case 'running': return <Clock className="h-4 w-4 text-blue-500 animate-spin" />;
+      case 'completed': return <CheckCircle className="h-4 w-4 text-green-500" />;
+      case 'failed': return <XCircle className="h-4 w-4 text-red-500" />;
+      default: return <div className="h-4 w-4 rounded-full bg-gray-300" />;
     }
   };
 
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'running': return 'text-blue-600';
+      case 'completed': return 'text-green-600';
+      case 'failed': return 'text-red-600';
+      default: return 'text-gray-500';
+    }
+  };
+
+  const overallProgress = steps.length > 0 
+    ? (steps.filter(s => s.status === 'completed').length / steps.length) * 100 
+    : 0;
+
+  const tierConfig = getTierConfig(currentTier);
+
+  if (!isVisible) return null;
+
   return (
-    <div style={{
-      position: 'fixed',
-      top: '100px',
-      right: '20px',
-      width: '300px',
-      backgroundColor: 'var(--color-bg-primary)',
-      border: '1px solid var(--color-border)',
-      borderRadius: 'var(--radius-lg)',
-      boxShadow: 'var(--shadow-lg)',
-      zIndex: 100,
-      overflow: 'hidden'
-    }}>
-      {/* Header */}
-      <div style={{
-        padding: '12px 16px',
-        backgroundColor: 'var(--color-bg-secondary)',
-        borderBottom: '1px solid var(--color-border)'
-      }}>
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          marginBottom: '8px'
-        }}>
-          <div style={{
-            fontSize: '14px',
-            fontWeight: '600',
-            color: 'var(--color-text-primary)'
-          }}>
-            Processing Status
+    <div className="fixed top-24 right-5 w-80 z-50">
+      <Card className="shadow-lg">
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-sm font-semibold">
+              {title || 'Processing Status'}
+            </CardTitle>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onClose}
+              className="h-6 w-6 p-0"
+            >
+              <X className="h-4 w-4" />
+            </Button>
           </div>
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-            padding: '4px 8px',
-            backgroundColor: getTierColor(currentTier),
-            color: 'white',
-            borderRadius: 'var(--radius-sm)',
-            fontSize: '12px',
-            fontWeight: '500'
-          }}>
-            <span>{getTierIcon(currentTier)}</span>
-            <span>{currentTier}</span>
-          </div>
-        </div>
-
-        {/* Overall Progress */}
-        <div style={{
-          marginBottom: '8px'
-        }}>
-          <div style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            marginBottom: '4px'
-          }}>
-            <span style={{
-              fontSize: '12px',
-              color: 'var(--color-text-secondary)'
-            }}>
-              Overall Progress
-            </span>
-            <span style={{
-              fontSize: '12px',
-              fontWeight: '500',
-              color: 'var(--color-text-primary)'
-            }}>
-              {Math.round(overallProgress * 100)}%
+          <div className="flex items-center justify-between">
+            <Badge 
+              className={`${tierConfig.color} text-white text-xs`}
+            >
+              <span className="mr-1">{tierConfig.icon}</span>
+              {tierConfig.label} Tier
+            </Badge>
+            <span className="text-xs text-muted-foreground">
+              {Math.round(overallProgress)}% Complete
             </span>
           </div>
-          <div style={{
-            width: '100%',
-            height: '6px',
-            backgroundColor: 'var(--color-bg-quaternary)',
-            borderRadius: '3px',
-            overflow: 'hidden'
-          }}>
-            <div style={{
-              width: `${overallProgress * 100}%`,
-              height: '100%',
-              backgroundColor: 'var(--color-accent)',
-              transition: 'width 0.3s ease'
-            }} />
-          </div>
-        </div>
-
-        {/* Quality Score */}
-        {qualityScore !== undefined && (
-          <div style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            fontSize: '12px'
-          }}>
-            <span style={{ color: 'var(--color-text-secondary)' }}>
-              Quality Score
-            </span>
-            <span style={{
-              fontWeight: '500',
-              color: qualityScore > 0.8 ? 'var(--color-success)' : 
-                     qualityScore > 0.6 ? 'var(--color-warning)' : 'var(--color-error)'
-            }}>
-              {Math.round(qualityScore * 100)}%
-            </span>
-          </div>
-        )}
-      </div>
-
-      {/* Task List */}
-      <div style={{
-        maxHeight: '200px',
-        overflowY: 'auto',
-        padding: '8px'
-      }}>
-        {tasks.map((task) => (
-          <div
-            key={task.id}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              padding: '8px',
-              borderRadius: 'var(--radius-md)',
-              backgroundColor: task.status === 'active' ? 'var(--color-bg-tertiary)' : 'transparent',
-              marginBottom: '4px'
-            }}
-          >
-            <span style={{ fontSize: '14px' }}>
-              {getStatusIcon(task.status)}
-            </span>
-            <div style={{ flex: 1 }}>
-              <div style={{
-                fontSize: '13px',
-                fontWeight: task.status === 'active' ? '500' : '400',
-                color: 'var(--color-text-primary)',
-                marginBottom: '2px'
-              }}>
-                {task.title}
+          <Progress value={overallProgress} className="h-2" />
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {steps.map((step, index) => (
+            <div key={step.id} className="flex items-start gap-3">
+              <div className="mt-0.5">
+                {getStatusIcon(step.status)}
               </div>
-              {task.status === 'active' && (
-                <div style={{
-                  width: '100%',
-                  height: '3px',
-                  backgroundColor: 'var(--color-bg-quaternary)',
-                  borderRadius: '1.5px',
-                  overflow: 'hidden'
-                }}>
-                  <div style={{
-                    width: `${task.progress * 100}%`,
-                    height: '100%',
-                    backgroundColor: 'var(--color-accent)',
-                    transition: 'width 0.3s ease'
-                  }} />
+              <div className="flex-1 min-w-0">
+                <div className={`text-sm font-medium ${getStatusColor(step.status)}`}>
+                  {step.label}
                 </div>
-              )}
+                {step.details && (
+                  <div className="text-xs text-muted-foreground mt-1">
+                    {step.details}
+                  </div>
+                )}
+                {step.status === 'running' && step.progress !== undefined && (
+                  <Progress value={step.progress} className="h-1 mt-2" />
+                )}
+              </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+          {steps.length === 0 && (
+            <div className="text-center py-4 text-muted-foreground text-sm">
+              No active processes
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 };

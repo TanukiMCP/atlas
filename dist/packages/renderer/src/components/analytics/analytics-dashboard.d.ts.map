@@ -1,1 +1,1 @@
-{"version":3,"file":"analytics-dashboard.d.ts","sourceRoot":"","sources":["../../../../../../packages/renderer/src/components/analytics/analytics-dashboard.tsx"],"names":[],"mappings":"AAAA,OAAO,KAAmB,MAAM,OAAO,CAAC;AAuBxC,eAAO,MAAM,kBAAkB,EAAE,KAAK,CAAC,EAsEtC,CAAC"}
+{"version":3,"file":"analytics-dashboard.d.ts","sourceRoot":"","sources":["../../../../../../packages/renderer/src/components/analytics/analytics-dashboard.tsx"],"names":[],"mappings":"AAAA,OAAO,KAAmB,MAAM,OAAO,CAAC;AAyBxC,eAAO,MAAM,kBAAkB,EAAE,KAAK,CAAC,EA0DtC,CAAC"}
