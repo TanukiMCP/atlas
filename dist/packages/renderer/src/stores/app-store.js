@@ -1,23 +1,26 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.useSubjectMode = exports.useTools = exports.useLayout = exports.useChat = exports.useFiles = exports.useTheme = exports.useAppStore = void 0;
+exports.useStatusIndicators = exports.useProject = exports.useNotifications = exports.useSubjectMode = exports.useTools = exports.useLayout = exports.useChat = exports.useFiles = exports.useTheme = exports.useAppStore = void 0;
 const zustand_1 = require("zustand");
-const middleware_1 = require("zustand/middleware");
-exports.useAppStore = (0, zustand_1.create)()((0, middleware_1.persist)((set, get) => ({
+exports.useAppStore = (0, zustand_1.create)()((set, get) => ({
     // Theme
     theme: 'dark',
     setTheme: (theme) => set({ theme }),
     // Layout
     sidebarCollapsed: false,
     setSidebarCollapsed: (collapsed) => set({ sidebarCollapsed: collapsed }),
+    isSidebarVisible: true,
+    setSidebarVisible: (isVisible) => set({ isSidebarVisible: isVisible }),
     activeTab: 'chat',
     setActiveTab: (tab) => set({ activeTab: tab }),
+    currentView: 'welcome',
+    setCurrentView: (view) => set({ currentView: view }),
     // Files
     files: [],
     selectedFile: null,
     setFiles: (files) => set({ files }),
     setSelectedFile: (file) => set({ selectedFile: file }),
-    // Chat
+    // Chat & Sessions
     messages: [
         {
             id: '1',
@@ -30,19 +33,41 @@ exports.useAppStore = (0, zustand_1.create)()((0, middleware_1.persist)((set, ge
         messages: [...state.messages, message]
     })),
     clearMessages: () => set({ messages: [] }),
+    currentChatSessionId: null,
+    setCurrentChatSessionId: (sessionId) => set({ currentChatSessionId: sessionId }),
+    // Project
+    currentProjectId: null,
+    setCurrentProjectId: (projectId) => set({ currentProjectId: projectId }),
     // Tools
     showToolSelector: false,
     setShowToolSelector: (show) => set({ showToolSelector: show }),
     // Subject Mode
     currentSubjectMode: 'Mathematics',
     setCurrentSubjectMode: (mode) => set({ currentSubjectMode: mode }),
-}), {
-    name: 'tanukimcp-atlas-store',
-    partialize: (state) => ({
-        theme: state.theme,
-        sidebarCollapsed: state.sidebarCollapsed,
-        currentSubjectMode: state.currentSubjectMode,
-    }),
+    // Notifications
+    notifications: [],
+    addNotification: (notificationContent) => set((state) => ({
+        notifications: [
+            ...state.notifications,
+            {
+                id: `notif-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+                timestamp: new Date(),
+                ...notificationContent,
+            },
+        ],
+    })),
+    removeNotification: (id) => set((state) => ({
+        notifications: state.notifications.filter(n => n.id !== id),
+    })),
+    // Global Loaders & Errors
+    isLoading: {},
+    setLoading: (key, isLoading) => set((state) => ({
+        isLoading: { ...state.isLoading, [key]: isLoading },
+    })),
+    errors: {},
+    setError: (key, error) => set((state) => ({
+        errors: { ...state.errors, [key]: error },
+    })),
 }));
 // Convenience hooks for specific parts of the store
 const useTheme = () => (0, exports.useAppStore)(state => ({ theme: state.theme, setTheme: state.setTheme }));
@@ -57,14 +82,20 @@ exports.useFiles = useFiles;
 const useChat = () => (0, exports.useAppStore)(state => ({
     messages: state.messages,
     addMessage: state.addMessage,
-    clearMessages: state.clearMessages
+    clearMessages: state.clearMessages,
+    currentChatSessionId: state.currentChatSessionId,
+    setCurrentChatSessionId: state.setCurrentChatSessionId
 }));
 exports.useChat = useChat;
 const useLayout = () => (0, exports.useAppStore)(state => ({
     sidebarCollapsed: state.sidebarCollapsed,
     setSidebarCollapsed: state.setSidebarCollapsed,
+    isSidebarVisible: state.isSidebarVisible,
+    setSidebarVisible: state.setSidebarVisible,
     activeTab: state.activeTab,
-    setActiveTab: state.setActiveTab
+    setActiveTab: state.setActiveTab,
+    currentView: state.currentView,
+    setCurrentView: state.setCurrentView
 }));
 exports.useLayout = useLayout;
 const useTools = () => (0, exports.useAppStore)(state => ({
@@ -77,4 +108,23 @@ const useSubjectMode = () => (0, exports.useAppStore)(state => ({
     setCurrentSubjectMode: state.setCurrentSubjectMode
 }));
 exports.useSubjectMode = useSubjectMode;
+// Added convenience hooks for new state slices
+const useNotifications = () => (0, exports.useAppStore)(state => ({
+    notifications: state.notifications,
+    addNotification: state.addNotification,
+    removeNotification: state.removeNotification,
+}));
+exports.useNotifications = useNotifications;
+const useProject = () => (0, exports.useAppStore)(state => ({
+    currentProjectId: state.currentProjectId,
+    setCurrentProjectId: state.setCurrentProjectId,
+}));
+exports.useProject = useProject;
+const useStatusIndicators = () => (0, exports.useAppStore)(state => ({
+    isLoading: state.isLoading,
+    setLoading: state.setLoading,
+    errors: state.errors,
+    setError: state.setError,
+}));
+exports.useStatusIndicators = useStatusIndicators;
 //# sourceMappingURL=app-store.js.map

@@ -1,6 +1,7 @@
 /**
  * MCP Service - Real tool integration for TanukiMCP Atlas
  * Handles tool discovery, execution, and result management
+ * Now integrated with real MCP client
  */
 export interface MCPTool {
     name: string;

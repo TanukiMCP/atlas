@@ -59,6 +59,8 @@ import {
 import { cn, formatTimeAgo, formatFileSize, truncateText } from '../../lib/utils';
 import { fileService, FileContent, FileInfo, getFileTypeIcon } from '../../services/file-service';
 import { LLMStatus } from '../llm/llm-status';
+import { MCPServersTab } from '../mcp/MCPServersTab';
+import { MCPAvailableToolsTab } from '../mcp/MCPAvailableToolsTab';
 
 // Type definitions
 interface ChatMessage {
@@ -67,6 +69,7 @@ interface ChatMessage {
   content: string;
   timestamp: Date;
   tools?: string[];
+  streaming?: boolean;
 }
 
 // Use FileNode from store (type: 'file' | 'folder')
@@ -593,7 +596,7 @@ export const ModernIDELayout: React.FC = () => {
           )}
           </ResizablePanel>
 
-          <ResizableHandle withHandle />
+          <ResizableHandle />
 
           {/* Main Panel */}
           <ResizablePanel defaultSize={60} minSize={40} className="flex flex-col">
@@ -626,7 +629,7 @@ export const ModernIDELayout: React.FC = () => {
                   </div>
                 </CardHeader>
                 
-                <CardContent className="flex-1 flex flex-col">
+                <CardContent className="flex-1 flex flex-col overflow-hidden">
                   <ScrollArea className="flex-1 pr-4">
                     {(!currentSession?.messages || currentSession.messages.length === 0) ? (
                       <div className="flex-1 flex items-center justify-center">
@@ -848,89 +851,26 @@ export const ModernIDELayout: React.FC = () => {
           </Tabs>
           </ResizablePanel>
 
-          <ResizableHandle withHandle />
+          <ResizableHandle />
 
           {/* Secondary Panel */}
           <ResizablePanel defaultSize={20} minSize={15} maxSize={35} className="panel-container">
           <div className="panel-header">
-            <span>Tools & Analytics</span>
+            <span>MCP Hub</span>
           </div>
           <div className="panel-content">
-            <Tabs defaultValue="tools" className="h-full">
+            <Tabs defaultValue="servers" className="h-full flex flex-col">
               <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="tools">Tools</TabsTrigger>
-                <TabsTrigger value="analytics">Analytics</TabsTrigger>
+                <TabsTrigger value="servers">Servers</TabsTrigger>
+                <TabsTrigger value="available_tools">Available Tools</TabsTrigger>
               </TabsList>
               
-              <TabsContent value="tools" className="space-y-3">
-                <div className="p-2">
-                  <Input placeholder="Search tools..." className="mb-3" />
-                  
-                  {Object.entries(
-                    availableTools.reduce((acc, tool) => {
-                      if (!acc[tool.category]) acc[tool.category] = [];
-                      acc[tool.category].push(tool);
-                      return acc;
-                    }, {} as Record<string, Tool[]>)
-                  ).map(([category, tools]) => (
-                    <div key={category} className="space-y-2">
-                      <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                        {category}
-                      </h4>
-                      {tools.map(tool => (
-                        <div key={tool.id} className="flex items-center gap-2 p-2 rounded hover:bg-accent/50 cursor-pointer">
-                          {tool.icon}
-                          <div className="flex-1">
-                            <div className="text-sm font-medium">{tool.name}</div>
-                            <div className="text-xs text-muted-foreground">{tool.description}</div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ))}
-                </div>
+              <TabsContent value="servers" className="flex-1 overflow-y-auto">
+                <MCPServersTab />
               </TabsContent>
               
-              <TabsContent value="analytics" className="space-y-3">
-                <div className="p-2 space-y-4">
-                  <Card>
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-sm">Usage Statistics</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-2">
-                      <div className="flex justify-between text-sm">
-                        <span>Messages today</span>
-                        <span className="font-medium">23</span>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span>Tools executed</span>
-                        <span className="font-medium">8</span>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span>Files modified</span>
-                        <span className="font-medium">5</span>
-                      </div>
-                    </CardContent>
-                  </Card>
-                  
-                  <Card>
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-sm">Recent Activity</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-2">
-                      {[
-                        { action: 'Created todolist', time: '2 min ago' },
-                        { action: 'Modified App.tsx', time: '5 min ago' },
-                        { action: 'Ran code analysis', time: '10 min ago' }
-                      ].map((activity, i) => (
-                        <div key={i} className="flex justify-between text-sm">
-                          <span className="text-muted-foreground">{activity.action}</span>
-                          <span className="text-xs">{activity.time}</span>
-                        </div>
-                      ))}
-                    </CardContent>
-                  </Card>
-                </div>
+              <TabsContent value="available_tools" className="flex-1 overflow-y-auto">
+                <MCPAvailableToolsTab />
               </TabsContent>
             </Tabs>
           </div>

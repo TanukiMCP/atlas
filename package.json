@@ -29,6 +29,7 @@
     "deploy:netlify": "cd packages/renderer && netlify deploy --prod"
   },
   "devDependencies": {
+    "@electron/rebuild": "^4.0.1",
     "@types/node": "^20.10.0",
     "electron": "^28.0.0",
     "electron-builder": "^24.9.1",
@@ -109,7 +110,9 @@
       "protocols": [
         {
           "name": "TanukiMCP Protocol",
-          "schemes": ["tanukimcp"]
+          "schemes": [
+            "tanukimcp"
+          ]
         }
       ]
     },

@@ -3,6 +3,7 @@ interface StatusBarProps {
     currentMode: string;
     connectionStatus: string;
     activeTools: string[];
+    workflowExecutionService?: any;
 }
 export declare const StatusBar: React.FC<StatusBarProps>;
 export {};

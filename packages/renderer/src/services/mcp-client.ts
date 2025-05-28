@@ -8,11 +8,13 @@ export interface MCPServer {
   name: string;
   url: string;
   protocol: 'websocket' | 'http';
-  status: 'connected' | 'disconnected' | 'connecting' | 'error';
+  status: MCPServerStatus;
   lastPing?: Date;
   error?: string;
   capabilities?: string[];
 }
+
+export type MCPServerStatus = 'connected' | 'disconnected' | 'connecting' | 'error';
 
 export interface MCPRequest {
   jsonrpc: '2.0';
@@ -170,6 +172,61 @@ class MCPClient {
     });
   }
 
+  /**
+   * Connect to a server (alias for connect method)
+   */
+  async connectToServer(server: MCPServer): Promise<void> {
+    return this.connect(server.id);
+  }
+
+  /**
+   * Disconnect from a server (alias for disconnect method)
+   */
+  async disconnectFromServer(serverId: string): Promise<void> {
+    this.disconnect(serverId);
+  }
+
+  /**
+   * Check server health
+   */
+  async checkServerHealth(serverId: string): Promise<boolean> {
+    try {
+      const connection = this.connections.get(serverId);
+      return connection?.readyState === WebSocket.OPEN;
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * Get available tools from a server
+   */
+  async getAvailableTools(serverId: string): Promise<any[]> {
+    try {
+      const result = await this.sendRequest(serverId, 'tools/list');
+      return result.tools || [];
+    } catch {
+      return [];
+    }
+  }
+
+  /**
+   * Execute a tool on a server
+   */
+  async executeTool(serverId: string, toolName: string, parameters: any): Promise<any> {
+    return this.sendRequest(serverId, 'tools/call', {
+      name: toolName,
+      arguments: parameters
+    });
+  }
+
+  /**
+   * Get default servers
+   */
+  getDefaultServers(): MCPServer[] {
+    return this.getServers();
+  }
+
   private async connectWebSocket(serverId: string): Promise<void> {
     const server = this.servers.get(serverId);
     if (!server) return;
@@ -235,4 +292,5 @@ class MCPClient {
 
 // Export singleton instance
 export const mcpClient = new MCPClient();
+export { MCPClient };
 export default mcpClient;

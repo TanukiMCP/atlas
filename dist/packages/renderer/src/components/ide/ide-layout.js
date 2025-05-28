@@ -7,14 +7,16 @@ const menu_bar_1 = require("./menu-bar");
 const toolbar_1 = require("./toolbar");
 const status_bar_1 = require("./status-bar");
 const panel_manager_1 = require("./panel-manager");
-const chat_interface_1 = require("../chat/chat-interface");
+const improved_chat_interface_1 = require("../chat/improved-chat-interface");
 const working_file_tree_1 = require("../file-explorer/working-file-tree");
+// import { RealFileTree } from '../file-explorer/real-file-tree';
 const visual_workflow_builder_1 = require("../workflows/visual-workflow-builder");
 const comprehensive_tool_catalog_1 = require("../tools/comprehensive-tool-catalog");
 const specialized_agent_templates_1 = require("../agents/specialized-agent-templates");
 const analytics_dashboard_1 = require("../analytics/analytics-dashboard");
 const workflow_manager_1 = require("../workflows/workflow-manager");
 const management_center_modal_1 = require("../management/management-center-modal");
+// import { CodeEditor } from '../editor/code-editor';
 const use_keyboard_shortcuts_1 = require("../../hooks/use-keyboard-shortcuts");
 const use_subject_mode_1 = require("../../hooks/use-subject-mode");
 const use_ui_store_1 = require("../../hooks/use-ui-store");
@@ -31,13 +33,26 @@ const IDELayout = () => {
     const [selectedFile, setSelectedFile] = (0, react_1.useState)(null);
     const [showFileViewer, setShowFileViewer] = (0, react_1.useState)(false);
     const [showProcessingTier, setShowProcessingTier] = (0, react_1.useState)(false);
-    const [currentTier, setCurrentTier] = (0, react_1.useState)('MODERATE');
+    const [currentTier, setCurrentTier] = (0, react_1.useState)('advanced');
     const [isProcessing, setIsProcessing] = (0, react_1.useState)(false);
     const [showToolPanel, setShowToolPanel] = (0, react_1.useState)(false);
     const [activeRightPanel, setActiveRightPanel] = (0, react_1.useState)('workflow');
-    const [activeMainView, setActiveMainView] = (0, react_1.useState)('chat'); // New state for managing main views
+    const [activeMainView, setActiveMainView] = (0, react_1.useState)('chat'); // Back to chat view
     const { currentMode, switchMode } = (0, use_subject_mode_1.useSubjectMode)();
     const { layout, updateLayout } = (0, use_ui_store_1.useUIStore)();
+    // Helper function to convert FileInfo to FileNode
+    const fileInfoToFileNode = (fileInfo) => {
+        return {
+            id: fileInfo.path || fileInfo.name,
+            name: fileInfo.name,
+            type: fileInfo.type === 'directory' ? 'folder' : 'file',
+            path: fileInfo.path,
+            size: fileInfo.size,
+            modified: fileInfo.modified,
+            children: [],
+            isExpanded: false
+        };
+    };
     // Handler functions
     const handleNewChat = () => console.log('New Chat');
     const handleOpenProject = () => console.log('Open Project');
@@ -54,14 +69,14 @@ const IDELayout = () => {
         setOperationalMode(mode);
     };
     const handleFileSelect = (file) => {
-        // Map the file explorer's FileItem to FileInfo for FileContentViewer
-        const fileInfo = {
+        // Convert FileItem to FileNode for FileContentViewer
+        const fileNode = fileInfoToFileNode({
             name: file.name,
             path: file.name,
-            type: file.type,
+            type: file.type === 'directory' ? 'directory' : 'file',
             modified: new Date(),
-        };
-        setSelectedFile(fileInfo);
+        });
+        setSelectedFile(fileNode);
         if (file.type === 'file') {
             setActiveMainView('editor');
         }
@@ -120,7 +135,7 @@ const IDELayout = () => {
     return ((0, jsx_runtime_1.jsxs)("div", { className: "ide-container flex flex-col h-full w-full overflow-hidden", children: [(0, jsx_runtime_1.jsx)("div", { className: "menu-bar flex-shrink-0", children: (0, jsx_runtime_1.jsx)(menu_bar_1.MenuBar, { onNewChat: handleNewChat, onOpenProject: handleOpenProject, onSaveChat: handleSaveChat, onSubjectModeChange: switchMode, currentMode: currentMode, onOpenMCPManager: handleOpenMCPManager, onOpenLLMPromptManagement: handleOpenLLMPromptManagement, onNavigate: handleNavigate }) }), (0, jsx_runtime_1.jsxs)("div", { className: "toolbar flex-shrink-0", children: [activeMainView === 'chat' && ((0, jsx_runtime_1.jsx)(toolbar_1.Toolbar, { currentMode: currentMode, onModeChange: switchMode, onAtSymbolTrigger: () => setShowAtSymbol(true), operationalMode: operationalMode, onOperationalModeChange: handleOperationalModeChange, onEmergencyStop: handleEmergencyStop, onShowProcessingTier: () => setShowProcessingTier(!showProcessingTier), onShowToolPanel: () => setShowToolPanel(!showToolPanel), isProcessing: isProcessing })), activeMainView === 'workflow-manager' && ((0, jsx_runtime_1.jsxs)("div", { children: [" ", "Workflow Manager Toolbar Content Here"] }))] }), (0, jsx_runtime_1.jsx)("div", { className: "main-content-area flex-grow flex overflow-hidden", children: (0, jsx_runtime_1.jsx)(panel_manager_1.PanelManager, { layout: layout, onLayoutChange: updateLayout, panels: {
                         fileExplorer: (0, jsx_runtime_1.jsx)(working_file_tree_1.WorkingFileTree, { onFileSelect: handleFileSelect }),
                         // Main panel content will now be dynamic based on activeMainView
-                        centerPanel: ((0, jsx_runtime_1.jsxs)(jsx_runtime_1.Fragment, { children: [activeMainView === 'chat' && (0, jsx_runtime_1.jsx)(chat_interface_1.ChatInterface, { ref: chatRef, onAtSymbolTrigger: handleAtSymbolTrigger, operationalMode: operationalMode }), activeMainView === 'workflow-manager' && (0, jsx_runtime_1.jsx)(workflow_manager_1.WorkflowManager, {}) /* Assuming WorkflowManager is the component */, activeMainView === 'settings' && (0, jsx_runtime_1.jsx)("div", { children: "Settings View Placeholder" }), activeMainView === 'llm-prompt-management' && (0, jsx_runtime_1.jsx)("div", { children: "LLM Prompt Management Placeholder" }), activeMainView === 'mcp-servers' && (0, jsx_runtime_1.jsx)("div", { children: "MCP Servers Placeholder" }), activeMainView === 'editor' && selectedFile && ((0, jsx_runtime_1.jsx)(file_content_viewer_1.FileContentViewer, { selectedFile: selectedFile, isVisible: true, onClose: () => {
+                        centerPanel: ((0, jsx_runtime_1.jsxs)(jsx_runtime_1.Fragment, { children: [activeMainView === 'chat' && (0, jsx_runtime_1.jsx)(improved_chat_interface_1.ImprovedChatInterface, { ref: chatRef, onAtSymbolTrigger: handleAtSymbolTrigger, operationalMode: operationalMode }), activeMainView === 'workflow-manager' && (0, jsx_runtime_1.jsx)(workflow_manager_1.WorkflowManager, {}) /* Assuming WorkflowManager is the component */, activeMainView === 'settings' && (0, jsx_runtime_1.jsx)("div", { children: "Settings View Placeholder" }), activeMainView === 'llm-prompt-management' && (0, jsx_runtime_1.jsx)("div", { children: "LLM Prompt Management Placeholder" }), activeMainView === 'mcp-servers' && (0, jsx_runtime_1.jsx)("div", { children: "MCP Servers Placeholder" }), activeMainView === 'editor' && selectedFile && ((0, jsx_runtime_1.jsx)(file_content_viewer_1.FileContentViewer, { selectedFile: selectedFile, isVisible: true, onClose: () => {
                                         setSelectedFile(null);
                                         setActiveMainView('chat');
                                     } })), activeMainView === 'editor' && !selectedFile && ((0, jsx_runtime_1.jsx)("div", { style: { padding: '20px', textAlign: 'center', color: 'var(--color-text-muted)' }, children: "Select a file from the explorer to view its content." }))] })),
@@ -150,7 +165,7 @@ const IDELayout = () => {
                                             transition: 'all 0.15s ease'
                                         }, children: [tab.icon, " ", tab.label] }, tab.id))) }), (0, jsx_runtime_1.jsxs)("div", { style: { flex: 1, overflowY: 'auto' }, children: [" ", activeRightPanel === 'workflow' && (0, jsx_runtime_1.jsx)(visual_workflow_builder_1.VisualWorkflowBuilder, {}), activeRightPanel === 'tools' && (0, jsx_runtime_1.jsx)(comprehensive_tool_catalog_1.ComprehensiveToolCatalog, {}), activeRightPanel === 'agents' && (0, jsx_runtime_1.jsx)(specialized_agent_templates_1.SpecializedAgentTemplates, {}), activeRightPanel === 'analytics' && (0, jsx_runtime_1.jsx)(analytics_dashboard_1.AnalyticsDashboard, {})] })] })),
                         bottomPanel: showToolPanel ? ((0, jsx_runtime_1.jsx)(tool_execution_panel_1.ToolExecutionPanel, { isVisible: showToolPanel, onClose: () => setShowToolPanel(false) })) : null
-                    } }) }), (0, jsx_runtime_1.jsx)("div", { className: "status-bar flex-shrink-0", children: (0, jsx_runtime_1.jsx)(status_bar_1.StatusBar, { currentMode: currentMode, connectionStatus: "connected", activeTools: [] }) }), (0, jsx_runtime_1.jsx)(tool_selector_1.ToolSelector, { isOpen: showAtSymbol, position: atSymbolPosition, operationalMode: operationalMode, onToolSelect: handleToolSelect, onClose: () => setShowAtSymbol(false) }), showProcessingTier && ((0, jsx_runtime_1.jsx)(processing_tier_indicator_1.ProcessingTierIndicator, { currentTier: currentTier, complexity: 6, estimatedDuration: 45, isActive: isProcessing, onTierSwitch: handleTierSwitch })), (0, jsx_runtime_1.jsx)(management_center_modal_1.ManagementCenterModal, { isOpen: showManagementCenter, onClose: () => setShowManagementCenter(false) })] }));
+                    } }) }), (0, jsx_runtime_1.jsx)("div", { className: "status-bar flex-shrink-0", children: (0, jsx_runtime_1.jsx)(status_bar_1.StatusBar, { currentMode: currentMode, connectionStatus: "connected", activeTools: [] }) }), (0, jsx_runtime_1.jsx)(tool_selector_1.ToolSelector, { isOpen: showAtSymbol, position: atSymbolPosition, operationalMode: operationalMode, onToolSelect: handleToolSelect, onClose: () => setShowAtSymbol(false) }), showProcessingTier && ((0, jsx_runtime_1.jsx)(processing_tier_indicator_1.ProcessingTierIndicator, { currentTier: currentTier, complexity: 6, isActive: isProcessing, estimatedTime: "45 seconds" })), (0, jsx_runtime_1.jsx)(management_center_modal_1.ManagementCenterModal, { isOpen: showManagementCenter, onClose: () => setShowManagementCenter(false) })] }));
 };
 exports.IDELayout = IDELayout;
 //# sourceMappingURL=ide-layout.js.map

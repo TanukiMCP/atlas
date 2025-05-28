@@ -20,6 +20,8 @@ const llm_prompt_management_1 = require("../prompt-management/llm-prompt-managem
 const use_keyboard_shortcuts_1 = require("../../hooks/use-keyboard-shortcuts");
 const use_subject_mode_1 = require("../../hooks/use-subject-mode");
 const use_ui_store_1 = require("../../hooks/use-ui-store");
+const llm_store_1 = require("../../stores/llm-store");
+const mcp_store_1 = require("../../stores/mcp-store");
 const workflow_generation_1 = require("../../services/workflow-generation");
 const workflow_execution_1 = require("../../services/workflow-execution");
 const EnhancedIDELayout = () => {
@@ -31,11 +33,20 @@ const EnhancedIDELayout = () => {
     const [selectedWorkflowForExecution, setSelectedWorkflowForExecution] = (0, react_1.useState)(null);
     const { currentMode, switchMode } = (0, use_subject_mode_1.useSubjectMode)();
     const { layout, updateLayout } = (0, use_ui_store_1.useUIStore)();
+    const { checkHealth, refreshModels } = (0, llm_store_1.useLLMStore)();
+    const { initialize: initializeMCP } = (0, mcp_store_1.useMCPStore)();
     const workflowGenerationServiceRef = (0, react_1.useRef)(null);
     const workflowExecutionServiceRef = (0, react_1.useRef)(null);
     const toolRouterRef = (0, react_1.useRef)(null); // Mock tool router for now
     // Initialize services
     (0, react_1.useEffect)(() => {
+        // Initialize LLM and MCP services
+        const initializeServices = async () => {
+            await checkHealth();
+            await refreshModels(); // This will set the default model
+            await initializeMCP();
+        };
+        initializeServices();
         // Initialize Workflow Generation Service
         const generationConfig = {
             enableAutoSave: false,

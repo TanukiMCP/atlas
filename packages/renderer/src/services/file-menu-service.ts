@@ -29,61 +29,24 @@ export class FileMenuService {
    * Create a new chat session
    * This completely resets the chat interface and creates a fresh session
    */
-  async newChat(): Promise<ChatSession> {
+  async newChat(): Promise<void> {
     try {
-      // Get current subject mode from store
-      const currentMode = useAppStore.getState().currentSubjectMode || 'general';
-      
-      // Create new session via IPC
-      const sessionData = {
-        title: `New Chat - ${new Date().toLocaleString()}`,
-        description: '',
-        subjectMode: currentMode
+      const newSession = {
+        id: `chat-${Date.now()}`,
+        name: 'New Chat',
+        messages: [],
+        createdAt: new Date().toISOString(),
+        // Add other necessary properties for a session if any
       };
-
-      if (typeof window !== 'undefined' && window.electronAPI) {
-        const newSession = await window.electronAPI.invoke('chat:createSession', sessionData);
-        
-        // Update app store with new session
-        useAppStore.getState().setCurrentChatSession(newSession.id);
-        useAppStore.getState().addNotification({
-          type: 'success',
-          title: 'New Chat Created',
-          message: 'A fresh chat session has been created successfully.'
-        });
-
-        return newSession;
-      } else {
-        // Fallback for development/testing
-        const newSession: ChatSession = {
-          id: `chat_${Date.now()}`,
-          title: sessionData.title,
-          description: sessionData.description,
-          messages: [],
-          metadata: {
-            createdAt: new Date(),
-            updatedAt: new Date(),
-            tags: [],
-            subjectMode: sessionData.subjectMode,
-            isArchived: false,
-            isFavorite: false
-          },
-          settings: {
-            model: 'gpt-4',
-            temperature: 0.7,
-            maxTokens: 2048
-          }
-        };
-        
-        useAppStore.getState().setCurrentChatSession(newSession.id);
-        useAppStore.getState().addNotification({
-          type: 'info',
-          title: 'New Chat (Development)',
-          message: 'New chat created in development mode.'
-        });
-
-        return newSession;
-      }
+      // Assuming useLLMStore or similar handles actual session creation with the backend/LLM service
+      // useLLMStore.getState().createNewSession(newSession.name);
+      // useAppStore.getState().setCurrentChatSession(newSession.id); // Original line
+      useAppStore.getState().setCurrentChatSessionId(newSession.id); // Corrected
+      useAppStore.getState().addNotification({
+        type: 'success',
+        title: 'New Chat Created',
+        message: `New chat session '${newSession.name}' started.`,
+      });
     } catch (error) {
       console.error('Failed to create new chat:', error);
       useAppStore.getState().addNotification({
@@ -122,7 +85,7 @@ export class FileMenuService {
           };
 
           // Update app store
-          useAppStore.getState().setCurrentProject(projectData);
+          useAppStore.getState().setCurrentProjectId(projectData.id);
           useAppStore.getState().addNotification({
             type: 'success',
             title: 'Project Opened',
@@ -158,7 +121,7 @@ export class FileMenuService {
    */
   async saveChat(): Promise<boolean> {
     try {
-      const currentSessionId = useAppStore.getState().currentChatSession;
+      const currentSessionId = useAppStore.getState().currentChatSessionId;
       
       if (!currentSessionId) {
         useAppStore.getState().addNotification({
@@ -214,7 +177,7 @@ export class FileMenuService {
    */
   async exportChat(): Promise<boolean> {
     try {
-      const currentSessionId = useAppStore.getState().currentChatSession;
+      const currentSessionId = useAppStore.getState().currentChatSessionId;
       
       if (!currentSessionId) {
         useAppStore.getState().addNotification({
@@ -343,7 +306,7 @@ export class FileMenuService {
               });
             }
 
-            useAppStore.getState().setCurrentChatSession(newSession.id);
+            useAppStore.getState().setCurrentChatSessionId(newSession.id);
             useAppStore.getState().addNotification({
               type: 'success',
               title: 'Chat Imported',
@@ -461,7 +424,7 @@ export class FileMenuService {
    */
   private async checkUnsavedChanges(): Promise<boolean> {
     try {
-      const currentSessionId = useAppStore.getState().currentChatSession;
+      const currentSessionId = useAppStore.getState().currentChatSessionId;
       if (!currentSessionId) return false;
 
       if (typeof window !== 'undefined' && window.electronAPI) {

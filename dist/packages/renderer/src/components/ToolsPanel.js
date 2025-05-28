@@ -1,0 +1,22 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const jsx_runtime_1 = require("react/jsx-runtime");
+const ToolsPanel = ({ mcpTools, workflows, processingTiers, connectionStatus }) => {
+    const getConnectionStatusColor = (status) => {
+        switch (status) {
+            case 'connected':
+                return 'bg-green-500';
+            case 'connecting':
+                return 'bg-yellow-500';
+            case 'error':
+                return 'bg-red-500';
+            default:
+                return 'bg-destructive';
+        }
+    };
+    const primaryConnection = connectionStatus.find(conn => conn.service === 'Ollama') ||
+        { service: 'Ollama', status: 'disconnected' };
+    return ((0, jsx_runtime_1.jsxs)("div", { className: "w-80 bg-card/30 border-l border-border p-4", children: [(0, jsx_runtime_1.jsx)("h3", { className: "text-sm font-semibold mb-4 text-muted-foreground", children: "\uD83D\uDEE0\uFE0F Tools & Context" }), (0, jsx_runtime_1.jsxs)("div", { className: "space-y-3", children: [(0, jsx_runtime_1.jsxs)("div", { className: "p-3 bg-card border border-border rounded-lg", children: [(0, jsx_runtime_1.jsx)("div", { className: "font-medium text-primary text-sm", children: "\uD83D\uDD27 MCP Tools" }), (0, jsx_runtime_1.jsx)("div", { className: "text-muted-foreground text-xs mt-1", children: mcpTools.length > 0 ? (`${mcpTools.filter(t => t.available).length} of ${mcpTools.length} tools available`) : ('File operations, web search, code execution') }), mcpTools.length > 0 && ((0, jsx_runtime_1.jsxs)("div", { className: "mt-2 space-y-1", children: [mcpTools.slice(0, 3).map((tool, index) => ((0, jsx_runtime_1.jsxs)("div", { className: "text-xs text-muted-foreground", children: ["\u2022 ", tool.name] }, index))), mcpTools.length > 3 && ((0, jsx_runtime_1.jsxs)("div", { className: "text-xs text-muted-foreground", children: ["+", mcpTools.length - 3, " more tools"] }))] }))] }), (0, jsx_runtime_1.jsxs)("div", { className: "p-3 bg-card border border-border rounded-lg", children: [(0, jsx_runtime_1.jsx)("div", { className: "font-medium text-primary text-sm", children: "\u26A1 Workflows" }), (0, jsx_runtime_1.jsx)("div", { className: "text-muted-foreground text-xs mt-1", children: workflows.length > 0 ? (`${workflows.filter(w => w.status === 'available').length} workflows ready`) : ('Automated task sequences') }), workflows.length > 0 && ((0, jsx_runtime_1.jsx)("div", { className: "mt-2 space-y-1", children: workflows.slice(0, 2).map((workflow, index) => ((0, jsx_runtime_1.jsxs)("div", { className: "text-xs text-muted-foreground", children: ["\u2022 ", workflow.name] }, workflow.id))) }))] }), (0, jsx_runtime_1.jsxs)("div", { className: "p-3 bg-card border border-border rounded-lg", children: [(0, jsx_runtime_1.jsx)("div", { className: "font-medium text-primary text-sm", children: "\uD83E\uDDE0 Processing Tiers" }), (0, jsx_runtime_1.jsx)("div", { className: "text-muted-foreground text-xs mt-1", children: processingTiers.length > 0 ? (processingTiers.map(tier => tier.name).join(' → ')) : ('Atomic → Moderate → Complex → Expert') })] }), (0, jsx_runtime_1.jsxs)("div", { className: "p-3 bg-card border border-border rounded-lg", children: [(0, jsx_runtime_1.jsx)("div", { className: "font-medium text-primary text-sm", children: "\uD83D\uDCCA Analytics" }), (0, jsx_runtime_1.jsx)("div", { className: "text-muted-foreground text-xs mt-1", children: "Performance metrics and insights" })] }), (0, jsx_runtime_1.jsxs)("div", { className: "p-3 bg-card border border-border rounded-lg", children: [(0, jsx_runtime_1.jsxs)("div", { className: "font-medium text-sm flex items-center gap-2", children: [(0, jsx_runtime_1.jsx)("div", { className: `w-2 h-2 rounded-full ${getConnectionStatusColor(primaryConnection.status)}` }), "Connection Status"] }), (0, jsx_runtime_1.jsxs)("div", { className: "text-muted-foreground text-xs mt-1", children: [primaryConnection.service, ": ", primaryConnection.status] }), connectionStatus.length > 1 && ((0, jsx_runtime_1.jsx)("div", { className: "mt-2 space-y-1", children: connectionStatus.slice(1).map((conn, index) => ((0, jsx_runtime_1.jsxs)("div", { className: "text-xs text-muted-foreground flex items-center gap-2", children: [(0, jsx_runtime_1.jsx)("div", { className: `w-1 h-1 rounded-full ${getConnectionStatusColor(conn.status)}` }), conn.service, ": ", conn.status] }, index))) }))] })] })] }));
+};
+exports.default = ToolsPanel;
+//# sourceMappingURL=ToolsPanel.js.map

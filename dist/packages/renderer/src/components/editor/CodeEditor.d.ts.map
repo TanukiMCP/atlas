@@ -1,0 +1,1 @@
+{"version":3,"file":"CodeEditor.d.ts","sourceRoot":"","sources":["../../../../../../packages/renderer/src/components/editor/CodeEditor.tsx"],"names":[],"mappings":"AAAA,OAAO,KAA8B,MAAM,OAAO,CAAC;AAWnD,UAAU,eAAe;IACvB,QAAQ,EAAE,MAAM,CAAC;IACjB,OAAO,EAAE,MAAM,IAAI,CAAC;CACrB;AAED,eAAO,MAAM,UAAU,EAAE,KAAK,CAAC,EAAE,CAAC,eAAe,CA0OhD,CAAC"}

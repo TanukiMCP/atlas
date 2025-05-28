@@ -15,13 +15,25 @@ interface ChatMessage {
     timestamp: Date;
     tools?: string[];
 }
+export interface Notification {
+    id: string;
+    title?: string;
+    message: string;
+    type: 'info' | 'success' | 'warning' | 'error';
+    timestamp: Date;
+}
+export type ViewType = 'welcome' | 'chat' | 'files' | 'tools' | 'workflows' | 'settings' | string;
 interface AppState {
     theme: 'light' | 'dark';
     setTheme: (theme: 'light' | 'dark') => void;
     sidebarCollapsed: boolean;
     setSidebarCollapsed: (collapsed: boolean) => void;
+    isSidebarVisible: boolean;
+    setSidebarVisible: (isVisible: boolean) => void;
     activeTab: string;
     setActiveTab: (tab: string) => void;
+    currentView: ViewType;
+    setCurrentView: (view: ViewType) => void;
     files: FileNode[];
     selectedFile: FileNode | null;
     setFiles: (files: FileNode[]) => void;
@@ -29,30 +41,23 @@ interface AppState {
     messages: ChatMessage[];
     addMessage: (message: ChatMessage) => void;
     clearMessages: () => void;
+    currentChatSessionId: string | null;
+    setCurrentChatSessionId: (sessionId: string | null) => void;
+    currentProjectId: string | null;
+    setCurrentProjectId: (projectId: string | null) => void;
     showToolSelector: boolean;
     setShowToolSelector: (show: boolean) => void;
     currentSubjectMode: string;
     setCurrentSubjectMode: (mode: string) => void;
+    notifications: Notification[];
+    addNotification: (notification: Omit<Notification, 'id' | 'timestamp'>) => void;
+    removeNotification: (id: string) => void;
+    isLoading: Record<string, boolean>;
+    setLoading: (key: string, isLoading: boolean) => void;
+    errors: Record<string, string | null>;
+    setError: (key: string, error: string | null) => void;
 }
-export declare const useAppStore: import("zustand").UseBoundStore<Omit<import("zustand").StoreApi<AppState>, "persist"> & {
-    persist: {
-        setOptions: (options: Partial<import("zustand/middleware").PersistOptions<AppState, {
-            theme: "dark" | "light";
-            sidebarCollapsed: boolean;
-            currentSubjectMode: string;
-        }>>) => void;
-        clearStorage: () => void;
-        rehydrate: () => Promise<void> | void;
-        hasHydrated: () => boolean;
-        onHydrate: (fn: (state: AppState) => void) => () => void;
-        onFinishHydration: (fn: (state: AppState) => void) => () => void;
-        getOptions: () => Partial<import("zustand/middleware").PersistOptions<AppState, {
-            theme: "dark" | "light";
-            sidebarCollapsed: boolean;
-            currentSubjectMode: string;
-        }>>;
-    };
-}>;
+export declare const useAppStore: import("zustand").UseBoundStore<import("zustand").StoreApi<AppState>>;
 export declare const useTheme: () => {
     theme: "dark" | "light";
     setTheme: (theme: "light" | "dark") => void;
@@ -67,12 +72,18 @@ export declare const useChat: () => {
     messages: ChatMessage[];
     addMessage: (message: ChatMessage) => void;
     clearMessages: () => void;
+    currentChatSessionId: string | null;
+    setCurrentChatSessionId: (sessionId: string | null) => void;
 };
 export declare const useLayout: () => {
     sidebarCollapsed: boolean;
     setSidebarCollapsed: (collapsed: boolean) => void;
+    isSidebarVisible: boolean;
+    setSidebarVisible: (isVisible: boolean) => void;
     activeTab: string;
     setActiveTab: (tab: string) => void;
+    currentView: string;
+    setCurrentView: (view: ViewType) => void;
 };
 export declare const useTools: () => {
     showToolSelector: boolean;
@@ -81,6 +92,21 @@ export declare const useTools: () => {
 export declare const useSubjectMode: () => {
     currentSubjectMode: string;
     setCurrentSubjectMode: (mode: string) => void;
+};
+export declare const useNotifications: () => {
+    notifications: Notification[];
+    addNotification: (notification: Omit<Notification, "id" | "timestamp">) => void;
+    removeNotification: (id: string) => void;
+};
+export declare const useProject: () => {
+    currentProjectId: string | null;
+    setCurrentProjectId: (projectId: string | null) => void;
+};
+export declare const useStatusIndicators: () => {
+    isLoading: Record<string, boolean>;
+    setLoading: (key: string, isLoading: boolean) => void;
+    errors: Record<string, string | null>;
+    setError: (key: string, error: string | null) => void;
 };
 export {};
 //# sourceMappingURL=app-store.d.ts.map

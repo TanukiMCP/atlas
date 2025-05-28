@@ -1,0 +1,12 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const jsx_runtime_1 = require("react/jsx-runtime");
+const Header = ({ currentView, theme, onViewChange, onThemeToggle }) => {
+    return ((0, jsx_runtime_1.jsxs)(jsx_runtime_1.Fragment, { children: [(0, jsx_runtime_1.jsxs)("div", { className: "h-12 bg-card/50 backdrop-blur-sm border-b border-border flex items-center justify-between px-4", children: [(0, jsx_runtime_1.jsxs)("div", { className: "flex items-center gap-4", children: [(0, jsx_runtime_1.jsxs)("div", { className: "flex items-center gap-2", children: [(0, jsx_runtime_1.jsx)("div", { className: "text-xl", children: "\uD83E\uDD9D" }), (0, jsx_runtime_1.jsx)("span", { className: "font-semibold text-foreground", children: "TanukiMCP Atlas" })] }), (0, jsx_runtime_1.jsx)("button", { onClick: () => onViewChange('chat'), className: `px-3 py-1 rounded text-sm transition-colors ${currentView === 'chat'
+                                    ? 'bg-primary text-primary-foreground'
+                                    : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'}`, children: "Chat" }), (0, jsx_runtime_1.jsx)("button", { onClick: () => onViewChange('welcome'), className: `px-3 py-1 rounded text-sm transition-colors ${currentView === 'welcome'
+                                    ? 'bg-primary text-primary-foreground'
+                                    : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'}`, children: "Welcome" })] }), (0, jsx_runtime_1.jsx)("div", { className: "flex items-center gap-2", children: (0, jsx_runtime_1.jsx)("button", { onClick: onThemeToggle, className: "p-2 hover:bg-accent rounded transition-colors", "aria-label": `Switch to ${theme === 'dark' ? 'light' : 'dark'} theme`, children: theme === 'dark' ? '☀️' : '🌙' }) })] }), (0, jsx_runtime_1.jsx)("div", { className: "h-10 bg-card/30 backdrop-blur-sm border-b border-border flex items-center px-4", children: (0, jsx_runtime_1.jsxs)("div", { className: "flex items-center gap-2 text-sm text-muted-foreground", children: [(0, jsx_runtime_1.jsx)("span", { children: "\uD83E\uDD16 General mode" }), (0, jsx_runtime_1.jsx)("span", { children: "\u2022" }), (0, jsx_runtime_1.jsx)("span", { children: "Agent mode" }), (0, jsx_runtime_1.jsx)("span", { children: "\u2022" }), (0, jsx_runtime_1.jsx)("span", { className: "text-destructive", children: "Ollama: Disconnected" })] }) })] }));
+};
+exports.default = Header;
+//# sourceMappingURL=Header.js.map

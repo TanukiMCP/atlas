@@ -41,7 +41,7 @@ export function createWindow(): BrowserWindow {
     },
     
     // Performance settings
-    show: false, // Don't show until ready
+    show: true, // Show immediately for debugging
     paintWhenInitiallyHidden: false,
     backgroundThrottling: false, // Keep app responsive when in background
     

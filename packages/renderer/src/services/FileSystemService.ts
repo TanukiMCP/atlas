@@ -1,0 +1,241 @@
+import { FileSystemItem } from '../types';
+
+class FileSystemService {
+  private watchers: Map<string, any> = new Map();
+  private listeners: Set<(files: FileSystemItem[]) => void> = new Set();
+  private isNodeEnvironment = typeof process !== 'undefined' && process.versions && process.versions.node;
+
+  async getWorkspaceFiles(rootPath: string = this.getCurrentPath()): Promise<FileSystemItem[]> {
+    if (!this.isNodeEnvironment) {
+      throw new Error('File system access is not available in browser environment. Please use the desktop application for file operations.');
+    }
+
+    try {
+      return await this.getNodeFiles(rootPath);
+    } catch (error) {
+      console.error('Error accessing file system:', error);
+      throw new Error(`Failed to access workspace files: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
+  private getCurrentPath(): string {
+    if (this.isNodeEnvironment && typeof process !== 'undefined') {
+      // In Electron renderer, process.cwd() might not be available
+      // Use a default workspace path or get it from main process
+      try {
+        return process.cwd();
+      } catch (error) {
+        // Fallback to a default workspace path
+        console.warn('process.cwd() not available, using default workspace path');
+        return '/c/Users/ididi/tanukimcp-atlas'; // Use the actual workspace path
+      }
+    }
+    throw new Error('Cannot determine current path: not running in Node.js environment');
+  }
+
+  private async getNodeFiles(rootPath: string): Promise<FileSystemItem[]> {
+    const fs = await import('fs/promises');
+    const path = await import('path');
+    
+    const readDirectory = async (dirPath: string, relativePath: string = ''): Promise<FileSystemItem[]> => {
+      const items: FileSystemItem[] = [];
+      
+      try {
+        const entries = await fs.readdir(dirPath, { withFileTypes: true });
+        
+        for (const entry of entries) {
+          // Skip hidden files and node_modules
+          if (entry.name.startsWith('.') || entry.name === 'node_modules') {
+            continue;
+          }
+          
+          const fullPath = path.join(dirPath, entry.name);
+          const itemPath = relativePath ? `${relativePath}/${entry.name}` : entry.name;
+          
+          if (entry.isDirectory()) {
+            try {
+              const children = await readDirectory(fullPath, itemPath);
+              items.push({
+                name: entry.name,
+                type: 'folder',
+                path: itemPath,
+                children: children.length > 0 ? children : undefined
+              });
+            } catch (dirError) {
+              console.warn(`Cannot access directory ${fullPath}:`, dirError);
+              // Add directory entry without children to indicate access issue
+              items.push({
+                name: entry.name,
+                type: 'folder',
+                path: itemPath,
+                children: undefined
+              });
+            }
+          } else {
+            items.push({
+              name: entry.name,
+              type: 'file',
+              path: itemPath
+            });
+          }
+        }
+      } catch (error) {
+        throw new Error(`Cannot read directory ${dirPath}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      }
+      
+      return items.sort((a, b) => {
+        // Folders first, then files, alphabetically
+        if (a.type === 'folder' && b.type === 'file') return -1;
+        if (a.type === 'file' && b.type === 'folder') return 1;
+        return a.name.localeCompare(b.name);
+      });
+    };
+    
+    return await readDirectory(rootPath);
+  }
+
+  async readFile(filePath: string): Promise<string> {
+    if (!this.isNodeEnvironment) {
+      throw new Error('File reading is not available in browser environment. Please use the desktop application for file operations.');
+    }
+
+    try {
+      const fs = await import('fs/promises');
+      const fullPath = this.resolvePath(filePath);
+      return await fs.readFile(fullPath, 'utf-8');
+    } catch (error) {
+      throw new Error(`Failed to read file ${filePath}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
+  async writeFile(filePath: string, content: string): Promise<void> {
+    if (!this.isNodeEnvironment) {
+      throw new Error('File writing is not available in browser environment. Please use the desktop application for file operations.');
+    }
+
+    try {
+      const fs = await import('fs/promises');
+      const path = await import('path');
+      const fullPath = this.resolvePath(filePath);
+      
+      // Ensure directory exists
+      await fs.mkdir(path.dirname(fullPath), { recursive: true });
+      await fs.writeFile(fullPath, content, 'utf-8');
+      
+      this.notifyListeners();
+    } catch (error) {
+      throw new Error(`Failed to write file ${filePath}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
+  async createFile(filePath: string, content: string = ''): Promise<void> {
+    await this.writeFile(filePath, content);
+  }
+
+  async createDirectory(dirPath: string): Promise<void> {
+    if (!this.isNodeEnvironment) {
+      throw new Error('Directory creation is not available in browser environment. Please use the desktop application for file operations.');
+    }
+
+    try {
+      const fs = await import('fs/promises');
+      const fullPath = this.resolvePath(dirPath);
+      await fs.mkdir(fullPath, { recursive: true });
+      this.notifyListeners();
+    } catch (error) {
+      throw new Error(`Failed to create directory ${dirPath}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
+  async deleteFile(filePath: string): Promise<void> {
+    if (!this.isNodeEnvironment) {
+      throw new Error('File deletion is not available in browser environment. Please use the desktop application for file operations.');
+    }
+
+    try {
+      const fs = await import('fs/promises');
+      const fullPath = this.resolvePath(filePath);
+      await fs.unlink(fullPath);
+      this.notifyListeners();
+    } catch (error) {
+      throw new Error(`Failed to delete file ${filePath}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
+  async deleteDirectory(dirPath: string): Promise<void> {
+    if (!this.isNodeEnvironment) {
+      throw new Error('Directory deletion is not available in browser environment. Please use the desktop application for file operations.');
+    }
+
+    try {
+      const fs = await import('fs/promises');
+      const fullPath = this.resolvePath(dirPath);
+      await fs.rmdir(fullPath, { recursive: true });
+      this.notifyListeners();
+    } catch (error) {
+      throw new Error(`Failed to delete directory ${dirPath}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
+  watchWorkspace(rootPath: string = this.getCurrentPath()): void {
+    if (this.watchers.has(rootPath)) {
+      return; // Already watching
+    }
+
+    if (!this.isNodeEnvironment) {
+      console.warn('File watching is not available in browser environment');
+      return;
+    }
+
+    try {
+      const fs = require('fs');
+      const watcher = fs.watch(rootPath, { recursive: true }, (eventType: string, filename: string) => {
+        if (filename && !filename.startsWith('.') && filename !== 'node_modules') {
+          this.notifyListeners();
+        }
+      });
+      
+      this.watchers.set(rootPath, watcher);
+    } catch (error) {
+      console.error(`Failed to watch directory ${rootPath}:`, error);
+    }
+  }
+
+  stopWatching(rootPath: string): void {
+    const watcher = this.watchers.get(rootPath);
+    if (watcher) {
+      watcher.close();
+      this.watchers.delete(rootPath);
+    }
+  }
+
+  onFilesChanged(listener: (files: FileSystemItem[]) => void): () => void {
+    this.listeners.add(listener);
+    return () => this.listeners.delete(listener);
+  }
+
+  private resolvePath(filePath: string): string {
+    if (!this.isNodeEnvironment) {
+      throw new Error('Path resolution is not available in browser environment');
+    }
+
+    const path = require('path');
+    if (path.isAbsolute(filePath)) {
+      return filePath;
+    }
+    return path.resolve(this.getCurrentPath(), filePath);
+  }
+
+  private async notifyListeners(): Promise<void> {
+    try {
+      const files = await this.getWorkspaceFiles();
+      this.listeners.forEach(listener => listener(files));
+    } catch (error) {
+      console.error('Error notifying file system listeners:', error);
+      // Notify with empty array to indicate error state
+      this.listeners.forEach(listener => listener([]));
+    }
+  }
+}
+
+export const fileSystemService = new FileSystemService(); 

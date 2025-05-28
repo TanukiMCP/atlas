@@ -21,8 +21,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.send(channel, data);
   },
   
-  invokeAction: (channel: string, data: any) => {
-    return ipcRenderer.invoke(channel, data);
+  invoke: (channel: string, ...args: any[]) => {
+    return ipcRenderer.invoke(channel, ...args);
   },
   
   removeAllListeners: (channel: string) => {

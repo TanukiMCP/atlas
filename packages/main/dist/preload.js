@@ -18,8 +18,8 @@ import_electron.contextBridge.exposeInMainWorld("electronAPI", {
   sendAction: (channel, data) => {
     import_electron.ipcRenderer.send(channel, data);
   },
-  invokeAction: (channel, data) => {
-    return import_electron.ipcRenderer.invoke(channel, data);
+  invoke: (channel, ...args) => {
+    return import_electron.ipcRenderer.invoke(channel, ...args);
   },
   removeAllListeners: (channel) => {
     import_electron.ipcRenderer.removeAllListeners(channel);

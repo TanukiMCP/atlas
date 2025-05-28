@@ -1,0 +1,1 @@
+{"version":3,"file":"WelcomeView.d.ts","sourceRoot":"","sources":["../../../../../packages/renderer/src/components/WelcomeView.tsx"],"names":[],"mappings":"AAAA,OAAO,KAAK,MAAM,OAAO,CAAC;AAC1B,OAAO,EAAE,gBAAgB,EAAE,MAAM,UAAU,CAAC;AAE5C,QAAA,MAAM,WAAW,EAAE,KAAK,CAAC,EAAE,CAAC,gBAAgB,CAwD3C,CAAC;AAEF,eAAe,WAAW,CAAC"}

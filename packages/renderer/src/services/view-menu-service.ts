@@ -635,7 +635,7 @@ export class ViewMenuService {
     try {
       const appState = useAppStore.getState();
       this.viewState.currentTheme = appState.theme;
-      this.viewState.fileExplorerVisible = appState.sidebarVisible;
+      this.viewState.fileExplorerVisible = appState.isSidebarVisible;
       
       // Load other persisted settings from localStorage if available
       const saved = localStorage.getItem('tanukimcp-view-state');

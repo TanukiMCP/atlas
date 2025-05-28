@@ -1,12 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { SubjectMode } from '../../types/subject-types';
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from '../ui/select';
 
 const SUBJECT_MODES: SubjectMode[] = [
   { id: 'general', name: 'General', icon: '🎯', color: 'blue', description: 'General purpose assistance and conversation' },
@@ -30,7 +23,18 @@ export const SubjectModeDropdown: React.FC<SubjectModeDropdownProps> = ({
   currentMode,
   onModeChange
 }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedIndex, setSelectedIndex] = useState(0);
+  
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
   const currentModeData = SUBJECT_MODES.find(mode => mode.id === currentMode) || SUBJECT_MODES[0];
+
+  const filteredModes = SUBJECT_MODES.filter(mode => 
+    mode.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -106,6 +110,14 @@ export const SubjectModeDropdown: React.FC<SubjectModeDropdownProps> = ({
     return colors[color as keyof typeof colors] || '#3b82f6';
   };
 
+  useEffect(() => {
+    if (selectedIndex >= filteredModes.length && filteredModes.length > 0) {
+      setSelectedIndex(filteredModes.length - 1);
+    } else if (filteredModes.length === 0) {
+      setSelectedIndex(0);
+    }
+  }, [filteredModes, selectedIndex]);
+
   return (
     <div ref={dropdownRef} style={{ position: 'relative' }}>
       <button
@@ -124,8 +136,8 @@ export const SubjectModeDropdown: React.FC<SubjectModeDropdownProps> = ({
           fontSize: '13px',
           fontWeight: '500'
         }}
-        onMouseEnter={(e) => e.target.style.backgroundColor = 'var(--color-bg-tertiary)'}
-        onMouseLeave={(e) => e.target.style.backgroundColor = 'var(--color-bg-secondary)'}
+        onMouseEnter={(e) => (e.target as HTMLElement).style.backgroundColor = 'var(--color-bg-tertiary)'}
+        onMouseLeave={(e) => (e.target as HTMLElement).style.backgroundColor = 'var(--color-bg-secondary)'}
       >
         <span style={{ fontSize: '14px' }}>{currentModeData.icon}</span>
         <span style={{ 
@@ -212,14 +224,25 @@ export const SubjectModeDropdown: React.FC<SubjectModeDropdownProps> = ({
                         ? '3px solid var(--color-accent)'
                         : '3px solid transparent',
                     transition: 'all 0.15s ease',
-                    outline: index === selectedIndex ? '2px solid var(--color-accent)' : 'none',
-                    outlineOffset: '-2px'
                   }}
                   onMouseEnter={(e) => {
                     setSelectedIndex(index);
+                    (e.target as HTMLElement).style.backgroundColor = index === selectedIndex 
+                      ? 'var(--color-accent)' 
+                      : 'var(--color-bg-tertiary)';
                   }}
                   onMouseLeave={(e) => {
-                    // Don't reset selection on mouse leave to maintain keyboard navigation
+                    (e.target as HTMLElement).style.backgroundColor = index === selectedIndex
+                      ? 'var(--color-accent)'
+                      : mode.id === currentMode
+                        ? `${getModeColor(mode.color)}20`
+                        : 'transparent';
+                  }}
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      handleModeSelect(mode);
+                    }
                   }}
                 >
                   <div style={{

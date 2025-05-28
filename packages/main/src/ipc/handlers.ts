@@ -48,6 +48,17 @@ export interface IPCChannels {
   'optimization:getProfiles': { params: []; result: any[] };
   'optimization:getActiveProfile': { params: []; result: any };
   'optimization:setProfile': { params: [string]; result: void };
+  
+  // Enhanced LLM operations
+  'enhancedLLM:processRequest': { params: [any]; result: any };
+  'enhancedLLM:getStatus': { params: []; result: any };
+  'enhancedLLM:testTier': { params: [number]; result: any };
+  
+  // MCP Hub operations
+  'mcpHub:listServers': { params: []; result: any[] };
+  'mcpHub:connectServer': { params: [string]; result: void };
+  'mcpHub:disconnectServer': { params: [string]; result: void };
+  'mcpHub:executeCommand': { params: [string, string, any]; result: any };
   'optimization:optimizeForHardware': { params: [any]; result: any };
   
   'parameters:getPreset': { params: [string]; result: any };
@@ -470,6 +481,43 @@ function setupLLMHandlers(): void {
   ipcMain.handle('context:optimize', async (event: IpcMainInvokeEvent, sessionId: string) => {
     const services = tanukiApp.getServices();
     return await services.contextManager.optimizeContext(sessionId);
+  });
+  
+  // Enhanced LLM handlers
+  ipcMain.handle('enhancedLLM:processRequest', async (event: IpcMainInvokeEvent, request: any) => {
+    const services = tanukiApp.getServices();
+    return await services.enhancedLLM.processRequest(request);
+  });
+  
+  ipcMain.handle('enhancedLLM:getStatus', async (event: IpcMainInvokeEvent) => {
+    const services = tanukiApp.getServices();
+    return services.enhancedLLM.getStatus();
+  });
+  
+  ipcMain.handle('enhancedLLM:testTier', async (event: IpcMainInvokeEvent, tier: number) => {
+    const services = tanukiApp.getServices();
+    return await services.enhancedLLM.testTier(tier);
+  });
+  
+  // MCP Hub handlers
+  ipcMain.handle('mcpHub:listServers', async (event: IpcMainInvokeEvent) => {
+    const services = tanukiApp.getServices();
+    return services.mcpHub.listServers();
+  });
+  
+  ipcMain.handle('mcpHub:connectServer', async (event: IpcMainInvokeEvent, serverId: string) => {
+    const services = tanukiApp.getServices();
+    return await services.mcpHub.connectServer(serverId);
+  });
+  
+  ipcMain.handle('mcpHub:disconnectServer', async (event: IpcMainInvokeEvent, serverId: string) => {
+    const services = tanukiApp.getServices();
+    return await services.mcpHub.disconnectServer(serverId);
+  });
+  
+  ipcMain.handle('mcpHub:executeCommand', async (event: IpcMainInvokeEvent, serverId: string, command: string, params: any) => {
+    const services = tanukiApp.getServices();
+    return await services.mcpHub.executeCommand(serverId, command, params);
   });
 }
 

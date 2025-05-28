@@ -67,7 +67,7 @@ interface SystemInfo {
   gpuCount: number;
   totalVram: number;
 }export class OllamaService {
-  private baseUrl = 'http://localhost:11434';
+  private baseUrl = 'http://127.0.0.1:11434';
   private performanceCache = new Map<string, ModelPerformance>();
 
   async listModels(): Promise<OllamaModel[]> {

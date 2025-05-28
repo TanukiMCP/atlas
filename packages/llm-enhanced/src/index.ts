@@ -1,6 +1,37 @@
-// Main LLM Router
-export { LLMRouter } from './router/llm-router';
-export { RequestClassifier } from './router/request-classifier';
+// Main enhanced LLM service
+export { EnhancedLLMService, enhancedLLMService } from './enhanced-llm-service';
+export type { EnhancedLLMConfig } from './enhanced-llm-service';
+
+// Router and types
+export { LLMRouter } from './router/router';
+export { ComplexityAssessor } from './router/complexityAssessor';
+export type { 
+  LLMRequest, 
+  LLMResponse, 
+  RequestComplexity, 
+  TierProcessor, 
+  ComplexityAssessment 
+} from './router/types';
+
+// Services
+export { LLMService } from './services/llm-service';
+export { MCPClientAdapter, mcpClientAdapter } from './services/mcp-client-adapter';
+export type { 
+  MCPClientInterface, 
+  MCPToolCall, 
+  MCPToolResult
+} from './services/mcp-client-adapter';
+export type { 
+  LLMServiceConfig,
+  LLMGenerateOptions,
+  OllamaServiceInterface
+} from './services/llm-service';
+
+// Tier processors
+export { Tier1Processor } from './router/tier1Processor';
+export { Tier2Processor } from './router/tier2Processor';
+export { Tier3Processor } from './router/tier3Processor';
+export { Tier4Processor } from './router/tier4Processor';
 
 // Base Processor Architecture
 export { BaseProcessor } from './processors/base-processor';
@@ -23,87 +54,32 @@ export type { ProcessorEvents } from './processors/base-processor';
 export type { UserControlsEvents } from './intervention/user-controls';
 export type { PerformanceTrackerEvents } from './analytics/performance-tracker';
 
-// Helper function to create a configured LLM Router
-export function createLLMRouter(): LLMRouter {
-  return new LLMRouter();
+// Helper function to create a configured Enhanced LLM Service
+export function createEnhancedLLMService(config?: EnhancedLLMConfig): EnhancedLLMService {
+  return new EnhancedLLMService(config);
 }
 
-// Helper function to determine if a request needs intervention approval
-export function requiresUserApproval(
-  tier: ProcessingTier, 
-  estimatedTime: number, 
-  userPreferences: UserPreferences
-): boolean {
-  // Expert tier always requires approval unless explicitly allowed
-  if (tier === 'expert' && !userPreferences.allowExpertProcessing) {
-    return true;
-  }
-  
-  // Long processing times require approval
-  if (estimatedTime > userPreferences.maxWaitTime) {
-    return true;
-  }
-  
-  // High intervention level users want to approve complex operations
-  if (userPreferences.interventionLevel === 'high' && (tier === 'complex' || tier === 'expert')) {
-    return true;
-  }
-  
-  return false;
-}
-
-// Helper function to calculate optimal tier based on requirements
-export function calculateOptimalTier(requirements: ProcessingRequirements): ProcessingTier {
-  let score = 0;
-  
-  // Base complexity
-  if (requirements.requiresMultiStep) score += 3;
-  if (requirements.requiresReasoning) score += 2;
-  if (requirements.requiresCreativity && requirements.requiresFactualAccuracy) score += 2;
-  if (requirements.requiresCodeGeneration) score += 1;
-  if (requirements.requiresMathematics) score += 1;
-  
-  // Quality requirements
-  if (requirements.minQuality > 90) score += 3;
-  else if (requirements.minQuality > 80) score += 2;
-  else if (requirements.minQuality > 70) score += 1;
-  
-  // Latency constraints (negative scoring for time pressure)
-  if (requirements.maxLatency < 2000) score -= 2;
-  else if (requirements.maxLatency < 5000) score -= 1;
-  
-  // Map score to tier
-  if (score >= 6) return 'expert';
-  if (score >= 4) return 'complex';
-  if (score >= 2) return 'moderate';
-  return 'atomic';
-}
-
-// Constants for system configuration
+// Constants for tier configurations
 export const TIER_CONFIGURATIONS = {
-  atomic: {
-    timeout: 1000,
-    qualityRange: [60, 80],
-    models: ['llama3.2:1b'],
-    features: ['caching', 'templates']
+  DIRECT_RESPONSE: {
+    timeout: 500,
+    description: 'Simple acknowledgments and direct responses'
   },
-  moderate: {
-    timeout: 5000,
-    qualityRange: [75, 85],
-    models: ['llama3.2:3b', 'llama3.1:8b'],
-    features: ['reasoning', 'tools']
+  ATOMIC: {
+    timeout: 10000,
+    description: 'Single-step LLM responses'
   },
-  complex: {
-    timeout: 15000,
-    qualityRange: [85, 95],
-    models: ['deepseek-r1-distill-qwen:14b', 'qwq:32b'],
-    features: ['multi-step', 'tool-chaining', 'validation']
+  MODERATE: {
+    timeout: 30000,
+    description: 'Multi-step with clear-thought tools'
   },
-  expert: {
-    timeout: 45000,
-    qualityRange: [90, 98],
-    models: ['qwq:32b', 'deepseek-r1-distill-qwen:32b'],
-    features: ['multi-model', 'tournament', 'comprehensive-tools']
+  COMPLEX: {
+    timeout: 60000,
+    description: 'Comprehensive analysis with multiple tools'
+  },
+  EXPERT: {
+    timeout: 120000,
+    description: 'Full expert-level analysis with all available tools'
   }
 } as const;
 

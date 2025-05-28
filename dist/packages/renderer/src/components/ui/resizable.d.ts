@@ -1,7 +1,19 @@
-import * as React from "react";
-import { PanelGroup, PanelResizeHandle } from "react-resizable-panels";
-declare const ResizablePanelGroup: ({ className, ...props }: React.ComponentProps<typeof PanelGroup>) => import("react/jsx-runtime").JSX.Element;
-declare const ResizablePanel: React.ForwardRefExoticComponent<Omit<React.HTMLAttributes<HTMLDivElement | HTMLElement | HTMLButtonElement | HTMLHeadingElement | HTMLParagraphElement | HTMLSpanElement | HTMLSelectElement | HTMLOptionElement | HTMLOptGroupElement | HTMLInputElement | HTMLLabelElement | HTMLTextAreaElement | HTMLObjectElement | HTMLMapElement | HTMLTitleElement | HTMLDataElement | HTMLSourceElement | HTMLProgressElement | HTMLLinkElement | HTMLTableElement | HTMLTimeElement | HTMLBodyElement | HTMLStyleElement | HTMLHtmlElement | HTMLSlotElement | HTMLDialogElement | HTMLFormElement | HTMLImageElement | HTMLAnchorElement | HTMLLIElement | HTMLOListElement | HTMLUListElement | HTMLAreaElement | HTMLAudioElement | HTMLBaseElement | HTMLQuoteElement | HTMLBRElement | HTMLCanvasElement | HTMLTableColElement | HTMLDataListElement | HTMLModElement | HTMLDetailsElement | HTMLDListElement | HTMLEmbedElement | HTMLFieldSetElement | HTMLHeadElement | HTMLHRElement | HTMLIFrameElement | HTMLLegendElement | HTMLMetaElement | HTMLMeterElement | HTMLOutputElement | HTMLPreElement | HTMLScriptElement | HTMLTemplateElement | HTMLTableSectionElement | HTMLTableCellElement | HTMLTableRowElement | HTMLTrackElement | HTMLVideoElement | HTMLTableCaptionElement | HTMLMenuElement | HTMLPictureElement>, "id" | "onResize"> & {
+import { PanelResizeHandle } from "react-resizable-panels";
+export declare const ResizablePanelGroup: import("react").ForwardRefExoticComponent<Omit<import("react").HTMLAttributes<keyof HTMLElementTagNameMap>, "id"> & {
+    autoSaveId?: string | null;
+    className?: string;
+    direction: import("react-resizable-panels/dist/declarations/src/types").Direction;
+    id?: string | null;
+    keyboardResizeBy?: number | null;
+    onLayout?: import("react-resizable-panels").PanelGroupOnLayout | null;
+    storage?: import("react-resizable-panels").PanelGroupStorage;
+    style?: import("react").CSSProperties;
+    tagName?: keyof HTMLElementTagNameMap;
+    dir?: "auto" | "ltr" | "rtl" | undefined;
+} & {
+    children?: import("react").ReactNode | undefined;
+} & import("react").RefAttributes<import("react-resizable-panels").ImperativePanelGroupHandle>>;
+export declare const ResizablePanel: import("react").ForwardRefExoticComponent<Omit<import("react").HTMLAttributes<HTMLDivElement | HTMLElement | HTMLButtonElement | HTMLHeadingElement | HTMLParagraphElement | HTMLSpanElement | HTMLSelectElement | HTMLOptionElement | HTMLOptGroupElement | HTMLInputElement | HTMLLabelElement | HTMLTextAreaElement | HTMLDetailsElement | HTMLAnchorElement | HTMLPreElement | HTMLBRElement | HTMLObjectElement | HTMLMapElement | HTMLDataElement | HTMLStyleElement | HTMLLinkElement | HTMLSourceElement | HTMLTitleElement | HTMLProgressElement | HTMLTableElement | HTMLTimeElement | HTMLBodyElement | HTMLHtmlElement | HTMLFormElement | HTMLSlotElement | HTMLDialogElement | HTMLImageElement | HTMLAreaElement | HTMLAudioElement | HTMLBaseElement | HTMLQuoteElement | HTMLCanvasElement | HTMLTableColElement | HTMLDataListElement | HTMLModElement | HTMLDListElement | HTMLEmbedElement | HTMLFieldSetElement | HTMLHeadElement | HTMLHRElement | HTMLIFrameElement | HTMLLegendElement | HTMLLIElement | HTMLMetaElement | HTMLMeterElement | HTMLOListElement | HTMLOutputElement | HTMLScriptElement | HTMLTableSectionElement | HTMLTableCellElement | HTMLTemplateElement | HTMLTableRowElement | HTMLTrackElement | HTMLUListElement | HTMLVideoElement | HTMLTableCaptionElement | HTMLMenuElement | HTMLPictureElement>, "id" | "onResize"> & {
     className?: string;
     collapsedSize?: number | undefined;
     collapsible?: boolean | undefined;
@@ -17,9 +29,6 @@ declare const ResizablePanel: React.ForwardRefExoticComponent<Omit<React.HTMLAtt
     tagName?: keyof HTMLElementTagNameMap | undefined;
 } & {
     children?: import("react").ReactNode | undefined;
-} & React.RefAttributes<import("react-resizable-panels").ImperativePanelHandle>>;
-declare const ResizableHandle: ({ withHandle, className, ...props }: React.ComponentProps<typeof PanelResizeHandle> & {
-    withHandle?: boolean;
-}) => import("react/jsx-runtime").JSX.Element;
-export { ResizablePanelGroup, ResizablePanel, ResizableHandle };
+} & import("react").RefAttributes<import("react-resizable-panels").ImperativePanelHandle>>;
+export declare const ResizableHandle: typeof PanelResizeHandle;
 //# sourceMappingURL=resizable.d.ts.map

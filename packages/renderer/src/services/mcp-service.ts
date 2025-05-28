@@ -238,85 +238,25 @@ class MCPService {
   }
 
   private async executeToolInternal(tool: MCPTool, parameters: Record<string, any>): Promise<any> {
-    // Try to execute via real MCP servers first
+    // Try to execute via real MCP servers
     try {
       const mcpStore = useMCPStore.getState();
       const result = await mcpStore.executeTool(tool.name, parameters);
       return result;
     } catch (error) {
-      console.warn(`MCP execution failed for ${tool.name}, falling back to mock:`, error);
-      // Fall back to mock implementation for development
-    }
-    
-    switch (tool.name) {
-      case 'read_file':
-        return {
-          content: `// Sample file content for ${parameters.path}\nconst example = 'Hello World';\nexport default example;`,
-          size: 156,
-          encoding: 'utf-8'
-        };
-        
-      case 'write_file':
-        return {
-          message: `Successfully wrote ${parameters.content.length} characters to ${parameters.path}`,
-          bytesWritten: parameters.content.length
-        };
-        
-      case 'list_directory':
-        return {
-          files: [
-            { name: 'src', type: 'directory', size: 0 },
-            { name: 'package.json', type: 'file', size: 1234 },
-            { name: 'README.md', type: 'file', size: 567 }
-          ],
-          totalCount: 3
-        };
-        
-      case 'execute_command':
-        return {
-          stdout: `$ ${parameters.command}\nCommand executed successfully`,
-          stderr: '',
-          exitCode: 0,
-          duration: 250
-        };
-        
-      case 'sequential_thinking':
-        return {
-          thought: parameters.thought,
-          thoughtNumber: 1,
-          totalThoughts: parameters.total_thoughts,
-          nextThoughtNeeded: true
-        };
-        
-      case 'web_search':
-        return {
-          results: [
-            {
-              title: `Search results for: ${parameters.search_term}`,
-              url: 'https://example.com',
-              snippet: 'Relevant information found...'
-            }
-          ],
-          totalResults: 1
-        };
-        
-      case 'analyze_project':
-        return {
-          structure: {
-            totalFiles: 45,
-            totalDirectories: 12,
-            languages: ['TypeScript', 'CSS', 'JSON'],
-            framework: 'React'
-          },
-          health: {
-            score: 0.85,
-            issues: [],
-            recommendations: ['Consider adding more tests']
-          }
-        };
-        
-      default:
-        throw new Error(`Tool execution not implemented for '${tool.name}'`);
+      // Log the actual error for debugging
+      console.error(`MCP execution failed for ${tool.name}:`, error);
+      
+      // Throw a descriptive error instead of falling back to mock
+      throw new Error(
+        `Tool '${tool.name}' is currently unavailable. ` +
+        `This may be because:\n` +
+        `• The MCP server providing this tool is not connected\n` +
+        `• The tool requires additional configuration\n` +
+        `• There was a network or communication error\n\n` +
+        `Please check your MCP server connections in the settings and try again.\n` +
+        `Original error: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 

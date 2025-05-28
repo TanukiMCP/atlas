@@ -17,8 +17,8 @@ electron_1.contextBridge.exposeInMainWorld('electronAPI', {
     sendAction: (channel, data) => {
         electron_1.ipcRenderer.send(channel, data);
     },
-    invokeAction: (channel, data) => {
-        return electron_1.ipcRenderer.invoke(channel, data);
+    invoke: (channel, ...args) => {
+        return electron_1.ipcRenderer.invoke(channel, ...args);
     },
     removeAllListeners: (channel) => {
         electron_1.ipcRenderer.removeAllListeners(channel);

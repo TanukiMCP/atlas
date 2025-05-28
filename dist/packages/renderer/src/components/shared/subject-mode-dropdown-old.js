@@ -16,7 +16,13 @@ const SUBJECT_MODES = [
     { id: 'data', name: 'Data Science', icon: '📈', color: 'cyan', description: 'Data analysis, visualization, and machine learning' }
 ];
 const SubjectModeDropdown = ({ currentMode, onModeChange }) => {
+    const [isOpen, setIsOpen] = (0, react_1.useState)(false);
+    const [searchQuery, setSearchQuery] = (0, react_1.useState)('');
+    const [selectedIndex, setSelectedIndex] = (0, react_1.useState)(0);
+    const dropdownRef = (0, react_1.useRef)(null);
+    const inputRef = (0, react_1.useRef)(null);
     const currentModeData = SUBJECT_MODES.find(mode => mode.id === currentMode) || SUBJECT_MODES[0];
+    const filteredModes = SUBJECT_MODES.filter(mode => mode.name.toLowerCase().includes(searchQuery.toLowerCase()));
     (0, react_1.useEffect)(() => {
         const handleClickOutside = (event) => {
             if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -84,6 +90,14 @@ const SubjectModeDropdown = ({ currentMode, onModeChange }) => {
         };
         return colors[color] || '#3b82f6';
     };
+    (0, react_1.useEffect)(() => {
+        if (selectedIndex >= filteredModes.length && filteredModes.length > 0) {
+            setSelectedIndex(filteredModes.length - 1);
+        }
+        else if (filteredModes.length === 0) {
+            setSelectedIndex(0);
+        }
+    }, [filteredModes, selectedIndex]);
     return ((0, jsx_runtime_1.jsxs)("div", { ref: dropdownRef, style: { position: 'relative' }, children: [(0, jsx_runtime_1.jsxs)("button", { onClick: () => setIsOpen(!isOpen), style: {
                     display: 'flex',
                     alignItems: 'center',
@@ -147,12 +161,21 @@ const SubjectModeDropdown = ({ currentMode, onModeChange }) => {
                                         ? '3px solid var(--color-accent)'
                                         : '3px solid transparent',
                                 transition: 'all 0.15s ease',
-                                outline: index === selectedIndex ? '2px solid var(--color-accent)' : 'none',
-                                outlineOffset: '-2px'
                             }, onMouseEnter: (e) => {
                                 setSelectedIndex(index);
+                                e.target.style.backgroundColor = index === selectedIndex
+                                    ? 'var(--color-accent)'
+                                    : 'var(--color-bg-tertiary)';
                             }, onMouseLeave: (e) => {
-                                // Don't reset selection on mouse leave to maintain keyboard navigation
+                                e.target.style.backgroundColor = index === selectedIndex
+                                    ? 'var(--color-accent)'
+                                    : mode.id === currentMode
+                                        ? `${getModeColor(mode.color)}20`
+                                        : 'transparent';
+                            }, tabIndex: 0, onKeyDown: (e) => {
+                                if (e.key === 'Enter' || e.key === ' ') {
+                                    handleModeSelect(mode);
+                                }
                             }, children: (0, jsx_runtime_1.jsxs)("div", { style: {
                                     display: 'flex',
                                     alignItems: 'center',

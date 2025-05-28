@@ -16,34 +16,36 @@ import { AutoUpdaterService } from './services/auto-updater';
 import { NotificationService } from './services/notification-service';
 import { CrashReporterService } from './services/crash-reporter';
 import { ProtocolHandlerService } from './services/protocol-handler';
+import { EnhancedLLMService } from '../../llm-enhanced/src/enhanced-llm-service';
+import { MCPClientHub } from '../../mcp-hub/src/client-hub';
+import { OllamaServiceAdapter } from '../../llm-enhanced/src/services/ollama-adapter';
 
 class TanukiMCPApp {
   private mainWindow: BrowserWindow | null = null;
+  private trayService!: SystemTrayService;
+  private menuService!: NativeMenuService;
+  private autoUpdaterService!: AutoUpdaterService;
+  private notificationService!: NotificationService;
+  private crashReporterService!: CrashReporterService;
+  private protocolHandlerService!: ProtocolHandlerService;
+
+  // Services that might be initialized later or conditionally
+  private ollamaService!: OllamaService;
+  private systemMonitor!: SystemMonitor;
+  private modelManager!: ModelManager;
+  private hardwareAssessor!: HardwareAssessor;
+  private optimizationEngine!: OptimizationEngine;
+  private parameterTuner!: ParameterTuner;
+  private contextManager!: ContextManager;
+  private enhancedLLMService!: EnhancedLLMService;
+  private mcpClientHub!: MCPClientHub;
   private isQuitting = false;
-  
-  // Phase 2: LLM and Model Management Services
-  private ollamaService: OllamaService;
-  private systemMonitor: SystemMonitor;
-  private modelManager: ModelManager;
-  private hardwareAssessor: HardwareAssessor;
-  private optimizationEngine: OptimizationEngine;
-  private parameterTuner: ParameterTuner;
-  private contextManager: ContextManager;
-  
-  // Phase 3: Desktop Integration Services
-  private systemTrayService: SystemTrayService | null = null;
-  private nativeMenuService: NativeMenuService | null = null;
-  private autoUpdaterService: AutoUpdaterService | null = null;
-  private notificationService: NotificationService | null = null;
-  private crashReporterService: CrashReporterService | null = null;
-  private protocolHandlerService: ProtocolHandlerService | null = null;
 
   constructor() {
     this.setupEventHandlers();
-    this.initializeServices();
   }
   
-  private initializeServices(): void {
+  private async initializeServices(): Promise<void> {
     console.log('🔧 Initializing Phase 2 services...');
     
     // Initialize all LLM and model management services
@@ -56,6 +58,18 @@ class TanukiMCPApp {
     this.contextManager = new ContextManager();
     
     console.log('✅ Phase 2 services initialized');
+    
+    // Initialize Phase 2.5: Enhanced LLM and MCP Hub
+    console.log('🔧 Initializing Enhanced LLM and MCP Hub...');
+    
+    this.mcpClientHub = new MCPClientHub();
+    await this.mcpClientHub.initialize();
+    
+    const ollamaAdapter = new OllamaServiceAdapter(this.ollamaService);
+    this.enhancedLLMService = new EnhancedLLMService();
+    await this.enhancedLLMService.initialize(ollamaAdapter, this.mcpClientHub);
+    
+    console.log('✅ Enhanced LLM and MCP Hub initialized');
   }
 
   private setupEventHandlers(): void {
@@ -80,6 +94,7 @@ class TanukiMCPApp {
 
   private async onReady(): Promise<void> {
     try {
+      await this.initializeServices();
       console.log('🚀 TanukiMCP Atlas starting...');
       
       // Initialize database first
@@ -141,8 +156,11 @@ class TanukiMCPApp {
   private async loadProductionFile(): Promise<void> {
     if (!this.mainWindow) return;
     
-    const indexPath = path.join(__dirname, '../renderer/dist/index.html');
-    console.log(`📁 Loading from file: ${indexPath}`);
+    // __dirname is packages/main/dist
+    // ../../../ should resolve to the project root (e.g., tanukimcp-atlas)
+    const projectRoot = path.resolve(__dirname, '../../../');
+    const indexPath = path.join(projectRoot, 'packages/renderer/dist/index.html');
+    console.log(`📁 Loading from file: ${indexPath} (using projectRoot: ${projectRoot}, __dirname: ${__dirname})`);
     await this.mainWindow.loadFile(indexPath);
   }
 
@@ -176,10 +194,10 @@ class TanukiMCPApp {
       this.notificationService = new NotificationService(this.mainWindow);
       
       // Initialize system tray
-      this.systemTrayService = new SystemTrayService(this.mainWindow);
+      this.trayService = new SystemTrayService(this.mainWindow);
       
       // Initialize native menu
-      this.nativeMenuService = new NativeMenuService(this.mainWindow);
+      this.menuService = new NativeMenuService(this.mainWindow);
       
       // Initialize protocol handler
       this.protocolHandlerService = new ProtocolHandlerService(this.mainWindow);
@@ -247,8 +265,10 @@ class TanukiMCPApp {
       optimizationEngine: this.optimizationEngine,
       parameterTuner: this.parameterTuner,
       contextManager: this.contextManager,
-      systemTray: this.systemTrayService,
-      nativeMenu: this.nativeMenuService,
+      enhancedLLM: this.enhancedLLMService,
+      mcpHub: this.mcpClientHub,
+      systemTray: this.trayService,
+      nativeMenu: this.menuService,
       autoUpdater: this.autoUpdaterService,
       notification: this.notificationService,
       crashReporter: this.crashReporterService,

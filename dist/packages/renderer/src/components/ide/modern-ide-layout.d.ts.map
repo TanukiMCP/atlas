@@ -1,1 +1,1 @@
-{"version":3,"file":"modern-ide-layout.d.ts","sourceRoot":"","sources":["../../../../../../packages/renderer/src/components/ide/modern-ide-layout.tsx"],"names":[],"mappings":"AAAA,OAAO,KAA8B,MAAM,OAAO,CAAC;AAwSnD,eAAO,MAAM,eAAe,EAAE,KAAK,CAAC,EA4lBnC,CAAC"}
+{"version":3,"file":"modern-ide-layout.d.ts","sourceRoot":"","sources":["../../../../../../packages/renderer/src/components/ide/modern-ide-layout.tsx"],"names":[],"mappings":"AAAA,OAAO,KAA8B,MAAM,OAAO,CAAC;AA6SnD,eAAO,MAAM,eAAe,EAAE,KAAK,CAAC,EAirBnC,CAAC"}

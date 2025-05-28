@@ -23,7 +23,23 @@ class ErrorBoundary extends react_1.default.Component {
     }
     render() {
         if (this.state.hasError) {
-            return ((0, jsx_runtime_1.jsxs)("div", { className: "error-boundary", children: [(0, jsx_runtime_1.jsx)("h2", { children: "Something went wrong" }), (0, jsx_runtime_1.jsxs)("details", { style: { whiteSpace: 'pre-wrap' }, children: [(0, jsx_runtime_1.jsx)("summary", { children: "Error details" }), this.state.error && this.state.error.toString()] }), (0, jsx_runtime_1.jsx)("button", { onClick: () => window.location.reload(), children: "Reload Application" })] }));
+            return ((0, jsx_runtime_1.jsx)("div", { style: {
+                    minHeight: '100vh',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    backgroundColor: '#1a1a1a',
+                    color: 'white',
+                    fontFamily: 'sans-serif'
+                }, children: (0, jsx_runtime_1.jsxs)("div", { style: { textAlign: 'center', maxWidth: '500px', padding: '20px' }, children: [(0, jsx_runtime_1.jsx)("h2", { children: "\uD83D\uDEA8 React Error Detected" }), (0, jsx_runtime_1.jsxs)("details", { style: { whiteSpace: 'pre-wrap', marginTop: '20px' }, children: [(0, jsx_runtime_1.jsx)("summary", { children: "Error details" }), this.state.error && this.state.error.toString()] }), (0, jsx_runtime_1.jsx)("button", { onClick: () => window.location.reload(), style: {
+                                marginTop: '20px',
+                                padding: '10px 20px',
+                                backgroundColor: '#dc2626',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '5px',
+                                cursor: 'pointer'
+                            }, children: "\uD83D\uDD04 Reload Application" })] }) }));
         }
         return this.props.children;
     }
@@ -35,4 +51,5 @@ root.render((0, jsx_runtime_1.jsx)(react_1.default.StrictMode, { children: (0, j
 if (import.meta.hot) {
     import.meta.hot.accept();
 }
+console.log('✅ TanukiMCP Atlas App loaded with error boundary');
 //# sourceMappingURL=main.js.map

@@ -1,6 +1,7 @@
 /**
  * Enhanced Chat Interface with Workflow Generation Integration
  * Includes "Save as Workflow" buttons and comprehensive chat management
+ * Now integrated with real LLM service
  */
 import React from 'react';
 interface ChatInterfaceProps {

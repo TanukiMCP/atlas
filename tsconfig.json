@@ -1,22 +1,43 @@
 {
   "compilerOptions": {
     "target": "es2022",
-    "module": "commonjs",
+    "module": "ESNext",
     "lib": ["es2022", "dom", "dom.iterable"],
-    "outDir": "dist",
-    "rootDir": ".",
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
     "jsx": "react-jsx",
     "allowSyntheticDefaultImports": true,
-    "types": ["node"]
+    "types": ["node"],
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["packages/renderer/src/*"],
+      "@main/*": ["packages/main/src/*"],
+      "@shared/*": ["packages/shared/src/*"]
+    }
   },
-  "include": ["packages/*/src/**/*"],
-  "exclude": ["node_modules", "**/dist", "**/*.test.ts"]
+  "references": [
+    // For packages/renderer, Vite might handle its own tsconfig for app code vs. vite.config.ts.
+    // If packages/renderer/tsconfig.json exists and is meant for app code, use it.
+    // Otherwise, this root config might apply directly to its .ts/.tsx files if not excluded.
+    // For now, assuming Vite handles the renderer's main TS compilation and this root config provides base settings + path aliases.
+    // If direct tsc compilation of renderer is needed via project references, ensure packages/renderer/tsconfig.json is correctly set up for app code.
+    { "path": "./packages/main/tsconfig.json" },
+    { "path": "./packages/shared/tsconfig.json" }
+    // { "path": "./packages/llm-enhanced/tsconfig.json" }, // Assuming these might have their own or might not exist yet
+    // { "path": "./packages/mcp-hub/tsconfig.json" },
+    // { "path": "./packages/mcp-server/tsconfig.json" },
+    // { "path": "./packages/tool-router/tsconfig.json" },
+    // { "path": "./packages/management-center/tsconfig.json" },
+    // { "path": "./packages/mobile-server/tsconfig.json" }
+  ],
+  "files": [] // Important for a solution-style tsconfig with project references, or when no "include" is present.
+  // If you want this root tsconfig to compile files directly (not recommended with project references usually):
+  // "include": ["packages/renderer/src/**/*.ts", "packages/renderer/src/**/*.tsx", ...other packages similarly]
+  // "exclude": ["node_modules", "**/dist", "**/*.test.ts"]
 }
