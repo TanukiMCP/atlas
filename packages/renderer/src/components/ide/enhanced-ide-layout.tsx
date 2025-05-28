@@ -17,6 +17,8 @@ import { LLMPromptManagement } from '../prompt-management/llm-prompt-management'
 import { useKeyboardShortcuts } from '../../hooks/use-keyboard-shortcuts';
 import { useSubjectMode } from '../../hooks/use-subject-mode';
 import { useUIStore } from '../../hooks/use-ui-store';
+import { useLLMStore } from '../../stores/llm-store';
+import { useMCPStore } from '../../stores/mcp-store';
 import { 
   WorkflowGenerationService, 
   WorkflowGenerationConfig, 
@@ -39,6 +41,8 @@ export const EnhancedIDELayout: React.FC = () => {
   
   const { currentMode, switchMode } = useSubjectMode();
   const { layout, updateLayout } = useUIStore();
+  const { checkHealth, refreshModels } = useLLMStore();
+  const { initialize: initializeMCP } = useMCPStore();
   
   const workflowGenerationServiceRef = useRef<WorkflowGenerationService | null>(null);
   const workflowExecutionServiceRef = useRef<WorkflowExecutionService | null>(null);
@@ -46,6 +50,15 @@ export const EnhancedIDELayout: React.FC = () => {
 
   // Initialize services
   useEffect(() => {
+    // Initialize LLM and MCP services
+    const initializeServices = async () => {
+      await checkHealth();
+      await refreshModels(); // This will set the default model
+      await initializeMCP();
+    };
+    
+    initializeServices();
+    
     // Initialize Workflow Generation Service
     const generationConfig: WorkflowGenerationConfig = {
       enableAutoSave: false,

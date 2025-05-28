@@ -3,22 +3,25 @@ import { MenuBar } from './menu-bar';
 import { Toolbar } from './toolbar';
 import { StatusBar } from './status-bar';
 import { PanelManager } from './panel-manager';
-import { ChatInterface, ChatInterfaceHandle } from '../chat/chat-interface';
+import { ImprovedChatInterface, ImprovedChatInterfaceHandle } from '../chat/improved-chat-interface';
 import { WorkingFileTree } from '../file-explorer/working-file-tree';
+// import { RealFileTree } from '../file-explorer/real-file-tree';
 import { VisualWorkflowBuilder } from '../workflows/visual-workflow-builder';
 import { ComprehensiveToolCatalog } from '../tools/comprehensive-tool-catalog';
 import { SpecializedAgentTemplates } from '../agents/specialized-agent-templates';
 import { AnalyticsDashboard } from '../analytics/analytics-dashboard';
 import { WorkflowManager } from '../workflows/workflow-manager';
 import { ManagementCenterModal } from '../management/management-center-modal';
+// import { CodeEditor } from '../editor/code-editor';
 import { useKeyboardShortcuts } from '../../hooks/use-keyboard-shortcuts';
 import { useSubjectMode } from '../../hooks/use-subject-mode';
 import { useUIStore } from '../../hooks/use-ui-store';
 import { ToolSelector } from '../shared/tool-selector';
 import { FileContentViewer } from '../shared/file-content-viewer';
-import { ProcessingTierIndicator, ProcessingTier } from '../shared/processing-tier-indicator';
+import { ProcessingTierIndicator } from '../shared/processing-tier-indicator';
 import { ToolExecutionPanel } from '../shared/tool-execution-panel';
 import { FileInfo } from '../../services/file-service';
+import { FileNode } from '../../stores/app-store';
 import { MCPTool } from '../../services/mcp-service';
 
 export type AppView = 
@@ -32,23 +35,41 @@ export type AppView =
   | 'mcp-servers'
   | 'editor'; // Added for file editing
 
+type ProcessingTier = 'basic' | 'advanced' | 'premium' | 'enterprise';
+
 export const IDELayout: React.FC = () => {
   const [showAtSymbol, setShowAtSymbol] = useState(false);
-  const chatRef = useRef<ChatInterfaceHandle>(null);
+  const chatRef = useRef<ImprovedChatInterfaceHandle>(null);
   const [atSymbolPosition, setAtSymbolPosition] = useState({ x: 0, y: 0 });
   const [showManagementCenter, setShowManagementCenter] = useState(false);
   const [operationalMode, setOperationalMode] = useState<'agent' | 'chat'>('agent');
-  const [selectedFile, setSelectedFile] = useState<FileInfo | null>(null);
+  const [selectedFile, setSelectedFile] = useState<FileNode | null>(null);
   const [showFileViewer, setShowFileViewer] = useState(false);
   const [showProcessingTier, setShowProcessingTier] = useState(false);
-  const [currentTier, setCurrentTier] = useState<ProcessingTier>('MODERATE');
+  const [currentTier, setCurrentTier] = useState<ProcessingTier>('advanced');
   const [isProcessing, setIsProcessing] = useState(false);
   const [showToolPanel, setShowToolPanel] = useState(false);
   const [activeRightPanel, setActiveRightPanel] = useState<'workflow' | 'tools' | 'agents' | 'analytics'>('workflow');
-  const [activeMainView, setActiveMainView] = useState<AppView>('chat'); // New state for managing main views
+  const [activeMainView, setActiveMainView] = useState<AppView>('chat'); // Back to chat view
+  
+
   
   const { currentMode, switchMode } = useSubjectMode();
   const { layout, updateLayout } = useUIStore();
+  
+  // Helper function to convert FileInfo to FileNode
+  const fileInfoToFileNode = (fileInfo: FileInfo): FileNode => {
+    return {
+      id: fileInfo.path || fileInfo.name,
+      name: fileInfo.name,
+      type: fileInfo.type === 'directory' ? 'folder' : 'file',
+      path: fileInfo.path,
+      size: fileInfo.size,
+      modified: fileInfo.modified,
+      children: [],
+      isExpanded: false
+    };
+  };
   
   // Handler functions
   const handleNewChat = () => console.log('New Chat');
@@ -67,14 +88,14 @@ export const IDELayout: React.FC = () => {
   };
   
   const handleFileSelect = (file: any) => {
-    // Map the file explorer's FileItem to FileInfo for FileContentViewer
-    const fileInfo: FileInfo = {
+    // Convert FileItem to FileNode for FileContentViewer
+    const fileNode = fileInfoToFileNode({
       name: file.name,
       path: file.name,
-      type: file.type,
+      type: file.type === 'directory' ? 'directory' : 'file',
       modified: new Date(),
-    };
-    setSelectedFile(fileInfo);
+    });
+    setSelectedFile(fileNode);
     if (file.type === 'file') {
       setActiveMainView('editor');
     }
@@ -189,7 +210,7 @@ export const IDELayout: React.FC = () => {
             // Main panel content will now be dynamic based on activeMainView
             centerPanel: (
               <>
-                {activeMainView === 'chat' && <ChatInterface ref={chatRef} onAtSymbolTrigger={handleAtSymbolTrigger} operationalMode={operationalMode} />}
+                {activeMainView === 'chat' && <ImprovedChatInterface ref={chatRef} onAtSymbolTrigger={handleAtSymbolTrigger} operationalMode={operationalMode} />}
                 {activeMainView === 'workflow-manager' && <WorkflowManager /> /* Assuming WorkflowManager is the component */}
                 {activeMainView === 'settings' && <div>Settings View Placeholder</div>}
                 {activeMainView === 'llm-prompt-management' && <div>LLM Prompt Management Placeholder</div>}
@@ -300,9 +321,8 @@ export const IDELayout: React.FC = () => {
         <ProcessingTierIndicator
           currentTier={currentTier}
           complexity={6}
-          estimatedDuration={45}
           isActive={isProcessing}
-          onTierSwitch={handleTierSwitch}
+          estimatedTime="45 seconds"
         />
       )}
 

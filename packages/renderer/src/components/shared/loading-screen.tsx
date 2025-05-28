@@ -20,15 +20,15 @@ export const LoadingScreen: React.FC<LoadingScreenProps> = ({
       <div className="text-center max-w-md mx-auto px-8">
         {/* TanukiMCP Logo */}
         <div className="relative mb-8">
-          <div className="w-24 h-24 bg-tanuki-500 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
-            <span className="text-white text-4xl font-bold">T</span>
+          <div className="w-24 h-24 bg-primary rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
+            <span className="text-primary-foreground text-4xl">🦝</span>
           </div>
-          <div className="absolute inset-0 w-24 h-24 bg-tanuki-500 rounded-2xl mx-auto animate-ping opacity-20"></div>
+          <div className="absolute inset-0 w-24 h-24 bg-primary rounded-2xl mx-auto animate-ping opacity-20"></div>
         </div>
 
         {/* Brand Name */}
         <h1 className="text-3xl font-bold mb-2 text-foreground">
-          TanukiMCP <span className="tanuki-gradient">Atlas</span>
+          🦝 TanukiMCP <span className="tanuki-gradient">Atlas</span>
         </h1>
         <p className="text-muted-foreground mb-8 text-lg">
           AI-Powered Development Environment
@@ -40,7 +40,7 @@ export const LoadingScreen: React.FC<LoadingScreenProps> = ({
             {[0, 1, 2].map((i) => (
               <div
                 key={i}
-                className="w-3 h-3 bg-tanuki-500 rounded-full animate-bounce"
+                className="w-3 h-3 bg-primary rounded-full animate-bounce"
                 style={{
                   animationDelay: `${i * 0.2}s`,
                   animationDuration: '1s'
@@ -53,7 +53,7 @@ export const LoadingScreen: React.FC<LoadingScreenProps> = ({
           {progress !== undefined && (
             <div className="w-full bg-muted rounded-full h-2 mb-4">
               <div 
-                className="bg-tanuki-500 h-2 rounded-full transition-all duration-300 ease-out"
+                className="bg-primary h-2 rounded-full transition-all duration-300 ease-out"
                 style={{ width: `${Math.min(100, Math.max(0, progress))}%` }}
               />
             </div>

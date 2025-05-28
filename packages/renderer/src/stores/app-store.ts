@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+// import { persist } from 'zustand/middleware';
 
 export interface FileNode {
   id: string;
@@ -51,57 +51,45 @@ interface AppState {
   setCurrentSubjectMode: (mode: string) => void;
 }
 
-export const useAppStore = create<AppState>()(
-  persist(
-    (set, get) => ({
-      // Theme
-      theme: 'dark',
-      setTheme: (theme) => set({ theme }),
-      
-      // Layout
-      sidebarCollapsed: false,
-      setSidebarCollapsed: (collapsed) => set({ sidebarCollapsed: collapsed }),
-      activeTab: 'chat',
-      setActiveTab: (tab) => set({ activeTab: tab }),
-      
-      // Files
-      files: [],
-      selectedFile: null,
-      setFiles: (files) => set({ files }),
-      setSelectedFile: (file) => set({ selectedFile: file }),
-      
-      // Chat
-      messages: [
-        {
-          id: '1',
-          type: 'system',
-          content: 'Welcome to TanukiMCP Atlas! I\'m here to help you with AI-driven development workflows.',
-          timestamp: new Date(Date.now() - 300000),
-        }
-      ],
-      addMessage: (message) => set((state) => ({ 
-        messages: [...state.messages, message] 
-      })),
-      clearMessages: () => set({ messages: [] }),
-      
-      // Tools
-      showToolSelector: false,
-      setShowToolSelector: (show) => set({ showToolSelector: show }),
-      
-      // Subject Mode
-      currentSubjectMode: 'Mathematics',
-      setCurrentSubjectMode: (mode) => set({ currentSubjectMode: mode }),
-    }),
+export const useAppStore = create<AppState>()((set, get) => ({
+  // Theme
+  theme: 'dark',
+  setTheme: (theme) => set({ theme }),
+  
+  // Layout
+  sidebarCollapsed: false,
+  setSidebarCollapsed: (collapsed) => set({ sidebarCollapsed: collapsed }),
+  activeTab: 'chat',
+  setActiveTab: (tab) => set({ activeTab: tab }),
+  
+  // Files
+  files: [],
+  selectedFile: null,
+  setFiles: (files) => set({ files }),
+  setSelectedFile: (file) => set({ selectedFile: file }),
+  
+  // Chat
+  messages: [
     {
-      name: 'tanukimcp-atlas-store',
-      partialize: (state) => ({
-        theme: state.theme,
-        sidebarCollapsed: state.sidebarCollapsed,
-        currentSubjectMode: state.currentSubjectMode,
-      }),
+      id: '1',
+      type: 'system',
+      content: 'Welcome to TanukiMCP Atlas! I\'m here to help you with AI-driven development workflows.',
+      timestamp: new Date(Date.now() - 300000),
     }
-  )
-);
+  ],
+  addMessage: (message) => set((state) => ({ 
+    messages: [...state.messages, message] 
+  })),
+  clearMessages: () => set({ messages: [] }),
+  
+  // Tools
+  showToolSelector: false,
+  setShowToolSelector: (show) => set({ showToolSelector: show }),
+  
+  // Subject Mode
+  currentSubjectMode: 'Mathematics',
+  setCurrentSubjectMode: (mode) => set({ currentSubjectMode: mode }),
+}));
 
 // Convenience hooks for specific parts of the store
 export const useTheme = () => useAppStore(state => ({ theme: state.theme, setTheme: state.setTheme }));

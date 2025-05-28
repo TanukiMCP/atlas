@@ -1,16 +1,21 @@
 import React from 'react';
+import { LLMStatus } from '../llm/llm-status';
+import { useMCPStore } from '../../stores/mcp-store';
 
 interface StatusBarProps {
   currentMode: string;
   connectionStatus: string;
   activeTools: string[];
+  workflowExecutionService?: any;
 }
 
 export const StatusBar: React.FC<StatusBarProps> = ({
   currentMode,
   connectionStatus,
-  activeTools
+  activeTools,
+  workflowExecutionService
 }) => {
+  const { servers, connectedServers } = useMCPStore();
   return (
     <div style={{
       display: 'flex',
@@ -33,6 +38,10 @@ export const StatusBar: React.FC<StatusBarProps> = ({
           Mode: {currentMode}
         </div>
         
+        <div>
+          MCP Servers: {connectedServers.size}/{servers.length}
+        </div>
+        
         {activeTools.length > 0 && (
           <div>
             Active Tools: {activeTools.join(', ')}
@@ -41,6 +50,7 @@ export const StatusBar: React.FC<StatusBarProps> = ({
       </div>
       
       <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+        <LLMStatus />
         <div>Ready</div>
         <div>Line 1, Col 1</div>
         <div>UTF-8</div>

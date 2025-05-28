@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { useAppStore, useTheme, useFiles, useChat, useLayout, useTools, useSubjectMode, FileNode } from '../../stores/app-store';
+import { useLLMStore } from '../../stores/llm-store';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
@@ -50,10 +51,14 @@ import {
   Archive,
   RefreshCw,
   AlertCircle,
-  Loader2
+  Loader2,
+  MessageSquare,
+  Code,
+  Brain
 } from 'lucide-react';
 import { cn, formatTimeAgo, formatFileSize, truncateText } from '../../lib/utils';
 import { fileService, FileContent, FileInfo, getFileTypeIcon } from '../../services/file-service';
+import { LLMStatus } from '../llm/llm-status';
 
 // Type definitions
 interface ChatMessage {
@@ -297,10 +302,18 @@ const fileInfoToFileNode = (fileInfo: FileInfo, parentPath: string = ''): FileNo
 export const ModernIDELayout: React.FC = () => {
   const { theme, setTheme } = useTheme();
   const { files, selectedFile, setFiles, setSelectedFile } = useFiles();
-  const { messages, addMessage } = useChat();
   const { activeTab, setActiveTab, sidebarCollapsed, setSidebarCollapsed } = useLayout();
   const { showToolSelector, setShowToolSelector } = useTools();
   const { currentSubjectMode, setCurrentSubjectMode } = useSubjectMode();
+  const { 
+    currentModel, 
+    isConnected, 
+    sendMessage: sendLLMMessage, 
+    isStreaming, 
+    streamingMessage,
+    currentSession,
+    createNewSession
+  } = useLLMStore();
   
   const [inputMessage, setInputMessage] = useState('');
   const darkMode = theme === 'dark';
@@ -400,30 +413,33 @@ export const ModernIDELayout: React.FC = () => {
   };
 
   // Chat handlers
-  const handleSendMessage = () => {
+  const handleSendMessage = async () => {
     if (!inputMessage.trim()) return;
 
-    const newMessage: ChatMessage = {
-      id: Date.now().toString(),
-      type: 'user',
-      content: inputMessage,
-      timestamp: new Date()
-    };
-
-    addMessage(newMessage);
+    const messageContent = inputMessage;
     setInputMessage('');
 
-    // Simulate AI response
-    setTimeout(() => {
-      const responseMessage: ChatMessage = {
-        id: (Date.now() + 1).toString(),
-        type: 'assistant',
-        content: 'I understand you want to work on that. Let me help you implement this feature step by step.',
-        timestamp: new Date(),
-        tools: ['analyze_code', 'create_todolist']
-      };
-      addMessage(responseMessage);
-    }, 1000);
+    // Check if model is selected
+    if (!currentModel) {
+      console.error('No model selected');
+      return;
+    }
+
+    // Create session if none exists
+    if (!currentSession) {
+      createNewSession();
+    }
+
+    try {
+      // Send message to real LLM - the LLM store handles adding messages to the session
+      await sendLLMMessage(messageContent, (chunk: string) => {
+        // Handle streaming response chunks
+        console.log('Streaming chunk:', chunk);
+      });
+      
+    } catch (error) {
+      console.error('Failed to send message to LLM:', error);
+    }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -606,31 +622,105 @@ export const ModernIDELayout: React.FC = () => {
                       <Bot className="w-5 h-5" />
                       TanukiMCP Assistant
                     </CardTitle>
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm text-muted-foreground">llama3.2:3b</span>
-                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                    </div>
+                    <LLMStatus />
                   </div>
                 </CardHeader>
                 
                 <CardContent className="flex-1 flex flex-col">
                   <ScrollArea className="flex-1 pr-4">
-                    {messages.map(message => (
-                      <ChatMessageComponent key={message.id} message={message} />
-                    ))}
+                    {(!currentSession?.messages || currentSession.messages.length === 0) ? (
+                      <div className="flex-1 flex items-center justify-center">
+                        <div className="text-center space-y-4 max-w-md">
+                          <div className="w-16 h-16 mx-auto bg-gradient-to-br from-orange-500 to-orange-600 rounded-full flex items-center justify-center">
+                            <MessageSquare className="w-8 h-8 text-white" />
+                          </div>
+                          <div className="space-y-2">
+                            <h3 className="text-lg font-semibold text-foreground">
+                              Welcome to TanukiMCP Assistant
+                            </h3>
+                            <p className="text-sm text-muted-foreground">
+                              Your local-first AI assistant is ready to help. Start a conversation to:
+                            </p>
+                          </div>
+                          <div className="grid grid-cols-2 gap-3 text-xs">
+                            <div className="flex items-center gap-2 p-2 rounded-lg bg-muted/50">
+                              <Code className="w-4 h-4 text-orange-500" />
+                              <span>Write & analyze code</span>
+                            </div>
+                            <div className="flex items-center gap-2 p-2 rounded-lg bg-muted/50">
+                              <FileText className="w-4 h-4 text-orange-500" />
+                              <span>Manage files</span>
+                            </div>
+                            <div className="flex items-center gap-2 p-2 rounded-lg bg-muted/50">
+                              <Workflow className="w-4 h-4 text-orange-500" />
+                              <span>Create workflows</span>
+                            </div>
+                            <div className="flex items-center gap-2 p-2 rounded-lg bg-muted/50">
+                              <Brain className="w-4 h-4 text-orange-500" />
+                              <span>Solve problems</span>
+                            </div>
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            {isConnected && currentModel ? (
+                              <>Connected to <span className="font-medium text-orange-500">{currentModel}</span></>
+                            ) : (
+                              <span className="text-amber-500">⚠️ No model selected - check connection</span>
+                            )}
+                          </p>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        {currentSession?.messages.map((message, index) => {
+                          const chatMessage: ChatMessage = {
+                            id: `${currentSession.id}-${index}`,
+                            type: message.role === 'user' ? 'user' : 'assistant',
+                            content: message.content,
+                            timestamp: new Date(),
+                            streaming: false
+                          };
+                          return <ChatMessageComponent key={chatMessage.id} message={chatMessage} />;
+                        })}
+                        {isStreaming && streamingMessage && (
+                          <ChatMessageComponent 
+                            key="streaming" 
+                            message={{
+                              id: 'streaming',
+                              type: 'assistant',
+                              content: streamingMessage,
+                              timestamp: new Date(),
+                              streaming: true
+                            }} 
+                          />
+                        )}
+                      </>
+                    )}
                   </ScrollArea>
                   
                   <div className="border-t pt-4 space-y-4">
                     <div className="flex gap-2">
                       <Input
-                        placeholder="Type your message... (use @ for tools)"
+                        placeholder={
+                          !isConnected || !currentModel 
+                            ? "Select a model to start chatting..." 
+                            : "Type your message... (use @ for tools)"
+                        }
                         value={inputMessage}
                         onChange={(e) => setInputMessage(e.target.value)}
                         onKeyPress={handleKeyPress}
                         className="flex-1"
+                        disabled={!isConnected || !currentModel || isStreaming}
                       />
-                      <Button onClick={handleSendMessage} disabled={!inputMessage.trim()}>
-                        <Send className="w-4 h-4" />
+                      <Button 
+                        onClick={handleSendMessage} 
+                        disabled={!inputMessage.trim() || !isConnected || !currentModel || isStreaming}
+                        className="bg-orange-500 hover:bg-orange-600"
+                      >
+                        {isStreaming ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Send className="w-4 h-4" />
+                        )}
                       </Button>
                     </div>
                     

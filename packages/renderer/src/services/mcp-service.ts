@@ -1,7 +1,10 @@
 /**
  * MCP Service - Real tool integration for TanukiMCP Atlas
  * Handles tool discovery, execution, and result management
+ * Now integrated with real MCP client
  */
+
+import { useMCPStore } from '../stores/mcp-store';
 
 export interface MCPTool {
   name: string;
@@ -235,8 +238,15 @@ class MCPService {
   }
 
   private async executeToolInternal(tool: MCPTool, parameters: Record<string, any>): Promise<any> {
-    // Simulate tool execution with realistic responses
-    // In a real implementation, this would call actual MCP servers
+    // Try to execute via real MCP servers first
+    try {
+      const mcpStore = useMCPStore.getState();
+      const result = await mcpStore.executeTool(tool.name, parameters);
+      return result;
+    } catch (error) {
+      console.warn(`MCP execution failed for ${tool.name}, falling back to mock:`, error);
+      // Fall back to mock implementation for development
+    }
     
     switch (tool.name) {
       case 'read_file':

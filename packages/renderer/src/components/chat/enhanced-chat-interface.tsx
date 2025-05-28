@@ -1,11 +1,14 @@
 /**
  * Enhanced Chat Interface with Workflow Generation Integration
  * Includes "Save as Workflow" buttons and comprehensive chat management
+ * Now integrated with real LLM service
  */
 
 import React, { useState, useRef, useEffect } from 'react';
 import { WorkflowGenerationDialog } from '../workflows/workflow-generation-dialog';
 import { ChatTranscript, ChatMessage, WorkflowTemplate } from '../../types/workflow-types';
+import { useLLMStore } from '../../stores/llm-store';
+import { LLMStatus } from '../llm/llm-status';
 
 interface ChatInterfaceProps {
   onAtSymbolTrigger?: (event: React.KeyboardEvent, position: { x: number; y: number }) => void;
@@ -13,18 +16,29 @@ interface ChatInterfaceProps {
 
 export const EnhancedChatInterface: React.FC<ChatInterfaceProps> = ({ onAtSymbolTrigger }) => {
   const [message, setMessage] = useState('');
-  const [messages, setMessages] = useState<ChatMessage[]>([
-    {
-      id: 'welcome',
-      role: 'assistant',
-      content: 'Welcome to TanukiMCP Atlas! How can I help you today?',
-      timestamp: new Date().toISOString()
-    }
-  ]);
   const [showWorkflowDialog, setShowWorkflowDialog] = useState(false);
   const [selectedMessageForWorkflow, setSelectedMessageForWorkflow] = useState<string | null>(null);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  
+  // Use LLM store for real chat functionality
+  const { 
+    currentSession, 
+    isConnected, 
+    isLoading, 
+    sendMessage: sendLLMMessage,
+    createNewSession,
+    cancelCurrentRequest
+  } = useLLMStore();
+
+  // Initialize with a new session if none exists
+  useEffect(() => {
+    if (!currentSession) {
+      createNewSession();
+    }
+  }, [currentSession, createNewSession]);
+
+  const messages = currentSession?.messages || [];
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -46,29 +60,18 @@ export const EnhancedChatInterface: React.FC<ChatInterfaceProps> = ({ onAtSymbol
     }
   };
 
-  const handleSendMessage = () => {
-    if (!message.trim()) return;
+  const handleSendMessage = async () => {
+    if (!message.trim() || !isConnected || isLoading) return;
 
-    const newMessage: ChatMessage = {
-      id: `msg_${Date.now()}`,
-      role: 'user',
-      content: message,
-      timestamp: new Date().toISOString()
-    };
-
-    setMessages(prev => [...prev, newMessage]);
+    const messageToSend = message;
     setMessage('');
 
-    // Simulate assistant response (in real implementation, this would call LLM)
-    setTimeout(() => {
-      const assistantMessage: ChatMessage = {
-        id: `msg_${Date.now()}_assistant`,
-        role: 'assistant',
-        content: `I understand you said: "${message}". How can I help you further?`,
-        timestamp: new Date().toISOString()
-      };
-      setMessages(prev => [...prev, assistantMessage]);
-    }, 1000);
+    try {
+      await sendLLMMessage(messageToSend);
+    } catch (error) {
+      console.error('Failed to send message:', error);
+      // Could add error handling UI here
+    }
   };
 
   const handleSaveAsWorkflow = (fromMessage?: string) => {
@@ -117,12 +120,7 @@ export const EnhancedChatInterface: React.FC<ChatInterfaceProps> = ({ onAtSymbol
   };
 
   const handleClearChat = () => {
-    setMessages([{
-      id: 'welcome',
-      role: 'assistant',
-      content: 'Welcome to TanukiMCP Atlas! How can I help you today?',
-      timestamp: new Date().toISOString()
-    }]);
+    createNewSession();
   };
 
   return (
@@ -134,11 +132,12 @@ export const EnhancedChatInterface: React.FC<ChatInterfaceProps> = ({ onAtSymbol
             💬
           </div>
           <div>
-            <h2 className="font-medium">Chat Interface</h2>
+            <h2 className="font-medium">TanukiMCP Assistant</h2>
             <p className="text-sm text-gray-600 dark:text-gray-400">
               {messages.length} messages
             </p>
           </div>
+          <LLMStatus />
         </div>
         
         <div className="flex items-center space-x-2">
@@ -229,11 +228,20 @@ export const EnhancedChatInterface: React.FC<ChatInterfaceProps> = ({ onAtSymbol
           </div>
           <button 
             onClick={handleSendMessage}
-            disabled={!message.trim()}
+            disabled={!message.trim() || !isConnected || isLoading}
             className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed self-end"
           >
-            Send
+            {isLoading ? 'Sending...' : 'Send'}
           </button>
+          {isLoading && (
+            <button
+              onClick={cancelCurrentRequest}
+              className="px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 self-end"
+              title="Cancel current request"
+            >
+              ⏹️
+            </button>
+          )}
         </div>
         
         {/* Chat Tips */}

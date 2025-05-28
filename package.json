@@ -89,6 +89,8 @@
         }
       ],
       "icon": "assets/TanukiMCPLogo.png",
+      "publisherName": "TanukiMCP",
+      "verifyUpdateCodeSignature": false,
       "requestedExecutionLevel": "asInvoker",
       "fileAssociations": [
         {

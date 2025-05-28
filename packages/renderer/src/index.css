@@ -1,5 +1,6 @@
 /* TanukiMCP Atlas - Modern Design System */
 @import url('https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400..800&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&display=swap');
 @tailwind base;
 @tailwind components;
@@ -7,68 +8,68 @@
 
 @layer base {
   :root {
-    /* TanukiMCP Brand Colors (Light Mode) */
-    --background: 39 20 11; /* #fef7f0 - Cream */
-    --foreground: 28 22 17; /* #1c1611 - Dark brown */
-    --card: 37 29 23; /* #f7ede3 - Light beige */
-    --card-foreground: 28 22 17; /* #1c1611 */
-    --popover: 39 20 11; /* #fef7f0 */
-    --popover-foreground: 28 22 17; /* #1c1611 */
+    /* TanukiMCP Brand Colors (Light Mode) - Based on tanukimcp.com */
+    --background: 0 0% 100%; /* #ffffff - Pure white background */
+    --foreground: 248 84% 7%; /* #0e0c19 - Dark text from website */
+    --card: 36 100% 90%; /* #ffeccc - Light cream/tan from website */
+    --card-foreground: 248 84% 7%; /* #0e0c19 - Dark text */
+    --popover: 0 0% 100%; /* #ffffff - White popover */
+    --popover-foreground: 248 84% 7%; /* #0e0c19 - Dark text */
     
-    /* TanukiMCP Primary Colors */
-    --primary: 28 89 3; /* #d97706 - Burnt orange */
-    --primary-foreground: 39 20 11; /* Light text on primary */
-    --secondary: 36 27 20; /* #ede0d3 - Soft tan */
-    --secondary-foreground: 28 22 17; /* #1c1611 */
+    /* TanukiMCP Primary Colors - Exact from website */
+    --primary: 19 100% 41%; /* #d35400 - Burnt orange from tanukimcp.com */
+    --primary-foreground: 0 0% 100%; /* #ffffff - White text on orange */
+    --secondary: 36 100% 90%; /* #ffeccc - Light cream/tan */
+    --secondary-foreground: 248 84% 7%; /* #0e0c19 - Dark text */
     
     /* Accent Colors */
-    --accent: 43 96 4; /* #f59e0b - Amber */
-    --accent-foreground: 26 17 7; /* #1a1107 */
-    --muted: 36 27 20; /* #ede0d3 */
-    --muted-foreground: 107 91 82; /* #6b5b52 */
+    --accent: 36 100% 90%; /* #ffeccc - Light cream for accents */
+    --accent-foreground: 248 84% 7%; /* #0e0c19 - Dark text */
+    --muted: 0 0% 96%; /* #f5f5f5 - Light gray */
+    --muted-foreground: 220 9% 46%; /* #6b7280 - Medium gray */
     
     /* States */
-    --destructive: 0 84 60; /* #dc2626 */
-    --destructive-foreground: 39 20 11; /* #fef7f0 */
+    --destructive: 0 84% 60%; /* #ef4444 - Red */
+    --destructive-foreground: 0 0% 100%; /* #ffffff - White text */
     
     /* Borders and Inputs */
-    --border: 214 199 187; /* #d6c7bb */
-    --input: 36 27 20; /* #ede0d3 */
-    --ring: 28 89 3; /* #d97706 - Burnt orange */
+    --border: 220 13% 91%; /* #e5e7eb - Light gray border */
+    --input: 210 20% 98%; /* #f9fafb - Very light gray */
+    --ring: 19 100% 41%; /* #d35400 - Orange focus ring */
     
     /* Border Radius */
     --radius: 0.5rem;
   }
 
   .dark {
-    /* TanukiMCP Brand Colors (Dark Mode) */
-    --background: 26 22 17; /* #1a1611 - Deep burnt umber */
-    --foreground: 39 20 11; /* #fef7f0 - Warm white */
-    --card: 42 31 26; /* #2a1f1a - Rich brown */
-    --card-foreground: 231 211 195; /* #e7d3c3 - Soft beige */
-    --popover: 42 31 26; /* #2a1f1a */
-    --popover-foreground: 39 20 11; /* #fef7f0 */
+    /* TanukiMCP Brand Colors (Dark Mode) - Professional dark theme */
+    --background: 248 84% 7%; /* #0e0c19 - Dark background from website */
+    --foreground: 0 0% 100%; /* #ffffff - White text */
+    --card: 248 26% 14%; /* #1f1d2b - Slightly lighter dark */
+    --card-foreground: 0 0% 100%; /* #ffffff - White text */
+    --popover: 248 26% 14%; /* #1f1d2b - Dark popover */
+    --popover-foreground: 0 0% 100%; /* #ffffff - White text */
     
-    /* TanukiMCP Primary Colors */
-    --primary: 28 89 3; /* #d97706 - Burnt orange */
-    --primary-foreground: 39 20 11; /* #fef7f0 */
-    --secondary: 61 43 32; /* #3d2b20 - Warm brown */
-    --secondary-foreground: 231 211 195; /* #e7d3c3 */
+    /* TanukiMCP Primary Colors - Same orange, adjusted foreground */
+    --primary: 19 100% 41%; /* #d35400 - Same burnt orange */
+    --primary-foreground: 0 0% 100%; /* #ffffff - White text on orange */
+    --secondary: 248 15% 20%; /* #373044 - Dark secondary */
+    --secondary-foreground: 0 0% 100%; /* #ffffff - White text */
     
     /* Accent Colors */
-    --accent: 43 96 4; /* #f59e0b - Amber */
-    --accent-foreground: 26 22 17; /* #1a1611 */
-    --muted: 61 43 32; /* #3d2b20 */
-    --muted-foreground: 167 139 122; /* #a78b7a */
+    --accent: 248 15% 20%; /* #373044 - Dark accent */
+    --accent-foreground: 0 0% 100%; /* #ffffff - White text */
+    --muted: 248 15% 20%; /* #373044 - Dark muted */
+    --muted-foreground: 220 9% 68%; /* #9ca3af - Light gray text */
     
     /* States */
-    --destructive: 0 62 38; /* #dc2626 adjusted for dark */
-    --destructive-foreground: 39 20 11; /* #fef7f0 */
+    --destructive: 0 84% 60%; /* #ef4444 - Red */
+    --destructive-foreground: 0 0% 100%; /* #ffffff - White text */
     
     /* Borders and Inputs */
-    --border: 74 52 40; /* #4a3428 */
-    --input: 61 43 32; /* #3d2b20 */
-    --ring: 28 89 3; /* #d97706 */
+    --border: 248 15% 20%; /* #373044 - Dark border */
+    --input: 248 15% 20%; /* #373044 - Dark input */
+    --ring: 19 100% 41%; /* #d35400 - Orange focus ring */
   }
 }
 

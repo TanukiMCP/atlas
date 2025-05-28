@@ -25,15 +25,36 @@ class ErrorBoundary extends React.Component<
   render() {
     if (this.state.hasError) {
       return (
-        <div className="error-boundary">
-          <h2>Something went wrong</h2>
-          <details style={{ whiteSpace: 'pre-wrap' }}>
-            <summary>Error details</summary>
-            {this.state.error && this.state.error.toString()}
-          </details>
-          <button onClick={() => window.location.reload()}>
-            Reload Application
-          </button>
+        <div style={{
+          minHeight: '100vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: '#1a1a1a',
+          color: 'white',
+          fontFamily: 'sans-serif'
+        }}>
+          <div style={{ textAlign: 'center', maxWidth: '500px', padding: '20px' }}>
+            <h2>🚨 React Error Detected</h2>
+            <details style={{ whiteSpace: 'pre-wrap', marginTop: '20px' }}>
+              <summary>Error details</summary>
+              {this.state.error && this.state.error.toString()}
+            </details>
+            <button 
+              onClick={() => window.location.reload()}
+              style={{
+                marginTop: '20px',
+                padding: '10px 20px',
+                backgroundColor: '#dc2626',
+                color: 'white',
+                border: 'none',
+                borderRadius: '5px',
+                cursor: 'pointer'
+              }}
+            >
+              🔄 Reload Application
+            </button>
+          </div>
         </div>
       );
     }
@@ -58,4 +79,6 @@ root.render(
 // Development hot reload
 if (import.meta.hot) {
   import.meta.hot.accept();
-} 
+}
+
+console.log('✅ TanukiMCP Atlas App loaded with error boundary'); 

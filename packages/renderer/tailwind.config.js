@@ -19,21 +19,22 @@ module.exports = {
     extend: {
       fontFamily: {
         sans: ['Open Sans', 'system-ui', 'sans-serif'],
+        heading: ['Syne', 'Open Sans', 'system-ui', 'sans-serif'],
         mono: ['JetBrains Mono', 'Fira Code', 'Consolas', 'monospace'],
       },
       colors: {
-        // TanukiMCP Brand Colors
+        // TanukiMCP Brand Colors - Based on tanukimcp.com
         tanuki: {
-          50: '#fef7f0',   // Cream
-          100: '#fef0e0',  // Light cream
-          200: '#fcd9b8',  // Light tan
-          300: '#f9be8a',  // Tan
-          400: '#f59e0b',  // Amber (secondary)
-          500: '#d97706',  // Burnt orange (primary)
-          600: '#c2410c',  // Deep burnt orange
+          50: '#ffffff',   // Pure white
+          100: '#ffeccc',  // Light cream from website
+          200: '#ffd9a6',  // Lighter orange
+          300: '#ffb366',  // Light orange
+          400: '#ff8c1a',  // Medium orange
+          500: '#d35400',  // Primary burnt orange from website
+          600: '#b8470d',  // Darker orange
           700: '#9a3412',  // Dark burnt orange
           800: '#7c2d12',  // Very dark orange
-          900: '#651a07',  // Almost black orange
+          900: '#0e0c19',  // Dark text from website
         },
         
         // shadcn/ui semantic colors

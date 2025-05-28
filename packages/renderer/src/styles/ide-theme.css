@@ -1,23 +1,23 @@
 /* TanukiMCP Atlas IDE Theme Styles */
 
-/* TanukiMCP Brand Colors - Light mode variables */
+/* TanukiMCP Brand Colors - Based on tanukimcp.com */
 :root {
   --color-bg-primary: #ffffff;
-  --color-bg-secondary: #fdf7f0;
-  --color-bg-tertiary: #f5ebe0;
-  --color-bg-quaternary: #ede0d3;
-  --color-text-primary: #2d1810;
-  --color-text-secondary: #5d4037;
-  --color-text-muted: #8d6e63;
-  --color-border: #e0d0c4;
-  --color-border-hover: #d7c4b3;
-  --color-accent: #2e7d7b;
-  --color-accent-hover: #26706e;
-  --color-accent-secondary: #d4904b;
-  --color-accent-secondary-hover: #c17a35;
-  --color-success: #388e3c;
-  --color-warning: #ff8f00;
-  --color-error: #d32f2f;
+  --color-bg-secondary: #ffeccc;
+  --color-bg-tertiary: #f9fafb;
+  --color-bg-quaternary: #f3f4f6;
+  --color-text-primary: #0e0c19;
+  --color-text-secondary: #374151;
+  --color-text-muted: #6b7280;
+  --color-border: #e5e7eb;
+  --color-border-hover: #d1d5db;
+  --color-accent: #d35400;
+  --color-accent-hover: #b8470d;
+  --color-accent-secondary: #ffeccc;
+  --color-accent-secondary-hover: #ffd9a6;
+  --color-success: #10b981;
+  --color-warning: #f59e0b;
+  --color-error: #ef4444;
   --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
   --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
   --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
@@ -27,19 +27,19 @@
 }
 
 .dark {
-  --color-bg-primary: #1a0f0a;
-  --color-bg-secondary: #2d1810;
-  --color-bg-tertiary: #3e241a;
-  --color-bg-quaternary: #4a2c20;
-  --color-text-primary: #f4ede6;
-  --color-text-secondary: #d4c4b8;
-  --color-text-muted: #a08d80;
-  --color-border: #3e241a;
-  --color-border-hover: #4a2c20;
-  --color-accent: #4db6ac;
-  --color-accent-hover: #66bb6a;
-  --color-accent-secondary: #ffab40;
-  --color-accent-secondary-hover: #ff9800;
+  --color-bg-primary: #0e0c19;
+  --color-bg-secondary: #1f1d2b;
+  --color-bg-tertiary: #373044;
+  --color-bg-quaternary: #4b4563;
+  --color-text-primary: #ffffff;
+  --color-text-secondary: #d1d5db;
+  --color-text-muted: #9ca3af;
+  --color-border: #373044;
+  --color-border-hover: #4b4563;
+  --color-accent: #d35400;
+  --color-accent-hover: #b8470d;
+  --color-accent-secondary: #373044;
+  --color-accent-secondary-hover: #4b4563;
   --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.1);
   --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.2), 0 2px 4px -2px rgb(0 0 0 / 0.2);
   --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.2), 0 4px 6px -4px rgb(0 0 0 / 0.2);
