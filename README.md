@@ -34,269 +34,213 @@ Atlas features a sophisticated **4-tier processing architecture** that adapts to
 - **Always-Available Stop Button**: Instant halt capability for any operation
 - **Granular Control**: Intervene at any phase, task, or tool level
 - **Your Data Stays Yours**: Everything runs on your hardware
-## 🚀 Quick Start
+
+## 🚀 One-Click Setup
+
+### Windows Users
+
+**Option 1: Batch Script (Recommended)**
+```bash
+# Double-click or run in Command Prompt
+setup.bat
+```
+
+**Option 2: PowerShell Script**
+```powershell
+# Run in PowerShell (with optional parameters)
+.\install-dependencies.ps1
+# Or with verbose output
+.\install-dependencies.ps1 -Verbose
+# Or skip build test
+.\install-dependencies.ps1 -SkipBuild
+```
+
+### macOS/Linux Users
+
+```bash
+# Make executable and run
+chmod +x setup.sh
+./setup.sh
+```
+
+### What the Setup Scripts Do
+
+✅ **Dependency Verification**: Check for Node.js, npm, and Git  
+✅ **Package Installation**: Install all dependencies for root, main, and renderer packages  
+✅ **Environment Setup**: Create necessary directories and `.env` file  
+✅ **Build Verification**: Run initial build test to ensure everything works  
+✅ **Ready to Use**: Complete setup with clear next steps  
+
+## 🎯 Quick Start
+
+After running the setup script:
+
+### Option 1: Manual Start
+```bash
+# Terminal 1: Start development server
+npm run dev
+
+# Terminal 2: Start Electron app
+npm start
+```
+
+### Option 2: Convenience Scripts
+
+**Windows:**
+```bash
+start.bat
+```
+
+**macOS/Linux:**
+```bash
+chmod +x start.sh
+./start.sh
+```
+
+## 📋 Available Commands
+
+| Command | Description |
+|---------|-------------|
+| `npm run dev` | Start Vite development server |
+| `npm start` | Start Electron application |
+| `npm run build` | Build for production |
+| `npm run test` | Run test suite |
+| `npm run lint` | Run ESLint |
+| `npm run type-check` | Run TypeScript type checking |
+
+## 🏗️ Project Structure
+
+```
+tanukimcp-atlas/
+├── packages/
+│   ├── main/           # Electron main process
+│   └── renderer/       # React frontend
+├── setup.bat           # Windows setup script
+├── setup.sh            # Unix setup script
+├── install-dependencies.ps1  # PowerShell setup script
+├── start.bat           # Windows start script
+├── start.sh            # Unix start script
+└── README.md
+```
+
+## 🎨 Features
+
+### 🧠 **Clear-Thought Integration**
+- Sequential thinking processes
+- Mental model applications
+- Collaborative reasoning
+- Decision frameworks
+- Scientific method application
+
+### 🤖 **Model Management (TanukiMCP Apollo)**
+- Greek mythology-themed model categorization
+- Real-time model switching
+- Performance benchmarking
+- System capability assessment
+- Installation progress tracking
+
+### 🔧 **MCP Tools & Workflows**
+- Tool execution interface
+- Drag-and-drop workflow builder
+- Visual workflow management
+- Real-time tool status
+
+### 📝 **Code Editor**
+- Monaco Editor integration
+- Multi-language support
+- File system integration
+- Syntax highlighting
+
+### 💬 **Chat Interface**
+- AI conversation interface
+- Model-aware responses
+- Context management
+- Error handling
+
+## 🛠️ Development
 
 ### Prerequisites
-- **Node.js 18+** (Download from [nodejs.org](https://nodejs.org))
-- **Ollama** (Download from [ollama.ai](https://ollama.ai)) for local AI models
-- **8GB+ RAM recommended** (16GB+ for advanced models)
 
-### Development Installation
+- **Node.js** 18.x or higher
+- **npm** (comes with Node.js)
+- **Git** (optional but recommended)
 
-1. **Clone the repository**:
+### Manual Setup (if scripts don't work)
+
+1. **Clone the repository**
    ```bash
-   git clone https://github.com/TanukiMCP/atlas.git
+   git clone <repository-url>
    cd tanukimcp-atlas
    ```
 
-2. **Install dependencies**:
+2. **Install dependencies**
    ```bash
    npm install
+   cd packages/main && npm install
+   cd ../renderer && npm install
+   cd ../..
    ```
 
-3. **Start development server**:
+3. **Create environment file**
    ```bash
-   npm run dev
+   cp .env.example .env  # or create manually
    ```
 
-### Production Deployment
-
-1. **Build for production**:
+4. **Build and test**
    ```bash
    npm run build
    ```
 
-2. **Start production server**:
-   ```bash
-   npm run start
-   ```
+### Environment Variables
 
-3. **Or deploy to your preferred hosting**:
-   - Build artifacts are in `dist/` folder
-   - Compatible with Vercel, Netlify, AWS, or any static hosting
-   - Includes optimized bundles and assets
+Create a `.env` file in the root directory:
 
-### Install AI Models (Recommended)
+```env
+NODE_ENV=development
+ELECTRON_IS_DEV=true
+VITE_DEV_SERVER_URL=http://localhost:3000
+# Add your custom variables below
+```
+
+## 🔍 Troubleshooting
+
+### Common Issues
+
+**Build Errors:**
+- Ensure Node.js version is 18.x or higher
+- Clear node_modules and reinstall: `rm -rf node_modules package-lock.json && npm install`
+- Check for TypeScript errors: `npm run type-check`
+
+**Electron Won't Start:**
+- Make sure development server is running first (`npm run dev`)
+- Check if port 3000 is available
+- Verify `.env` file exists and has correct values
+
+**File System Errors:**
+- Ensure you're running the desktop application, not in browser
+- Check file permissions in the workspace directory
+
+### Getting Help
+
+1. Check the console for error messages
+2. Verify all dependencies are installed correctly
+3. Ensure you're using the correct Node.js version
+4. Try running the setup script again
+
+## 📦 Building for Production
 
 ```bash
-# Efficient reasoning model (4GB RAM minimum)
-ollama pull deepseek-r1-distill-qwen:7b
-
-# Advanced reasoning model (24GB+ RAM recommended)
-ollama pull qwq:32b
-
-# General purpose model (8GB RAM)
-ollama pull llama3.2:latest
-```
-
-## 🎯 Key Features
-
-### 🤖 **Intelligent Task Management**
-- **Adaptive Complexity Assessment**: Automatically routes tasks to the optimal processing tier
-- **Context-Aware Planning**: Understands relationships between tasks and optimizes execution
-- **Real-Time Optimization**: Continuously improves performance based on usage patterns
-
-### 🔧 **Comprehensive Tool Ecosystem**
-- **100+ Professional Tools**: File operations, code analysis, data processing, web APIs, and more
-- **Visual Tool Catalog**: Browse, install, and manage tools with ratings and reviews
-- **Smart Tool Integration**: Automatic tool routing based on task complexity
-- **Custom Tool Development**: Build and share your own tools with the community
-
-### 🎨 **Visual Workflow Builder**
-- **Drag-and-Drop Interface**: Create complex workflows visually with node-based editor
-- **Pre-built Templates**: Start with specialized workflows for common tasks
-- **Real-time Testing**: Test workflows as you build them with live execution
-- **Workflow Marketplace**: Share and discover workflows created by the community
-
-### 🤖 **Specialized AI Agents**
-- **Domain Experts**: Software Developer, Research Analyst, Business Analyst, Creative Writer
-- **Adaptive Intelligence**: Agents automatically adjust to task complexity
-- **Tool Integration**: Each agent comes with curated tool sets for their domain
-- **Custom Agent Creation**: Build specialized agents for your specific needs
-
-### 🎨 **Modern Interface**
-- **Dual-Mode UI**: Seamlessly switch between Agent and Chat modes
-- **Real-Time Visualization**: Watch AI reasoning in action with live process display
-- **Customizable Workspace**: Tailor the interface to your workflow preferences
-
-## 🏗️ Architecture Overview
-
-Atlas is built on a **Hub-Based Dual MCP Architecture** that combines:
-
-```
-🦝 TanukiMCP Atlas
-├── 🧠 Enhanced LLM Router (4-tier processing)
-├── 🎭 Dual-Mode Operation (Agent + Chat)
-├── 🏆 AI Quality Assurance Council
-├── 🔧 Built-in MCP Server (100% uptime tools)
-├── 🌐 MCP Client Hub (external integrations)
-├── 📊 Workflow Automation System
-└── 🛡️ Advanced User Control & Safety
-```
-
-## 💡 Use Cases
-
-### **For Developers**
-- **Code Review & Optimization**: Multi-agent code analysis with quality assurance
-- **Architecture Planning**: Complex system design with expert AI consultation
-- **Debugging Assistant**: Intelligent problem-solving with context awareness
-
-### **For Researchers**
-- **Literature Analysis**: Comprehensive research paper analysis and synthesis
-- **Data Processing**: Automated data cleaning and analysis workflows
-- **Hypothesis Generation**: AI-assisted ideation with quality validation
-
-### **For Business**
-- **Process Automation**: Convert manual tasks into intelligent workflows
-- **Decision Support**: Multi-perspective analysis with consensus building
-- **Content Creation**: High-quality content with built-in review processes
-
-### **For Students & Educators**
-- **Interactive Learning**: Adaptive tutoring with personalized explanations
-- **Research Assistance**: Structured investigation with source validation
-- **Skill Development**: Progressive learning with real-time feedback## 🌍 Open Source & Community
-
-### **Why Open Source?**
-Atlas is **completely open source** because we believe AI should be:
-- **Accessible**: Available to everyone regardless of economic status
-- **Transparent**: No black boxes or hidden agendas
-- **Community-Driven**: Improved by collective intelligence
-- **Privacy-Respecting**: You control your data and interactions
-
-### **Community Contributions Welcome!**
-We actively encourage:
-- 🐛 **Bug Reports**: Help us identify and fix issues
-- 💡 **Feature Requests**: Share your ideas for improvements
-- 🔧 **Code Contributions**: Submit pull requests for enhancements
-- 📚 **Documentation**: Improve guides and tutorials
-- 🎨 **UI/UX Improvements**: Enhance the user experience
-- 🧪 **Tool Development**: Create new MCP tools and integrations
-
-### **Learning & Advancement**
-Atlas is designed as a **learning platform**:
-- **Modular Architecture**: Easy to understand and modify
-- **Comprehensive Documentation**: Detailed guides for all skill levels
-- **Example Workflows**: Learn from real-world use cases
-- **Community Tutorials**: Shared knowledge and best practices## ⚠️ Honest Disclaimer
-
-**Atlas was created by a passionate full-time veterinary technician** who believes in the democratization of AI technology. This project represents:
-
-- 🧠 **Original Architecture & Ideas**: Novel concepts in multi-layered AI processing
-- 🤝 **AI-Assisted Implementation**: Built with AI collaboration for rapid development
-- 💝 **Passion Project**: "Vibe coded" with enthusiasm and dedication to the community
-- 🎯 **Practical Focus**: Designed by someone who uses AI daily for real work
-
-**This is not a corporate product** - it's a community-driven initiative built by someone who:
-- Works full-time in veterinary medicine
-- Uses AI tools daily for practical applications
-- Believes AI should be accessible to everyone
-- Values community collaboration over profit
-
-**Contributions from experienced developers are especially welcome** to help refine and improve the codebase!
-
-## 🛣️ Roadmap
-
-### **Current Status: PRODUCTION READY** ✅
-- ✅ Complete Enhanced LLM Processing Architecture (4-tier system)
-- ✅ Dual-Mode Operation (Agent + Chat modes)
-- ✅ Visual Workflow Builder with drag-and-drop functionality
-- ✅ Comprehensive Tool Catalog (100+ professional tools)
-- ✅ Specialized Agent Templates (Developer, Researcher, Business, Creative)
-- ✅ Enterprise Analytics Dashboard with performance metrics
-- ✅ Advanced File Management with real-time browsing
-- ✅ Processing Tier Visualization and Quality Assurance
-- ✅ Complete MCP Service Integration
-- ✅ Professional UI/UX with TanukiMCP branding
-
-### **Advanced Features Available Now**
-- 🎨 **Visual Workflow Builder**: Create complex workflows with drag-and-drop
-- 🛠️ **Professional Tool Catalog**: Browse, install, and manage 100+ tools
-- 🤖 **Specialized AI Agents**: Domain-specific assistants ready for activation
-- 📊 **Enterprise Analytics**: Real-time performance metrics and insights
-- 🔧 **Advanced File Operations**: Complete file system integration
-- ⚡ **Processing Tier System**: ATOMIC → MODERATE → COMPLEX → EXPERT
-- 🛡️ **Quality Assurance Council**: Tournament bracket + voting panel validation## 🤝 Getting Involved
-
-### **Join Our Community**
-- 💬 **Discussions**: Share ideas and get help on GitHub Discussions
-- 🐛 **Issues**: Report bugs or request features on GitHub Issues
-- 🔧 **Pull Requests**: Contribute code improvements
-- 📖 **Wiki**: Help improve documentation and guides
-
-### **Ways to Contribute**
-1. **Use Atlas**: The best contribution is using and providing feedback
-2. **Share Your Workflows**: Help others by sharing successful automation
-3. **Report Issues**: Even small bugs help improve the experience
-4. **Spread the Word**: Tell others about local AI possibilities
-5. **Contribute Code**: Help build the future of AI interaction
-
-### **Developer Setup**
-```bash
-# Fork the repository on GitHub
-git clone https://github.com/YOUR_USERNAME/atlas.git
-cd tanukimcp-atlas
-
-# Install dependencies
-npm install
-
-# Start development environment
-npm run dev
-
-# Run tests
-npm test
-
-# Build for production
 npm run build
+npm run electron:build
 ```
 
-## 🚀 Production Deployment Guide
+## 🤝 Contributing
 
-### **Local Production**
-```bash
-# Build optimized production bundle
-npm run build
-
-# Start production server
-npm run start
-
-# Access at http://localhost:3000
-```
-
-### **Cloud Deployment**
-
-**Vercel (Recommended)**
-```bash
-# Install Vercel CLI
-npm i -g vercel
-
-# Deploy to Vercel
-vercel --prod
-```
-
-**Netlify**
-```bash
-# Build command: npm run build
-# Publish directory: dist
-# Deploy via Netlify Dashboard or CLI
-```
-
-**Docker Deployment**
-```dockerfile
-FROM node:18-alpine
-WORKDIR /app
-COPY package*.json ./
-RUN npm ci --only=production
-COPY . .
-RUN npm run build
-EXPOSE 3000
-CMD ["npm", "start"]
-```
-
-### **Configuration**
-- All AI processing runs locally (no cloud APIs required)
-- Configure Ollama endpoint in settings
-- Customize tool catalog and agent templates
-- Set up workflow templates for your team
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Run tests and linting
+5. Submit a pull request
 
 ## 📄 License
 
@@ -306,15 +250,7 @@ Atlas is released under the **MIT License**, which means:
 - ✅ **Modify and distribute freely**
 - ✅ **No attribution required** (but appreciated!)
 
-See the [LICENSE](LICENSE) file for full details.## 🙏 Acknowledgments
-
-- **Ollama Team**: For making local AI accessible
-- **MCP Community**: For the fantastic protocol and tools
-- **Open Source Community**: For inspiration and contributions
-- **AI Research Community**: For advancing the field
-- **Early Users & Contributors**: For feedback and improvements
-
----
+See the [LICENSE](LICENSE) file for full details.
 
 ## 🎉 Start Your AI Journey Today
 
