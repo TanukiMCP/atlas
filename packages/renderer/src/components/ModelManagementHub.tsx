@@ -9,10 +9,10 @@ import { ModelManagementHubProps, TanukiModel, ModelInstallation, ModelConfigura
 type TabType = 'installed' | 'available' | 'configuration' | 'performance';
 
 const ModelManagementHub: React.FC<ModelManagementHubProps> = ({
-  installedModels,
-  availableModels,
-  installations,
-  configurations,
+  installedModels = [],
+  availableModels = [],
+  installations = [],
+  configurations = [],
   systemCapabilities,
   onInstallModel,
   onUninstallModel,
@@ -50,7 +50,7 @@ const ModelManagementHub: React.FC<ModelManagementHubProps> = ({
   };
 
   const getInstallationProgress = (modelName: string): ModelInstallation | undefined => {
-    return installations.find(inst => inst.modelName === modelName);
+    return (installations || []).find(inst => inst.modelName === modelName);
   };
 
   const filterModels = (models: TanukiModel[]) => {
@@ -84,7 +84,7 @@ const ModelManagementHub: React.FC<ModelManagementHubProps> = ({
 
   const renderModelCard = (model: TanukiModel, showInstallButton: boolean = false) => {
     const installation = getInstallationProgress(model.name);
-    const config = configurations.find(c => c.modelName === model.name);
+    const config = (configurations || []).find(c => c.modelName === model.name);
     const recommendation = getSystemRecommendation(model);
 
     return (
@@ -206,7 +206,7 @@ const ModelManagementHub: React.FC<ModelManagementHubProps> = ({
       );
     }
 
-    const config = configurations.find(c => c.modelName === selectedModel.name) || {
+    const config = (configurations || []).find(c => c.modelName === selectedModel.name) || {
       modelName: selectedModel.name,
       temperature: 0.7,
       topP: 0.9,
@@ -308,7 +308,7 @@ const ModelManagementHub: React.FC<ModelManagementHubProps> = ({
   };
 
   const renderPerformancePanel = () => {
-    const modelsWithPerformance = installedModels.filter(model => model.performance);
+    const modelsWithPerformance = (installedModels || []).filter(model => model.performance);
 
     return (
       <div className="space-y-6">
@@ -384,7 +384,7 @@ const ModelManagementHub: React.FC<ModelManagementHubProps> = ({
     );
   };
 
-  const categories = Array.from(new Set([...installedModels, ...availableModels].map(m => m.category)));
+  const categories = Array.from(new Set([...(installedModels || []), ...(availableModels || [])].map(m => m.category)));
 
   return (
     <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -411,8 +411,8 @@ const ModelManagementHub: React.FC<ModelManagementHubProps> = ({
         {/* Tabs */}
         <div className="flex border-b border-border">
           {[
-            { id: 'installed', label: 'Installed Models', count: installedModels.length },
-            { id: 'available', label: 'Available Models', count: availableModels.length },
+            { id: 'installed', label: 'Installed Models', count: (installedModels || []).length },
+            { id: 'available', label: 'Available Models', count: (availableModels || []).length },
             { id: 'configuration', label: 'Configuration' },
             { id: 'performance', label: 'Performance' }
           ].map(tab => (
@@ -464,7 +464,7 @@ const ModelManagementHub: React.FC<ModelManagementHubProps> = ({
 
               {/* Models Grid */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 overflow-y-auto max-h-[calc(100vh-300px)]">
-                {filterModels(activeTab === 'installed' ? installedModels : availableModels).map(model =>
+                {filterModels(activeTab === 'installed' ? (installedModels || []) : (availableModels || [])).map(model =>
                   renderModelCard(model, activeTab === 'available')
                 )}
               </div>

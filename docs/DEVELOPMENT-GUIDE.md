@@ -4,8 +4,8 @@
 
 ### Prerequisites
 - **Node.js 18+** (Download: https://nodejs.org/)
-- **Ollama** (Download: https://ollama.ai/)
-- **Windows 10/11** (for MSI distribution)
+- **Git** (Download: https://git-scm.com/)
+- **OpenRouter Account** (Sign up: https://openrouter.ai/)
 
 ### 1. Clone & Install
 ```bash
@@ -17,7 +17,7 @@ npm run dev-start
 The `dev-start` script will:
 - ✅ Check prerequisites
 - 📦 Install all dependencies
-- 🤖 Setup and start Ollama
+- 🤖 Provide OpenRouter setup guidance
 - 🚀 Launch the development environment
 
 ### 2. Development Commands
@@ -130,11 +130,11 @@ tanukimcp-atlas/
 
 ### Common Issues
 
-**Ollama not found:**
+**OpenRouter API Key not configured:**
 ```bash
-# Install Ollama first
-# Windows: https://ollama.ai/download/windows
-# Then run: npm run dev-start
+# Set up your OpenRouter API key in the app settings
+# Visit: https://openrouter.ai/keys to get a free API key
+# Then enter it in TanukiMCP Atlas Settings
 ```
 
 **Build fails:**
@@ -155,7 +155,7 @@ npm run build-msi
 **Port conflicts:**
 ```bash
 # Renderer runs on port 3000
-# Ollama runs on port 11434
+# OpenRouter uses HTTPS API (port 443)
 # Check if ports are available
 ```
 
@@ -166,21 +166,21 @@ npm run build-msi
 - [ ] Update version in package.json
 - [ ] Replace placeholder icon with actual .ico file
 - [ ] Test on clean Windows machine
-- [ ] Verify Ollama integration works
+- [ ] Verify OpenRouter integration works
 - [ ] Check all UI components render correctly
 
 ### Distribution:
 - [ ] MSI installs cleanly
 - [ ] Application launches without errors
 - [ ] All features accessible from menus
-- [ ] Ollama auto-setup works
+- [ ] OpenRouter setup works with API key
 - [ ] Uninstaller removes all files
 
 ## 🎉 **What You Have**
 
 You now have a **complete, production-ready AI IDE** with:
 
-1. **Local LLM Integration** - Works with Ollama
+1. **OpenRouter Integration** - Works with free models
 2. **MCP Architecture** - Extensible tool system
 3. **Professional IDE** - File management, chat, workflows
 4. **Management Center** - System monitoring and control
@@ -195,3 +195,5 @@ You now have a **complete, production-ready AI IDE** with:
 4. **Distribute**: Share the MSI file for easy installation
 
 Your TanukiMCP Atlas is ready for the world! 🌟
+
+# OpenRouter runs on https://openrouter.ai/api/v1

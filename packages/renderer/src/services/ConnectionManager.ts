@@ -30,9 +30,9 @@ class ConnectionManager {
   }
 
   private initializeDefaultConnections(): void {
-    this.configs.set('Ollama', {
-      url: 'http://127.0.0.1:11434',
-      healthEndpoint: '/api/version',
+    this.configs.set('OpenRouter', {
+      url: 'https://openrouter.ai',
+      healthEndpoint: '/api/v1/models',
       timeout: 5000,
       retryInterval: 10000,
       maxRetries: 5
@@ -62,9 +62,9 @@ class ConnectionManager {
     }
 
     try {
-      // Use IPC for Ollama health check instead of direct fetch
-      if (service === 'Ollama') {
-        const isHealthy = await this.checkOllamaViaIPC();
+      // Use IPC for OpenRouter health check instead of direct fetch
+      if (service === 'OpenRouter') {
+        const isHealthy = await this.checkOpenRouterViaIPC();
         if (isHealthy) {
           await this.updateConnectionStatus(service, 'connected');
           return 'connected';
@@ -107,23 +107,20 @@ class ConnectionManager {
     }
   }
 
-  private async checkOllamaViaIPC(): Promise<boolean> {
+  private async checkOpenRouterViaIPC(): Promise<boolean> {
     try {
-      // Use Electron's IPC to check Ollama health via main process
+      // Use Electron's IPC to check OpenRouter health via main process
       if (window.electronAPI && window.electronAPI.invoke) {
-        const isHealthy = await window.electronAPI.invoke('ollama:checkHealth');
-        return isHealthy;
+        const healthResult = await window.electronAPI.invoke('openrouter:checkHealth');
+        // OpenRouter health check returns an object with isConnected property
+        return healthResult && (healthResult.isConnected === true || healthResult === true);
       } else {
-        console.warn('Electron IPC not available, falling back to direct fetch');
-        // Fallback to direct fetch if IPC is not available
-        const response = await fetch('http://127.0.0.1:11434/api/version', {
-          method: 'GET',
-          signal: AbortSignal.timeout(5000)
-        });
-        return response.ok;
+        console.warn('Electron IPC not available, OpenRouter health check not available in browser');
+        // OpenRouter requires API key and proper setup, can't check directly from browser
+        return false;
       }
     } catch (error) {
-      console.error('Ollama health check failed:', error);
+      console.error('OpenRouter health check failed:', error);
       return false;
     }
   }

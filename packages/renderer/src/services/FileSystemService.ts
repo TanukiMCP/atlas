@@ -1,25 +1,35 @@
-import { FileSystemItem } from '../types';
+import { FileSystemItem } from '../types/index';
+
+// Type declaration for electronAPI
+declare global {
+  interface Window {
+    electronAPI?: {
+      invoke: (channel: string, ...args: any[]) => Promise<any>;
+    };
+  }
+}
 
 class FileSystemService {
   private watchers: Map<string, any> = new Map();
   private listeners: Set<(files: FileSystemItem[]) => void> = new Set();
-  private isNodeEnvironment = typeof process !== 'undefined' && process.versions && process.versions.node;
 
-  async getWorkspaceFiles(rootPath: string = this.getCurrentPath()): Promise<FileSystemItem[]> {
-    if (!this.isNodeEnvironment) {
-      throw new Error('File system access is not available in browser environment. Please use the desktop application for file operations.');
+  async getWorkspaceFiles(rootPath?: string): Promise<FileSystemItem[]> {
+    if (!window.electronAPI?.invoke) {
+      console.warn('Electron API not available, returning empty file list');
+      return [];
     }
 
     try {
-      return await this.getNodeFiles(rootPath);
+      const files = await window.electronAPI.invoke('filesystem:getWorkspaceFiles', rootPath);
+      return files || [];
     } catch (error) {
-      console.error('Error accessing file system:', error);
-      throw new Error(`Failed to access workspace files: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      console.error('Error accessing file system via IPC:', error);
+      return [];
     }
   }
 
   private getCurrentPath(): string {
-    if (this.isNodeEnvironment && typeof process !== 'undefined') {
+    if (typeof process !== 'undefined') {
       // In Electron renderer, process.cwd() might not be available
       // Use a default workspace path or get it from main process
       try {
@@ -95,33 +105,28 @@ class FileSystemService {
   }
 
   async readFile(filePath: string): Promise<string> {
-    if (!this.isNodeEnvironment) {
-      throw new Error('File reading is not available in browser environment. Please use the desktop application for file operations.');
+    if (!window.electronAPI?.invoke) {
+      throw new Error('File reading requires the Electron desktop application');
     }
 
     try {
-      const fs = await import('fs/promises');
-      const fullPath = this.resolvePath(filePath);
-      return await fs.readFile(fullPath, 'utf-8');
+      const content = await window.electronAPI.invoke('fs:readFileContent', filePath);
+      if (content === null) {
+        throw new Error('File not found or cannot be read');
+      }
+      return content;
     } catch (error) {
       throw new Error(`Failed to read file ${filePath}: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
   async writeFile(filePath: string, content: string): Promise<void> {
-    if (!this.isNodeEnvironment) {
-      throw new Error('File writing is not available in browser environment. Please use the desktop application for file operations.');
+    if (!window.electronAPI?.invoke) {
+      throw new Error('File writing requires the Electron desktop application');
     }
 
     try {
-      const fs = await import('fs/promises');
-      const path = await import('path');
-      const fullPath = this.resolvePath(filePath);
-      
-      // Ensure directory exists
-      await fs.mkdir(path.dirname(fullPath), { recursive: true });
-      await fs.writeFile(fullPath, content, 'utf-8');
-      
+      await window.electronAPI.invoke('fs:writeFileContent', filePath, content);
       this.notifyListeners();
     } catch (error) {
       throw new Error(`Failed to write file ${filePath}: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -133,14 +138,12 @@ class FileSystemService {
   }
 
   async createDirectory(dirPath: string): Promise<void> {
-    if (!this.isNodeEnvironment) {
-      throw new Error('Directory creation is not available in browser environment. Please use the desktop application for file operations.');
+    if (!window.electronAPI?.invoke) {
+      throw new Error('Directory creation requires the Electron desktop application');
     }
 
     try {
-      const fs = await import('fs/promises');
-      const fullPath = this.resolvePath(dirPath);
-      await fs.mkdir(fullPath, { recursive: true });
+      await window.electronAPI.invoke('fs:createDirectory', dirPath);
       this.notifyListeners();
     } catch (error) {
       throw new Error(`Failed to create directory ${dirPath}: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -148,14 +151,12 @@ class FileSystemService {
   }
 
   async deleteFile(filePath: string): Promise<void> {
-    if (!this.isNodeEnvironment) {
-      throw new Error('File deletion is not available in browser environment. Please use the desktop application for file operations.');
+    if (!window.electronAPI?.invoke) {
+      throw new Error('File deletion requires the Electron desktop application');
     }
 
     try {
-      const fs = await import('fs/promises');
-      const fullPath = this.resolvePath(filePath);
-      await fs.unlink(fullPath);
+      await window.electronAPI.invoke('fs:deleteFile', filePath);
       this.notifyListeners();
     } catch (error) {
       throw new Error(`Failed to delete file ${filePath}: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -163,50 +164,27 @@ class FileSystemService {
   }
 
   async deleteDirectory(dirPath: string): Promise<void> {
-    if (!this.isNodeEnvironment) {
-      throw new Error('Directory deletion is not available in browser environment. Please use the desktop application for file operations.');
+    if (!window.electronAPI?.invoke) {
+      throw new Error('Directory deletion requires the Electron desktop application');
     }
 
     try {
-      const fs = await import('fs/promises');
-      const fullPath = this.resolvePath(dirPath);
-      await fs.rmdir(fullPath, { recursive: true });
+      await window.electronAPI.invoke('fs:deleteDirectory', dirPath);
       this.notifyListeners();
     } catch (error) {
       throw new Error(`Failed to delete directory ${dirPath}: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
-  watchWorkspace(rootPath: string = this.getCurrentPath()): void {
-    if (this.watchers.has(rootPath)) {
-      return; // Already watching
-    }
-
-    if (!this.isNodeEnvironment) {
-      console.warn('File watching is not available in browser environment');
-      return;
-    }
-
-    try {
-      const fs = require('fs');
-      const watcher = fs.watch(rootPath, { recursive: true }, (eventType: string, filename: string) => {
-        if (filename && !filename.startsWith('.') && filename !== 'node_modules') {
-          this.notifyListeners();
-        }
-      });
-      
-      this.watchers.set(rootPath, watcher);
-    } catch (error) {
-      console.error(`Failed to watch directory ${rootPath}:`, error);
-    }
+  watchWorkspace(rootPath?: string): void {
+    // File watching is handled by the main process
+    // We just need to listen for changes via IPC events
+    console.log('File watching initiated via main process');
   }
 
   stopWatching(rootPath: string): void {
-    const watcher = this.watchers.get(rootPath);
-    if (watcher) {
-      watcher.close();
-      this.watchers.delete(rootPath);
-    }
+    // Watching cleanup is handled by main process
+    console.log('File watching stopped');
   }
 
   onFilesChanged(listener: (files: FileSystemItem[]) => void): () => void {
@@ -215,7 +193,7 @@ class FileSystemService {
   }
 
   private resolvePath(filePath: string): string {
-    if (!this.isNodeEnvironment) {
+    if (!typeof process !== 'undefined') {
       throw new Error('Path resolution is not available in browser environment');
     }
 

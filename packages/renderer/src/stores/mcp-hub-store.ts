@@ -89,14 +89,14 @@ export const useMCPHubStore = create<MCPHubState>((set, get) => ({
     // Mock: In a real app, this would fetch from a backend or local persistence
     // For now, initialize with a sample server for UI development
     const sampleServer: MCPServerConfig = {
-      id: 'sample-ollama-mcp',
-      name: 'Local Ollama MCP',
-      description: 'MCP interface for local Ollama models',
+      id: 'sample-openrouter-mcp',
+      name: 'OpenRouter MCP',
+      description: 'MCP interface for OpenRouter models',
+      status: 'connected',
       version: '1.0.0',
-      transport: { type: 'websocket', url: 'http://localhost:11435' }, // Changed to websocket
+      transport: { type: 'websocket', url: 'http://localhost:11435' },
       capabilities: { tools: true, resources: false, prompts: false, logging: false },
       security: { sandboxed: true, allowedPaths: [], blockedCommands: [], maxExecutionTime: 30000, maxMemoryUsage: 512 },
-      status: 'disconnected',
       isAutoRestart: false,
     };
     setTimeout(() => { // Simulate async call
@@ -178,15 +178,15 @@ export const useMCPHubStore = create<MCPHubState>((set, get) => ({
     // Mock: In a real app, this would fetch tools for each connected server
     for (const server of connectedServers) {
       // Simulate fetching tools for this server
-      if (server.id === 'sample-ollama-mcp') {
+      if (server.id === 'sample-openrouter-mcp') {
         allTools.push(
           { 
-            id: 'ollama-mcp-summarize', name: 'Summarize Text (Ollama)', description: 'Summarizes long text using local Ollama model.', 
+            id: 'openrouter-mcp-summarize', name: 'Summarize Text', description: 'Summarizes long text using OpenRouter models.', 
             sourceServerId: server.id, sourceServerName: server.name, category: 'Text Processing',
             parameters: [{name: 'text', type: 'string', description: 'Text to summarize', required: true}]
           },
           { 
-            id: 'ollama-mcp-translate', name: 'Translate Text (Ollama)', description: 'Translates text using local Ollama model.', 
+            id: 'openrouter-mcp-translate', name: 'Translate Text', description: 'Translates text using OpenRouter language models.', 
             sourceServerId: server.id, sourceServerName: server.name, category: 'Language',
             parameters: [
               {name: 'text', type: 'string', description: 'Text to translate', required: true},

@@ -21,10 +21,9 @@ export type {
   MCPToolCall, 
   MCPToolResult
 } from './services/mcp-client-adapter';
-export type { 
+export type {
   LLMServiceConfig,
-  LLMGenerateOptions,
-  OllamaServiceInterface
+  GenerationOptions
 } from './services/llm-service';
 
 // Tier processors
@@ -47,7 +46,21 @@ export { PerformanceTracker } from './analytics/performance-tracker';
 export { TournamentBracket } from './quality-assurance/tournament-bracket';
 
 // Type Definitions
-export * from './types/llm-types';
+export type {
+  LLMRequest,
+  LLMResponse,
+  RequestComplexity,
+  ProcessingTier,
+  QualityMetrics,
+  ProcessingRequest,
+  ProcessingResponse,
+  ProcessingStep,
+  ChatMessage
+} from './types/llm-types';
+
+export type {
+  OpenRouterServiceInterface
+} from './services/openrouter-adapter';
 
 // Re-export processor events for external listening
 export type { ProcessorEvents } from './processors/base-processor';

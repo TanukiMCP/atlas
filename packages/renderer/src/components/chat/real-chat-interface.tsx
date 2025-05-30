@@ -1,11 +1,10 @@
 /**
- * Real Chat Interface with Ollama LLM Integration
- * Replaces mock responses with actual streaming LLM communication
+ * Real Chat Interface with OpenRouter LLM Integration
+ * Provides streaming LLM communication through OpenRouter API
  */
 
 import React, { useState, useRef, useEffect } from 'react';
 import { useLLMStore } from '../../stores/llm-store';
-import { OllamaChatMessage } from '../../services/ollama-service';
 import { WorkflowGenerationDialog } from '../workflows/workflow-generation-dialog';
 import { ChatTranscript, WorkflowTemplate } from '../../types/workflow-types';
 import { AlertCircle, Bot, User, Loader2, StopCircle, Settings } from 'lucide-react';
@@ -68,7 +67,7 @@ export const RealChatInterface: React.FC<RealChatInterfaceProps> = ({ onAtSymbol
     if (!message.trim() || isStreaming) return;
 
     if (!isConnected) {
-      alert('Not connected to Ollama. Please check if Ollama is running and try again.');
+      alert('Not connected to OpenRouter. Please check your OpenRouter API key and internet connection.');
       return;
     }
 
@@ -131,7 +130,7 @@ export const RealChatInterface: React.FC<RealChatInterfaceProps> = ({ onAtSymbol
           <AlertCircle className="w-12 h-12 text-orange-500 mx-auto" />
           <h3 className="text-lg font-semibold">Connection Required</h3>
           <p className="text-muted-foreground">
-            Please ensure Ollama is running and try again.
+            Please check your OpenRouter API key and internet connection.
           </p>
           <button
             onClick={checkHealth}

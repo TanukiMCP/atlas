@@ -2,7 +2,7 @@
 
 /**
  * TanukiMCP Atlas Development Startup Script
- * Handles dependency installation, Ollama setup, and development server startup
+ * Handles dependency installation, OpenRouter setup guidance, and development server startup
  */
 
 const { spawn, exec } = require('child_process');
@@ -23,7 +23,7 @@ class DevSetup {
     try {
       await this.checkPrerequisites();
       await this.installDependencies();
-      await this.setupOllama();
+      await this.setupOpenRouter();
       await this.startDevelopment();
     } catch (error) {
       console.error('❌ Setup failed:', error.message);
@@ -67,54 +67,24 @@ class DevSetup {
     }
   }
 
-  async setupOllama() {
-    console.log('\n🤖 Setting up Ollama...');
+  async setupOpenRouter() {
+    console.log('\n🤖 Setting up OpenRouter...');
     
-    try {
-      // Check if Ollama is installed
-      await this.execCommand('ollama --version');
-      console.log('✅ Ollama is already installed');
-      
-      // Check if Ollama is running
-      try {
-        await this.execCommand('curl -s http://localhost:11434/api/tags');
-        console.log('✅ Ollama is running');
-      } catch (error) {
-        console.log('🚀 Starting Ollama...');
-        if (this.isWindows) {
-          spawn('ollama', ['serve'], { detached: true, stdio: 'ignore' });
-        } else {
-          spawn('ollama', ['serve'], { detached: true, stdio: 'ignore' });
-        }
-        
-        // Wait a moment for Ollama to start
-        await new Promise(resolve => setTimeout(resolve, 3000));
-        console.log('✅ Ollama started');
-      }
-      
-      // Check for a default model
-      try {
-        const result = await this.execCommand('ollama list');
-        if (result.includes('llama')) {
-          console.log('✅ LLaMA model found');
-        } else {
-          console.log('📥 Downloading recommended model (llama3.2:3b)...');
-          console.log('   This may take a few minutes...');
-          await this.execCommand('ollama pull llama3.2:3b');
-          console.log('✅ Model downloaded successfully');
-        }
-      } catch (error) {
-        console.log('⚠️  Could not check models. Continuing anyway...');
-      }
-      
-    } catch (error) {
-      console.log('\n⚠️  Ollama not found. Please install Ollama:');
-      console.log('   Windows: https://ollama.ai/download/windows');
-      console.log('   macOS: https://ollama.ai/download/mac');
-      console.log('   Linux: https://ollama.ai/download/linux');
-      console.log('\n   After installation, run this script again.');
-      throw new Error('Ollama installation required');
-    }
+    console.log('ℹ️  OpenRouter is a cloud-based AI service that provides access to various models.');
+    console.log('   To use TanukiMCP Atlas with OpenRouter:');
+    console.log('');
+    console.log('   1. Visit https://openrouter.ai and create a free account');
+    console.log('   2. Go to https://openrouter.ai/keys to generate an API key');
+    console.log('   3. Launch the application and go to Settings');
+    console.log('   4. Enter your OpenRouter API key in the settings');
+    console.log('');
+    console.log('   Free tier includes access to several models like:');
+    console.log('   • Llama 3.1 8B (Free)');
+    console.log('   • Gemma 2 9B (Free)');
+    console.log('   • Phi-3 Mini (Free)');
+    console.log('   • Mistral 7B (Free)');
+    console.log('');
+    console.log('✅ OpenRouter setup guidance provided');
   }
 
   async startDevelopment() {
@@ -123,7 +93,7 @@ class DevSetup {
     console.log('🎯 TanukiMCP Atlas will be available at:');
     console.log('   • Main Application: Electron window will open automatically');
     console.log('   • Renderer Process: http://localhost:3000 (for debugging)');
-    console.log('   • Ollama API: http://localhost:11434\n');
+    console.log('   • OpenRouter: Configure API key in Settings\n');
     
     console.log('📝 Development commands:');
     console.log('   • npm run dev     - Start development');

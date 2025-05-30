@@ -1,3 +1,16 @@
+/**
+ * Enhanced chat service using OpenRouter for LLM operations
+ */
+
+// Type declaration for electronAPI
+declare global {
+  interface Window {
+    electronAPI?: {
+      invoke: (channel: string, ...args: any[]) => Promise<any>;
+    };
+  }
+}
+
 import { RequestComplexity } from '../../../llm-enhanced/src/index';
 
 interface ChatMessage {
@@ -35,8 +48,7 @@ class ChatService {
   private currentConversationId: string | null = null;
   private listeners: Set<(conversations: Conversation[]) => void> = new Set();
   private messageListeners: Set<(messages: ChatMessage[]) => void> = new Set();
-  private ollamaBaseUrl = 'http://127.0.0.1:11434';
-  private defaultModel = 'llama2';
+  private defaultModel = 'meta-llama/llama-3.1-8b-instruct:free';
 
   constructor() {
     this.loadConversationsFromStorage();
@@ -99,8 +111,8 @@ class ChatService {
     const userMessage = conversation.messages[conversation.messages.length - 1]?.content || '';
 
     try {
-      // Try direct Ollama since enhanced LLM service is not available in this context
-      const response = await this.callOllama(conversation, context);
+      // Use OpenRouter through IPC for model inference
+      const response = await this.callOpenRouter(conversation, context);
       return {
         id: this.generateId(),
         content: response.content,
@@ -113,27 +125,27 @@ class ChatService {
           tierUsed: 'atomic' // Use string instead of enum
         }
       };
-    } catch (ollamaError) {
+    } catch (openrouterError) {
       // Service failed - throw descriptive error
-      console.error('AI service failed:', ollamaError);
+      console.error('AI service failed:', openrouterError);
       
       throw new Error(
         `AI service is currently unavailable. This may be because:\n\n` +
-        `• Ollama is not running or not accessible at ${this.ollamaBaseUrl}\n` +
-        `• The selected model (${this.defaultModel}) is not installed\n` +
+        `• OpenRouter service is not connected or API key is missing\n` +
+        `• Rate limits have been exceeded\n` +
         `• There are network connectivity issues\n` +
         `• The AI service is overloaded or temporarily down\n\n` +
         `Please check:\n` +
-        `1. Ollama is running and accessible\n` +
-        `2. The model is properly installed\n` +
-        `3. Your network connection\n` +
+        `1. OpenRouter API key is properly configured in Settings\n` +
+        `2. Internet connection is stable\n` +
+        `3. OpenRouter service status\n` +
         `4. Try again in a few moments\n\n` +
-        `Error: ${ollamaError instanceof Error ? ollamaError.message : 'Unknown error'}`
+        `Error: ${openrouterError instanceof Error ? openrouterError.message : 'Unknown error'}`
       );
     }
   }
 
-  private async callOllama(conversation: Conversation, context?: ChatContext): Promise<{content: string; model: string; tokens?: number}> {
+  private async callOpenRouter(conversation: Conversation, context?: ChatContext): Promise<{content: string; model: string; tokens?: number}> {
     const messages = conversation.messages.map(msg => ({
       role: msg.role,
       content: msg.content
@@ -150,28 +162,28 @@ class ChatService {
       }
     }
 
-    const response = await fetch(`${this.ollamaBaseUrl}/api/chat`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        model: this.defaultModel,
-        messages,
-        stream: false
-      })
-    });
-
-    if (!response.ok) {
-      throw new Error(`Ollama API error: ${response.statusText}`);
+    // Use IPC to call OpenRouter service
+    if (!window.electronAPI?.invoke) {
+      throw new Error('Electron API not available - cannot communicate with OpenRouter service');
     }
 
-    const data = await response.json();
-    return {
-      content: data.message?.content || 'Sorry, I could not generate a response.',
-      model: data.model || this.defaultModel,
-      tokens: data.eval_count
-    };
+    try {
+      const response = await window.electronAPI.invoke('openrouter:generate', {
+        messages,
+        model: 'meta-llama/llama-3.1-8b-instruct:free', // Use first free model as default
+        temperature: 0.7,
+        max_tokens: 1000
+      });
+
+      return {
+        content: response.content || 'Sorry, I could not generate a response.',
+        model: response.model || 'meta-llama/llama-3.1-8b-instruct:free',
+        tokens: response.usage?.total_tokens
+      };
+    } catch (error) {
+      console.error('OpenRouter IPC call failed:', error);
+      throw new Error(`OpenRouter API error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
   }
 
   private buildContextMessage(context: ChatContext): string {
@@ -386,9 +398,13 @@ class ChatService {
   }
 
   getAvailableModels(): Promise<string[]> {
-    return fetch(`${this.ollamaBaseUrl}/api/tags`)
-      .then(response => response.json())
-      .then(data => data.models?.map((m: any) => m.name) || [])
+    // Use OpenRouter models through IPC
+    if (!window.electronAPI?.invoke) {
+      return Promise.resolve([this.defaultModel]);
+    }
+    
+    return window.electronAPI.invoke('openrouter:getAvailableModels')
+      .then((models: any[]) => models.map(m => m.id))
       .catch(() => [this.defaultModel]);
   }
 }

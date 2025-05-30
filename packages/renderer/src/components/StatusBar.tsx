@@ -20,8 +20,9 @@ const StatusBar: React.FC<StatusBarProps> = ({
     }
   };
 
-  const primaryConnection = connectionStatus.find(conn => conn.service === 'Ollama') || 
-    { service: 'Ollama', status: 'disconnected' as const };
+  const primaryConnection = (connectionStatus && Array.isArray(connectionStatus)) 
+    ? connectionStatus.find(conn => conn.service === 'OpenRouter') || { service: 'OpenRouter', status: 'disconnected' as const }
+    : { service: 'OpenRouter', status: 'disconnected' as const };
 
   return (
     <div className="h-6 bg-card/50 border-t border-border px-4 flex items-center justify-between text-xs text-muted-foreground">

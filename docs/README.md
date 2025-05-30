@@ -19,7 +19,7 @@ This directory contains the complete design documentation for TanukiMCP: Atlas, 
 3. **[System Architecture](03-system-architecture.md)** - Tech stack, application structure, IPC
 4. **[Tool System Architecture](04-tool-system-architecture.md)** - Comprehensive tool interface definitions and framework
 5. **[Task Management](05-task-management-core.md)** - Task system and execution engine
-6. **[LLM Integration](06-llm-integration.md)** - Ollama integration and model management
+6. **[LLM Integration](06-llm-integration.md)** - OpenRouter integration and model management
 7. **[MCP Integration](07-mcp-integration.md)** - MCP client hub and configuration
 16. **[Complete MCP Architecture](16-mcp-architecture-complete.md)** - Hub-based dual MCP architecture with FastMCP integration
 

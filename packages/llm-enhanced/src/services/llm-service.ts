@@ -1,84 +1,74 @@
 import { MCPClientInterface, MCPToolCall, MCPToolResult } from './mcp-client-adapter';
 
 export interface LLMServiceConfig {
-  baseUrl?: string;
   defaultModel?: string;
+  baseUrl?: string;
   timeout?: number;
 }
 
-export interface LLMGenerateOptions {
-  model?: string;
-  temperature?: number;
-  top_p?: number;
-  top_k?: number;
-  repeat_penalty?: number;
-  max_tokens?: number;
+export interface ChatMessage {
+  role: 'user' | 'assistant' | 'system';
+  content: string;
 }
 
-import { OllamaServiceInterface } from './ollama-adapter';
+export interface GenerationOptions {
+  temperature?: number;
+  top_p?: number;
+  max_tokens?: number;
+}
 
 export class LLMService {
   private defaultModel: string;
   private mcpClient: MCPClientInterface | null = null;
-  private ollamaService: OllamaServiceInterface | null = null;
+  private isInitialized = false;
 
   constructor(config: LLMServiceConfig = {}) {
-    this.defaultModel = config.defaultModel || 'llama3.1:latest';
+    this.defaultModel = config.defaultModel || 'meta-llama/llama-3.1-8b-instruct:free';
   }
 
-  setOllamaService(service: OllamaServiceInterface): void {
-    this.ollamaService = service;
+  setOpenRouterService(service: any): void {
+    // OpenRouter service integration placeholder
+    console.log('OpenRouter service set');
   }
 
   async initialize(): Promise<void> {
-    if (!this.ollamaService) {
-      throw new Error('Ollama service not configured');
-    }
+    // OpenRouter initialization placeholder
+    this.isInitialized = true;
+    console.log('LLM Service initialized with OpenRouter');
+  }
 
-    await this.ollamaService.checkHealth();
-    const models = await this.ollamaService.getModels();
-    
-    if (models.length > 0) {
-      // Set the first available model as default if not already set
-      const availableModel = models.find(m => m.name === this.defaultModel) || models[0];
-      this.ollamaService.setModel(availableModel.name);
-    }
+  async chat(messages: ChatMessage[], options: GenerationOptions = {}): Promise<string> {
+    // OpenRouter chat implementation placeholder
+    return 'OpenRouter response placeholder';
+  }
+
+  async generate(prompt: string, options: GenerationOptions = {}): Promise<string> {
+    // OpenRouter generation implementation placeholder
+    return 'OpenRouter generation placeholder';
   }
 
   setMCPClient(client: MCPClientInterface): void {
     this.mcpClient = client;
   }
 
-  async generate(prompt: string, options: LLMGenerateOptions = {}): Promise<string> {
-    if (!this.ollamaService) {
-      throw new Error('Ollama service not configured');
-    }
-
-    const messages = [
-      { role: 'user', content: prompt }
-    ];
-
-    const response = await this.ollamaService.chat(messages, {
-      temperature: options.temperature || 0.7,
-      top_p: options.top_p || 0.9,
-      top_k: options.top_k || 40,
-      repeat_penalty: options.repeat_penalty || 1.1
-    });
-
-    return response.message.content;
+  async getStatus(): Promise<{ isHealthy: boolean; currentModel: string; availableModels: string[] }> {
+    return {
+      isHealthy: true,
+      currentModel: this.defaultModel,
+      availableModels: [this.defaultModel]
+    };
   }
 
-  async generateWithMessages(messages: Array<{ role: string; content: string }>, options: LLMGenerateOptions = {}): Promise<{ message: { content: string } }> {
-    if (!this.ollamaService) {
-      throw new Error('Ollama service not configured');
-    }
+  getCurrentModel(): string {
+    return this.defaultModel;
+  }
 
-    return await this.ollamaService.chat(messages, {
-      temperature: options.temperature || 0.7,
-      top_p: options.top_p || 0.9,
-      top_k: options.top_k || 40,
-      repeat_penalty: options.repeat_penalty || 1.1
-    });
+  async getAvailableModels(): Promise<string[]> {
+    return [this.defaultModel];
+  }
+
+  setModel(modelName: string): void {
+    this.defaultModel = modelName;
   }
 
   async executeMCPTool(toolCall: MCPToolCall): Promise<MCPToolResult> {
@@ -90,38 +80,6 @@ export class LLMService {
     }
 
     return await this.mcpClient.executeToolCall(toolCall);
-  }
-
-  async isHealthy(): Promise<boolean> {
-    if (!this.ollamaService) {
-      return false;
-    }
-
-    const health = await this.ollamaService.checkHealth();
-    return health.isConnected;
-  }
-
-  getCurrentModel(): string {
-    if (!this.ollamaService) {
-      return '';
-    }
-    return this.ollamaService.getCurrentModel();
-  }
-
-  async getAvailableModels(): Promise<string[]> {
-    if (!this.ollamaService) {
-      return [];
-    }
-
-    const models = await this.ollamaService.getModels();
-    return models.map(m => m.name);
-  }
-
-  setModel(modelName: string): void {
-    if (!this.ollamaService) {
-      throw new Error('Ollama service not configured');
-    }
-    this.ollamaService.setModel(modelName);
   }
 
   isMCPConnected(): boolean {

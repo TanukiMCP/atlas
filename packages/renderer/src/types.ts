@@ -1,0 +1,1 @@
+export type ViewType = 'chat' | 'models' | 'editor' | 'tools' | 'workflows' | 'settings'; 

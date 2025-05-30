@@ -97,7 +97,7 @@ export const WelcomeView: React.FC<WelcomeViewProps> = ({
           <div className="flex items-center justify-center gap-2">
             <div className={`w-3 h-3 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`}></div>
             <Badge variant={isConnected ? 'default' : 'destructive'}>
-              {isConnected ? `Connected to ${currentModel}` : 'Ollama Disconnected'}
+              {isConnected ? `Connected to ${currentModel}` : 'OpenRouter Disconnected'}
             </Badge>
           </div>
         </div>
@@ -165,7 +165,7 @@ export const WelcomeView: React.FC<WelcomeViewProps> = ({
                   isConnected ? 'bg-green-500 text-white' : 'bg-muted text-muted-foreground'
                 }`}>1</div>
                 <span className={isConnected ? 'line-through text-muted-foreground' : ''}>
-                  Install and configure Ollama
+                  Configure OpenRouter API key
                 </span>
                 {isConnected && <Badge variant="outline">✓ Complete</Badge>}
               </div>

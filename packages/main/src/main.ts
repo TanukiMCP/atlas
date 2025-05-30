@@ -3,7 +3,6 @@ import path from 'path';
 import { createWindow } from './window';
 import { setupIPC } from './ipc/handlers';
 import { initializeDatabase } from './database/connection';
-import { OllamaService } from './services/ollama-service';
 import { OpenRouterService } from './services/openrouter-service';
 import { SystemMonitor } from './services/system-monitor';
 import { ModelManager } from './services/model-manager';
@@ -17,9 +16,6 @@ import { AutoUpdaterService } from './services/auto-updater';
 import { NotificationService } from './services/notification-service';
 import { CrashReporterService } from './services/crash-reporter';
 import { ProtocolHandlerService } from './services/protocol-handler';
-import { EnhancedLLMService } from '../../llm-enhanced/src/enhanced-llm-service';
-import { MCPClientHub } from '../../mcp-hub/src/client-hub';
-import { OllamaServiceAdapter } from '../../llm-enhanced/src/services/ollama-adapter';
 
 class TanukiMCPApp {
   private mainWindow: BrowserWindow | null = null;
@@ -31,7 +27,6 @@ class TanukiMCPApp {
   private protocolHandlerService!: ProtocolHandlerService;
 
   // Services that might be initialized later or conditionally
-  private ollamaService!: OllamaService;
   private openrouterService!: OpenRouterService;
   private systemMonitor!: SystemMonitor;
   private modelManager!: ModelManager;
@@ -39,8 +34,6 @@ class TanukiMCPApp {
   private optimizationEngine!: OptimizationEngine;
   private parameterTuner!: ParameterTuner;
   private contextManager!: ContextManager;
-  private enhancedLLMService!: EnhancedLLMService;
-  private mcpClientHub!: MCPClientHub;
   private isQuitting = false;
 
   constructor() {
@@ -51,7 +44,6 @@ class TanukiMCPApp {
     console.log('🔧 Initializing Phase 2 services...');
     
     // Initialize all LLM and model management services
-    this.ollamaService = new OllamaService();
     this.openrouterService = new OpenRouterService();
     this.systemMonitor = new SystemMonitor();
     this.modelManager = new ModelManager();
@@ -65,14 +57,33 @@ class TanukiMCPApp {
     // Initialize Phase 2.5: Enhanced LLM and MCP Hub
     console.log('🔧 Initializing Enhanced LLM and MCP Hub...');
     
-    this.mcpClientHub = new MCPClientHub();
-    await this.mcpClientHub.initialize();
+    // Initialize crash reporter first
+    if (this.mainWindow) {
+      this.crashReporterService = new CrashReporterService(this.mainWindow);
+      
+      // Initialize notification service
+      this.notificationService = new NotificationService(this.mainWindow);
+      
+      // Initialize system tray
+      this.trayService = new SystemTrayService(this.mainWindow);
+      
+      // Initialize native menu
+      this.menuService = new NativeMenuService(this.mainWindow);
+      
+      // Initialize protocol handler
+      this.protocolHandlerService = new ProtocolHandlerService(this.mainWindow);
+      
+      // Initialize auto-updater (only in production)
+      if (process.env.NODE_ENV === 'production') {
+        this.autoUpdaterService = new AutoUpdaterService(this.mainWindow);
+        // Check for updates on startup (after a delay)
+        setTimeout(() => {
+          this.autoUpdaterService?.checkForUpdates();
+        }, 5000);
+      }
+    }
     
-    const ollamaAdapter = new OllamaServiceAdapter(this.ollamaService);
-    this.enhancedLLMService = new EnhancedLLMService();
-    await this.enhancedLLMService.initialize(ollamaAdapter, this.mcpClientHub);
-    
-    console.log('✅ Enhanced LLM and MCP Hub initialized');
+    console.log('✅ Desktop integration services initialized');
   }
 
   private setupEventHandlers(): void {
@@ -221,14 +232,48 @@ class TanukiMCPApp {
     }
   }
 
+  private async loadStoredApiKey(): Promise<void> {
+    try {
+      const { app } = require('electron');
+      const path = require('path');
+      const fs = require('fs').promises;
+      
+      const userDataPath = app.getPath('userData');
+      const storageFile = path.join(userDataPath, 'secure-storage.json');
+      
+      try {
+        const data = await fs.readFile(storageFile, 'utf8');
+        const storage = JSON.parse(data);
+        const apiKey = storage['openrouter_api_key'];
+        
+        if (apiKey && this.openrouterService) {
+          this.openrouterService.setApiKey(apiKey);
+          console.log('🔑 Loaded stored OpenRouter API key');
+        }
+      } catch (error) {
+        // File doesn't exist or is invalid, no stored API key
+        console.log('ℹ️  No stored OpenRouter API key found');
+      }
+    } catch (error) {
+      console.error('Failed to load stored API key:', error);
+    }
+  }
+
   private async assessSystemCapabilities(): Promise<void> {
     try {
-      // Check Ollama health
-      const ollamaHealthy = await this.ollamaService.checkOllamaHealth();
-      if (ollamaHealthy) {
-        console.log('✅ Ollama service is running');
+      // Load stored API key for OpenRouter
+      await this.loadStoredApiKey();
+      
+      // Check OpenRouter health and available models
+      const openrouterHealthy = await this.openrouterService.checkHealth();
+      if (openrouterHealthy.isConnected) {
+        console.log('✅ OpenRouter service is connected');
+        console.log(`📦 Available free models: ${openrouterHealthy.availableModels.length}`);
       } else {
-        console.log('⚠️  Ollama service not detected - model management will be limited');
+        console.log('⚠️  OpenRouter service not connected - model management will be limited');
+        if (openrouterHealthy.error) {
+          console.log('❌ OpenRouter error:', openrouterHealthy.error);
+        }
       }
       
       // Get system info and recommendations
@@ -240,9 +285,8 @@ class TanukiMCPApp {
       });
       
       // Get model recommendations
-      const catalog = await this.ollamaService.getModelCatalog();
-      const recommendations = await this.hardwareAssessor.getModelRecommendations(systemCaps, catalog);
-      console.log('🤖 Recommended models:', recommendations.slice(0, 3).map(r => r.model.displayName));
+      const catalog = await this.openrouterService.getAvailableFreeModels();
+      console.log('🤖 Available free models:', catalog.slice(0, 3).map(m => m.displayName));
       
       // Apply optimal settings
       const optimalProfile = await this.optimizationEngine.optimizeForHardware(systemCaps);
@@ -261,7 +305,6 @@ class TanukiMCPApp {
   // Expose services for IPC handlers
   public getServices() {
     return {
-      ollama: this.ollamaService,
       openrouter: this.openrouterService,
       systemMonitor: this.systemMonitor,
       modelManager: this.modelManager,
@@ -269,8 +312,6 @@ class TanukiMCPApp {
       optimizationEngine: this.optimizationEngine,
       parameterTuner: this.parameterTuner,
       contextManager: this.contextManager,
-      enhancedLLM: this.enhancedLLMService,
-      mcpHub: this.mcpClientHub,
       systemTray: this.trayService,
       nativeMenu: this.menuService,
       autoUpdater: this.autoUpdaterService,

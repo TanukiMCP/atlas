@@ -89,6 +89,10 @@ export class OpenRouterService {
     this.apiKey = process.env.OPENROUTER_API_KEY || null;
   }
 
+  setApiKey(apiKey: string): void {
+    this.apiKey = apiKey || null;
+  }
+
   async checkHealth(): Promise<{
     isConnected: boolean;
     availableModels: FreeModelConfig[];

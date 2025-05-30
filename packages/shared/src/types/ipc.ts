@@ -41,13 +41,15 @@ export interface IPCChannels {
   'project:delete': { params: [string]; result: boolean };
   
   // Phase 2: LLM and Model Management
-  'ollama:listModels': { params: []; result: any[] };
-  'ollama:getModelCatalog': { params: []; result: any[] };
-  'ollama:installModel': { params: [string]; result: void };
-  'ollama:deleteModel': { params: [string]; result: void };
-  'ollama:generate': { params: [any]; result: any };
-  'ollama:checkHealth': { params: []; result: boolean };
-  'ollama:benchmarkModel': { params: [string]; result: any };
+  // OpenRouter handlers (current)
+  'openrouter:checkHealth': { params: []; result: { isConnected: boolean; availableModels: any[]; lastChecked: Date; error?: string } };
+  'openrouter:getAvailableModels': { params: []; result: any[] };
+  'openrouter:generate': { params: [any]; result: { content: string; usage: any } };
+  'openrouter:getModelRecommendations': { params: [string]; result: any[] };
+  
+  // OpenRouter model management
+  'openrouter:listModels': { params: []; result: any[] };
+  'openrouter:checkHealth': { params: []; result: boolean };
   
   'system:getCapabilities': { params: []; result: any };
   'system:getCurrentMetrics': { params: []; result: any };

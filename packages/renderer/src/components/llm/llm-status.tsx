@@ -1,5 +1,5 @@
 /**
- * LLM Status Component - Shows Ollama connection status and model info
+ * LLM Status Component - Shows OpenRouter connection status and model info
  */
 
 import React from 'react';
@@ -28,7 +28,7 @@ export const LLMStatus: React.FC = () => {
 
   const getStatusText = () => {
     if (isConnected) {
-      return `Connected • ${availableModels.length} models`;
+      return `Connected • ${availableModels.length} free models`;
     } else {
       return healthStatus?.error || 'Disconnected';
     }
@@ -39,7 +39,7 @@ export const LLMStatus: React.FC = () => {
       <div className="flex items-center space-x-3">
         {getStatusIcon()}
         <div>
-          <div className="text-sm font-medium">Ollama LLM</div>
+          <div className="text-sm font-medium">OpenRouter LLM</div>
           <div className="text-xs text-gray-600 dark:text-gray-400">
             {getStatusText()}
           </div>
@@ -54,8 +54,8 @@ export const LLMStatus: React.FC = () => {
             className="text-xs px-2 py-1 border rounded bg-white dark:bg-gray-700"
           >
             {availableModels.map(model => (
-              <option key={model.name} value={model.name}>
-                {model.name}
+              <option key={model.id} value={model.id}>
+                {model.displayName}
               </option>
             ))}
           </select>

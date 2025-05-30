@@ -113,7 +113,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   <div className="flex items-center gap-3">
                     <div className={`w-3 h-3 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`}></div>
                     <div>
-                      <div className="font-medium">Ollama Connection</div>
+                      <div className="font-medium">OpenRouter Connection</div>
                       <div className="text-sm text-muted-foreground">
                         {isConnected ? `Connected to ${currentModel}` : 'Not connected'}
                       </div>

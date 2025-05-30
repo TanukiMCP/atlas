@@ -70,8 +70,8 @@ export const RealFileTree: React.FC<RealFileTreeProps> = ({ onFileSelect }) => {
           type: 'folder',
           path: 'src/services',
           children: [
-            { name: 'ollama-service.ts', type: 'file', path: 'src/services/ollama-service.ts' },
-            { name: 'enhanced-chat-service.ts', type: 'file', path: 'src/services/enhanced-chat-service.ts' },
+            { name: 'OpenRouterService.ts', type: 'file', path: 'src/services/OpenRouterService.ts' },
+            { name: 'ChatService.ts', type: 'file', path: 'src/services/ChatService.ts' },
             { name: 'mcp-client.ts', type: 'file', path: 'src/services/mcp-client.ts' }
           ]
         }

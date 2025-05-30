@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { MCPTool, Workflow } from '../types';
+import { MCPTool, Workflow } from '../types/index';
 import { mcpService, MCPExecutionContext, MCPToolResult } from '../services/mcp-service';
 import WorkflowBuilder from './WorkflowBuilder';
 
@@ -360,17 +360,22 @@ const ToolsPanel: React.FC<ToolsPanelProps> = ({
   };
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="w-80 bg-card border-l border-border h-full flex flex-col">
+      {/* Header */}
+      <div className="p-4 border-b border-border">
+        <h2 className="text-sm font-semibold text-foreground">MCP Tools</h2>
+      </div>
+
       {/* Tab Navigation */}
-      <div className="flex border-b border-gray-200 dark:border-gray-700">
+      <div className="flex border-b border-border">
         {(['tools', 'workflows', 'builder'] as const).map(tab => (
           <button
             key={tab}
             onClick={() => setState(prev => ({ ...prev, activeTab: tab }))}
-            className={`px-4 py-2 text-sm font-medium capitalize ${
+            className={`flex-1 px-3 py-2 text-sm font-medium capitalize transition-colors ${
               state.activeTab === tab
-                ? 'border-b-2 border-blue-500 text-blue-600 dark:text-blue-400'
-                : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+                ? 'border-b-2 border-primary text-primary bg-primary/5'
+                : 'text-muted-foreground hover:text-foreground hover:bg-accent/50'
             }`}
           >
             {tab}
@@ -378,17 +383,27 @@ const ToolsPanel: React.FC<ToolsPanelProps> = ({
         ))}
       </div>
 
-      {/* Tab Content */}
-      <div className="flex-1 overflow-hidden">
-        {state.activeTab === 'tools' && renderToolsTab()}
-        {state.activeTab === 'workflows' && renderWorkflowsTab()}
+      {/* Tab Content - Fixed container size */}
+      <div className="flex-1 overflow-hidden flex flex-col">
+        {state.activeTab === 'tools' && (
+          <div className="flex-1 overflow-auto">
+            {renderToolsTab()}
+          </div>
+        )}
+        {state.activeTab === 'workflows' && (
+          <div className="flex-1 overflow-auto">
+            {renderWorkflowsTab()}
+          </div>
+        )}
         {state.activeTab === 'builder' && (
-          <WorkflowBuilder
-            availableTools={state.tools}
-            processingTiers={[]}
-            onSaveWorkflow={onWorkflowSave || (() => {})}
-            onLoadWorkflow={() => {}}
-          />
+          <div className="flex-1 overflow-hidden">
+            <WorkflowBuilder
+              availableTools={state.tools}
+              processingTiers={[]}
+              onSaveWorkflow={onWorkflowSave || (() => {})}
+              onLoadWorkflow={() => {}}
+            />
+          </div>
         )}
       </div>
     </div>

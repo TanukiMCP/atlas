@@ -111,11 +111,25 @@ export function createWindow(): BrowserWindow {
     const parsedUrl = new URL(navigationUrl);
     
     // Allow localhost navigation for development
-    if (parsedUrl.origin !== 'http://localhost:5173' && 
-        parsedUrl.origin !== 'file://') {
-      console.warn('🚫 Blocked navigation to external URL:', navigationUrl);
-      event.preventDefault();
+    if (parsedUrl.protocol === 'http:' && parsedUrl.hostname === 'localhost') {
+      return; // Allow localhost development server
     }
+    
+    // Allow file protocol for loading local app files
+    if (parsedUrl.protocol === 'file:') {
+      // Only allow navigation to files within our app directory
+      const projectRoot = path.resolve(__dirname, '../../../');
+      const normalizedNavUrl = path.normalize(navigationUrl.replace('file:///', '').replace(/\//g, path.sep));
+      const normalizedProjectRoot = path.normalize(projectRoot);
+      
+      if (normalizedNavUrl.startsWith(normalizedProjectRoot)) {
+        return; // Allow navigation to files within project
+      }
+    }
+    
+    // Block all other navigation attempts
+    console.warn('🚫 Blocked navigation to external URL:', navigationUrl);
+    event.preventDefault();
   });
 
   // Prevent new window creation

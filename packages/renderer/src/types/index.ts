@@ -1,4 +1,17 @@
-export type ViewType = 'chat' | 'editor' | 'tools' | 'workflows' | 'models';
+export type ViewType = 
+  | 'chat' 
+  | 'editor' 
+  | 'tools' 
+  | 'workflows' 
+  | 'models' 
+  | 'settings'
+  | 'workflow-manager'
+  | 'prompt-management'
+  | 'tool-browser'
+  | 'mcp-servers'
+  | 'performance-monitor'
+  | 'about';
+
 export type Theme = 'light' | 'dark';
 export type ConnectionStatus = 'connected' | 'disconnected' | 'connecting' | 'error';
 

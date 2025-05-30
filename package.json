@@ -54,11 +54,11 @@
   "license": "MIT",
   "keywords": [
     "ai-ide",
-    "local-llm",
+    "openrouter",
     "mcp",
     "electron",
     "development-environment",
-    "ollama"
+    "cloud-llm"
   ],
   "build": {
     "appId": "com.tanukimcp.atlas",

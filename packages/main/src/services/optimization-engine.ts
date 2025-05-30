@@ -113,10 +113,11 @@ export class OptimizationEngine {
   }
 
   async applyOptimizations(profile: OptimizationProfile): Promise<void> {
-    // Apply optimization settings to Ollama environment
-    process.env.OLLAMA_KV_CACHE_TYPE = profile.settings.kvCacheType;
-    process.env.OLLAMA_NUM_PARALLEL = profile.settings.numParallel.toString();
-    process.env.OLLAMA_MAX_LOADED_MODELS = profile.settings.maxLoadedModels.toString();
-    process.env.OLLAMA_FLASH_ATTENTION = profile.settings.flashAttention ? '1' : '0';
+    // Apply optimization settings for OpenRouter usage
+    console.log(`Applied optimization profile: ${profile.name}`);
+    console.log(`Settings: ${JSON.stringify(profile.settings, null, 2)}`);
+    
+    // Note: OpenRouter optimization happens server-side, so we mainly 
+    // store these settings for future use in request parameters
   }
 }

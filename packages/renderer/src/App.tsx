@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ViewType, Theme, FileSystemItem, MCPTool, Workflow, ProcessingTier, ConnectionInfo, TanukiModel, ModelInstallation, ModelConfiguration, SystemCapabilities } from './types';
+import { ViewType, Theme, FileSystemItem, MCPTool, Workflow, ProcessingTier, ConnectionInfo, TanukiModel, ModelInstallation, ModelConfiguration, SystemCapabilities } from './types/index';
 import { MCPExecutionContext, MCPToolResult } from './services/mcp-service';
 import Header from './components/Header';
 import FileExplorer from './components/FileExplorer';
@@ -8,6 +8,9 @@ import { ChatView } from './components/chat/ChatView';
 import StatusBar from './components/StatusBar';
 import ModelManagementHub from './components/ModelManagementHub';
 import MonacoEditor from './components/MonacoEditor';
+import Settings from './components/Settings';
+import { ComingSoon } from './components/shared/ComingSoon';
+import { AboutView } from './components/views/AboutView';
 
 // Import services
 import { fileSystemService } from './services/FileSystemService';
@@ -15,6 +18,7 @@ import ConnectionManager from './services/ConnectionManager';
 import { mcpService } from './services/mcp-service';
 import chatService from './services/ChatService';
 import { TanukiApolloService } from './services/TanukiApolloService';
+import { useLLMStore } from './stores/llm-store';
 
 function App() {
   const [currentView, setCurrentView] = useState<ViewType>('chat');
@@ -29,7 +33,6 @@ function App() {
   const [isLoading, setIsLoading] = useState(true);
 
   // Model management state
-  const [apolloService] = useState(() => new TanukiApolloService());
   const [currentModel, setCurrentModel] = useState<TanukiModel | undefined>(undefined);
   const [installedModels, setInstalledModels] = useState<TanukiModel[]>([]);
   const [availableModels, setAvailableModels] = useState<TanukiModel[]>([]);
@@ -37,12 +40,45 @@ function App() {
   const [modelConfigurations, setModelConfigurations] = useState<ModelConfiguration[]>([]);
   const [systemCapabilities, setSystemCapabilities] = useState<SystemCapabilities | null>(null);
   const [isModelHubOpen, setIsModelHubOpen] = useState(false);
-  const [isOllamaConnected, setIsOllamaConnected] = useState(false);
+
+  // Subscribe to LLM store changes
+  const { isConnected: isOpenRouterConnected, checkHealth: refreshOpenRouterHealth, availableModels: openRouterModels } = useLLMStore();
 
   // Editor state
   const [currentFile, setCurrentFile] = useState<FileSystemItem | null>(null);
   const [fileContent, setFileContent] = useState<string>('');
   const [isFileLoading, setIsFileLoading] = useState(false);
+
+  // UI state for toolbar
+  const [isFileExplorerVisible, setIsFileExplorerVisible] = useState(true);
+  const [subjectMode, setSubjectMode] = useState('general');
+  const [agentMode, setAgentMode] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  // Auto-select first model when OpenRouter connects and models are available
+  useEffect(() => {
+    if (isOpenRouterConnected && openRouterModels.length > 0 && !currentModel) {
+      const firstModel = convertFreeModelToTanukiModel(openRouterModels[0]);
+      setCurrentModel(firstModel);
+      console.log('Auto-selected OpenRouter model:', firstModel.name);
+    }
+  }, [isOpenRouterConnected, openRouterModels, currentModel]);
+
+  // Sync OpenRouter connection status to ConnectionManager for StatusBar
+  useEffect(() => {
+    setConnectionStatus(prev => {
+      const otherConnections = prev.filter(conn => conn.service !== 'OpenRouter');
+      return [
+        ...otherConnections,
+        {
+          service: 'OpenRouter',
+          status: isOpenRouterConnected ? 'connected' : 'disconnected',
+          url: 'https://openrouter.ai',
+          lastChecked: new Date()
+        }
+      ];
+    });
+  }, [isOpenRouterConnected]);
 
   useEffect(() => {
     // Apply theme class to document
@@ -51,6 +87,12 @@ function App() {
 
   useEffect(() => {
     initializeServices();
+    
+    // Also initialize OpenRouter connection
+    const { checkHealth } = useLLMStore.getState();
+    checkHealth().catch(error => {
+      console.error('Failed to check OpenRouter health:', error);
+    });
   }, []);
 
   const initializeServices = async () => {
@@ -73,9 +115,8 @@ function App() {
       
       const unsubscribeConnections = ConnectionManager.onConnectionsChanged((connections) => {
         setConnectionStatus(connections);
-        // Update Ollama connection status
-        const ollamaConnection = connections.find(conn => conn.service === 'Ollama');
-        setIsOllamaConnected(ollamaConnection?.status === 'connected');
+        // Update OpenRouter connection status from LLM store instead of ConnectionManager
+        // The LLM store is the authoritative source for OpenRouter connection status
       });
 
       // Initialize MCP tools
@@ -103,37 +144,74 @@ function App() {
     }
   };
 
+  const convertFreeModelToTanukiModel = (freeModel: any): TanukiModel => {
+    return {
+      name: freeModel.id,
+      displayName: freeModel.displayName,
+      description: freeModel.description,
+      size: 8000000000, // 8GB estimated for free models
+      parameterCount: '8B', // Estimated parameter count
+      family: 'OpenRouter',
+      isInstalled: true, // All free models are "available"
+      capabilities: ['conversation', 'reasoning'],
+      category: 'tanukimcp-apollo', // Default category
+      requirements: {
+        minRam: 8,
+        recommendedRam: 16,
+        minVram: 4,
+        recommendedVram: 8,
+        diskSpace: 8
+      }
+    };
+  };
+
   const initializeModelManagement = async () => {
     try {
-      // Check Ollama health
-      const isHealthy = await apolloService.checkHealth();
-      setIsOllamaConnected(isHealthy);
+      // Use the OpenRouter-based LLM store instead of apolloService
+      const { checkHealth, refreshModels, availableModels, isConnected, healthStatus } = useLLMStore.getState();
+      
+      // Check OpenRouter health
+      await checkHealth();
+      
+      // Get the updated state after health check
+      const currentState = useLLMStore.getState();
+      // OpenRouter connection status is now handled by the LLM store subscription
 
-      // Load system capabilities
-      const capabilities = await apolloService.getSystemCapabilities();
-      setSystemCapabilities(capabilities);
+      // Load available models from OpenRouter
+      await refreshModels();
+      const updatedState = useLLMStore.getState();
+      
+      // Convert FreeModels to TanukiModels
+      const convertedModels = updatedState.availableModels.map(convertFreeModelToTanukiModel);
+      setAvailableModels(convertedModels);
 
-      // Load available models catalog
-      const catalog = await apolloService.getModelCatalog();
-      setAvailableModels(catalog);
+      // For OpenRouter, we don't have "installed" models in the traditional sense
+      // All free models are "available" when connected
+      if (updatedState.isConnected) {
+        setInstalledModels(convertedModels);
 
-      // Load installed models if Ollama is connected
-      if (isHealthy) {
-        const installed = await apolloService.getInstalledModels();
-        setInstalledModels(installed);
-
-        // Set first installed model as current if none selected
-        if (installed.length > 0 && !currentModel) {
-          setCurrentModel(installed[0]);
+        // Set first available model as current if none selected
+        if (convertedModels.length > 0 && !currentModel) {
+          setCurrentModel(convertedModels[0]);
         }
       }
 
-      // Load active installations
-      const installations = apolloService.getActiveInstallations();
-      setModelInstallations(installations);
+      // Set basic system capabilities for OpenRouter
+      setSystemCapabilities({
+        totalRam: 16384,
+        availableRam: 8192,
+        totalVram: 8192,
+        availableVram: 4096,
+        cpuCores: 8,
+        diskSpace: 100000,
+        recommendedModels: convertedModels.map(model => model.name)
+      });
+
+      // No active installations for OpenRouter (free models are ready-to-use)
+      setModelInstallations([]);
 
     } catch (error) {
-      console.error('Failed to initialize model management:', error);
+      console.error('Failed to initialize OpenRouter model management:', error);
     }
   };
 
@@ -142,6 +220,10 @@ function App() {
     
     // Open model hub when models view is selected
     if (view === 'models') {
+      console.log('🔍 Opening Model Hub...');
+      console.log('systemCapabilities:', systemCapabilities);
+      console.log('availableModels:', availableModels);
+      console.log('installedModels:', installedModels);
       setIsModelHubOpen(true);
     }
   };
@@ -178,11 +260,7 @@ function App() {
   // Model management handlers
   const handleModelSwitch = async (modelName: string) => {
     try {
-      await apolloService.switchModel(modelName);
-      const model = [...installedModels, ...availableModels].find(m => m.name === modelName);
-      if (model) {
-        setCurrentModel(model);
-      }
+      // Implementation needed
     } catch (error) {
       console.error('Failed to switch model:', error);
     }
@@ -190,25 +268,7 @@ function App() {
 
   const handleInstallModel = async (modelName: string) => {
     try {
-      await apolloService.installModel(modelName, (progress) => {
-        setModelInstallations(prev => {
-          const existing = prev.findIndex(inst => inst.modelName === modelName);
-          if (existing >= 0) {
-            const updated = [...prev];
-            updated[existing] = progress;
-            return updated;
-          } else {
-            return [...prev, progress];
-          }
-        });
-      });
-
-      // Refresh installed models after installation
-      const installed = await apolloService.getInstalledModels();
-      setInstalledModels(installed);
-      
-      // Remove from installations list when complete
-      setModelInstallations(prev => prev.filter(inst => inst.modelName !== modelName));
+      // Implementation needed
     } catch (error) {
       console.error('Failed to install model:', error);
     }
@@ -216,58 +276,18 @@ function App() {
 
   const handleUninstallModel = async (modelName: string) => {
     try {
-      await apolloService.uninstallModel(modelName);
-      
-      // Refresh installed models
-      const installed = await apolloService.getInstalledModels();
-      setInstalledModels(installed);
-      
-      // Clear current model if it was uninstalled
-      if (currentModel?.name === modelName) {
-        setCurrentModel(installed.length > 0 ? installed[0] : undefined);
-      }
+      // Implementation needed
     } catch (error) {
       console.error('Failed to uninstall model:', error);
     }
   };
 
   const handleConfigureModel = (modelName: string, config: Partial<ModelConfiguration>) => {
-    apolloService.setModelConfiguration(modelName, config);
-    
-    // Update configurations state
-    setModelConfigurations(prev => {
-      const existing = prev.findIndex(c => c.modelName === modelName);
-      const newConfig = apolloService.getModelConfiguration(modelName);
-      
-      if (existing >= 0 && newConfig) {
-        const updated = [...prev];
-        updated[existing] = newConfig;
-        return updated;
-      } else if (newConfig) {
-        return [...prev, newConfig];
-      }
-      return prev;
-    });
+    // Implementation needed
   };
 
   const handleSetDefaultModel = (modelName: string) => {
-    // Clear all default flags
-    modelConfigurations.forEach(config => {
-      if (config.isDefault) {
-        apolloService.setModelConfiguration(config.modelName, { isDefault: false });
-      }
-    });
-    
-    // Set new default
-    apolloService.setModelConfiguration(modelName, { isDefault: true });
-    
-    // Update state
-    setModelConfigurations(prev => 
-      prev.map(config => ({
-        ...config,
-        isDefault: config.modelName === modelName
-      }))
-    );
+    // Implementation needed
   };
 
   // Helper function to determine Monaco language from file extension
@@ -399,11 +419,11 @@ function App() {
         return (
           <ChatView 
             currentModel={currentModel?.name || "llama3.2:3b"}
-            isConnected={isOllamaConnected}
-            subjectMode="general"
-            agentMode={false}
+            isConnected={isOpenRouterConnected}
+            subjectMode={subjectMode}
+            agentMode={agentMode}
             onProcessingChange={(processing: boolean) => {
-              // Handle processing state if needed
+              setIsProcessing(processing);
               console.log('Chat processing:', processing);
             }}
           />
@@ -544,6 +564,55 @@ function App() {
             </div>
           </div>
         );
+      case 'settings':
+        return <Settings onApiKeyChange={(apiKey) => console.log('API key updated:', apiKey)} />;
+      case 'about':
+        return <AboutView onViewChange={(view: string) => handleViewChange(view as ViewType)} />;
+      case 'workflow-manager':
+        return (
+          <ComingSoon 
+            featureName="Workflow Manager"
+            description="Advanced workflow creation and management interface with visual editor and automation tools."
+            onBackToChat={() => handleViewChange('chat')}
+            expectedRelease="Q1 2024"
+          />
+        );
+      case 'prompt-management':
+        return (
+          <ComingSoon 
+            featureName="LLM Prompt Management"
+            description="Create, edit, and organize prompts for different AI models with version control and sharing capabilities."
+            onBackToChat={() => handleViewChange('chat')}
+            expectedRelease="Q1 2024"
+          />
+        );
+      case 'tool-browser':
+        return (
+          <ComingSoon 
+            featureName="Tool Browser"
+            description="Browse, install, and manage MCP tools from the community marketplace."
+            onBackToChat={() => handleViewChange('chat')}
+            expectedRelease="Q2 2024"
+          />
+        );
+      case 'mcp-servers':
+        return (
+          <ComingSoon 
+            featureName="MCP Servers"
+            description="Manage Model Context Protocol server connections and configurations."
+            onBackToChat={() => handleViewChange('chat')}
+            expectedRelease="Q1 2024"
+          />
+        );
+      case 'performance-monitor':
+        return (
+          <ComingSoon 
+            featureName="Performance Monitor"
+            description="Real-time system performance metrics, resource usage, and optimization recommendations."
+            onBackToChat={() => handleViewChange('chat')}
+            expectedRelease="Q2 2024"
+          />
+        );
       default:
         return (
           <div className="flex items-center justify-center h-full">
@@ -589,7 +658,7 @@ function App() {
   };
 
   return (
-    <div className="h-screen flex flex-col font-sans bg-background text-foreground">
+    <div className="h-screen flex flex-col bg-background text-foreground antialiased">
       <Header 
         currentView={currentView}
         theme={theme}
@@ -597,34 +666,46 @@ function App() {
         onThemeToggle={handleThemeToggle}
         currentModel={currentModel}
         availableModels={availableModels}
-        isConnected={isOllamaConnected}
+        isConnected={isOpenRouterConnected}
         onModelSwitch={handleModelSwitch}
         onOpenModelHub={() => setIsModelHubOpen(true)}
+        onFileExplorerToggle={() => setIsFileExplorerVisible(!isFileExplorerVisible)}
+        isFileExplorerVisible={isFileExplorerVisible}
+        subjectMode={subjectMode}
+        onSubjectModeChange={setSubjectMode}
+        agentMode={agentMode}
+        onAgentModeToggle={() => setAgentMode(!agentMode)}
+        isProcessing={isProcessing}
+        onStopProcessing={() => setIsProcessing(false)}
       />
 
       {/* Main Content Area */}
       <div className="flex-1 flex overflow-hidden">
-        <FileExplorer 
-          onFileSelect={(filePath: string) => {
-            // Convert filePath to FileSystemItem for handleFileSelect
-            const findFileItem = (items: FileSystemItem[], path: string): FileSystemItem | null => {
-              for (const item of items) {
-                if (item.path === path) return item;
-                if (item.children) {
-                  const found = findFileItem(item.children, path);
-                  if (found) return found;
+        {isFileExplorerVisible && (
+          <FileExplorer 
+            onFileSelect={(filePath: string) => {
+              // Convert filePath to FileSystemItem for handleFileSelect
+              const findFileItem = (items: FileSystemItem[], path: string): FileSystemItem | null => {
+                if (!items || !Array.isArray(items)) return null;
+                
+                for (const item of items) {
+                  if (item.path === path) return item;
+                  if (item.children && Array.isArray(item.children)) {
+                    const found = findFileItem(item.children, path);
+                    if (found) return found;
+                  }
                 }
+                return null;
+              };
+              
+              const fileItem = findFileItem(files, filePath);
+              if (fileItem) {
+                handleFileSelect(fileItem);
               }
-              return null;
-            };
-            
-            const fileItem = findFileItem(files, filePath);
-            if (fileItem) {
-              handleFileSelect(fileItem);
-            }
-          }}
-          selectedFile={currentFile?.path}
-        />
+            }}
+            selectedFile={currentFile?.path}
+          />
+        )}
 
         {/* Main Content Panel */}
         <div className="flex-1 flex flex-col bg-background">

@@ -69,7 +69,7 @@ export const AboutView: React.FC<AboutViewProps> = ({
                 <ul className="text-sm text-muted-foreground space-y-1">
                   <li>• React + TypeScript</li>
                   <li>• Electron for desktop</li>
-                  <li>• Ollama for AI models</li>
+                  <li>• OpenRouter for AI models</li>
                   <li>• Model Context Protocol</li>
                   <li>• Tailwind CSS</li>
                 </ul>

@@ -11,6 +11,7 @@ import {
   Clock,
   AlertCircle
 } from 'lucide-react';
+import chatService from '../../services/ChatService';
 
 interface Message {
   id: string;
@@ -106,80 +107,37 @@ export const ChatView: React.FC<ChatViewProps> = ({
     setIsTyping(true);
 
     try {
-      if (isConnected && currentModel) {
-        // Real Ollama integration
-        const systemPrompt = getSystemPrompt(subjectMode);
-        const conversationMessages = [
-          { role: 'system', content: systemPrompt },
-          ...messages.slice(-5).map(msg => ({
-            role: msg.type === 'user' ? 'user' : 'assistant',
-            content: msg.content
-          })),
-          { role: 'user', content: messageText }
-        ];
-
-        const response = await fetch('http://localhost:11434/api/chat', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            model: currentModel,
-            messages: conversationMessages,
-            stream: false,
-            options: {
-              temperature: 0.7,
-              top_p: 0.9
-            }
-          })
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          const assistantMessage: Message = {
-            id: (Date.now() + 1).toString(),
-            type: 'assistant',
-            content: data.message.content,
-            timestamp: new Date(),
-            tier: determineTier(messageText),
-            tokenUsage: {
-              prompt: data.prompt_eval_count || 0,
-              completion: data.eval_count || 0,
-              total: (data.prompt_eval_count || 0) + (data.eval_count || 0)
-            },
-            processingTime: data.total_duration ? Math.round(data.total_duration / 1000000) : 0
-          };
-
-          setMessages(prev => [...prev, assistantMessage]);
-        } else {
-          throw new Error('Failed to get response from Ollama');
-        }
-      } else {
-        // Fallback mock response when Ollama is not available
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        const assistantMessage: Message = {
-          id: (Date.now() + 1).toString(),
-          type: 'assistant',
-          content: `I received your message: "${messageText}"\n\n⚠️ Note: Ollama is not currently connected, so this is a mock response. To enable real AI responses:\n\n1. Install Ollama from https://ollama.ai\n2. Run: ollama pull llama3.2:3b\n3. Start Ollama service\n\nOnce connected, I'll provide real AI-powered responses with multi-tier processing!`,
-          timestamp: new Date(),
-          tier: 'Mock',
-          isOffline: true
-        };
-
-        setMessages(prev => [...prev, assistantMessage]);
-      }
-    } catch (error) {
-      console.error('Error sending message:', error);
-      const errorMessage: Message = {
-        id: (Date.now() + 2).toString(),
+      // Use ChatService with OpenRouter integration
+      const response = await chatService.sendMessage(messageText);
+      
+      const assistantMessage: Message = {
+        id: response.id,
         type: 'assistant',
-        content: `❌ Error: ${error instanceof Error ? error.message : 'Unknown error'}\n\nPlease check your Ollama connection and try again.`,
+        content: response.content,
+        timestamp: response.timestamp,
+        tier: determineTier(messageText),
+        tokenUsage: {
+          prompt: 0, // OpenRouter doesn't provide detailed token breakdown
+          completion: response.metadata?.tokens || 0,
+          total: response.metadata?.tokens || 0
+        },
+        processingTime: response.metadata?.executionTime || 0
+      };
+
+      setMessages(prev => [...prev, assistantMessage]);
+    } catch (error) {
+      console.error('Chat error:', error);
+      const errorMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        type: 'assistant',
+        content: error instanceof Error ? error.message : 'Sorry, I encountered an error. Please try again.',
         timestamp: new Date(),
-        tier: 'Error',
         isError: true
       };
       setMessages(prev => [...prev, errorMessage]);
     } finally {
       setIsTyping(false);
+      onProcessingChange?.(false);
     }
   };
 

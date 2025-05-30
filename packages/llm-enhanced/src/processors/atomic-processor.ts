@@ -27,9 +27,9 @@ export class AtomicProcessor extends BaseProcessor {
     const prompt = this.buildAtomicPrompt(request);
     
     try {
-      const response = await this.callOllamaModel(prompt, {
-        temperature: 0.1, // Low temperature for consistency
-        max_tokens: 150,  // Short responses
+      const response = await this.callOpenRouterModel(prompt, {
+        temperature: 0.7,
+        maxTokens: 1000,
         top_p: 0.9,
         stream: false
       });
@@ -122,9 +122,9 @@ export class AtomicProcessor extends BaseProcessor {
 Keep your response concise (under 50 words) and focus on the most important information.`;
   }
 
-  private async callOllamaModel(prompt: string, options: any): Promise<string> {
-    // This would integrate with the Ollama service from Phase 2
-    // For now, return a placeholder that will be replaced with actual Ollama integration
+  private async callOpenRouterModel(prompt: string, options: any): Promise<string> {
+    // This would integrate with the OpenRouter service from Phase 2
+    // For now, return a placeholder that will be replaced with actual OpenRouter integration
     
     const response = await fetch('http://localhost:11434/api/generate', {
       method: 'POST',
@@ -135,14 +135,14 @@ Keep your response concise (under 50 words) and focus on the most important info
         stream: false,
         options: {
           temperature: options.temperature,
-          num_predict: options.max_tokens,
+          num_predict: options.maxTokens,
           top_p: options.top_p
         }
       })
     });
 
     if (!response.ok) {
-      throw new Error(`Ollama request failed: ${response.statusText}`);
+      throw new Error(`OpenRouter request failed: ${response.statusText}`);
     }
 
     const data = await response.json() as { response?: string };

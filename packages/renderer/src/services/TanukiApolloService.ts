@@ -490,7 +490,7 @@ export class TanukiApolloService {
   }
 
   /**
-   * Check if Ollama service is healthy
+   * Check if OpenRouter service is healthy
    */
   async checkHealth(): Promise<boolean> {
     try {

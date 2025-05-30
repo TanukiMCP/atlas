@@ -1,5 +1,5 @@
 import React from 'react';
-import { Button } from '@/components/ui/button';
+import { Button } from '../ui/button';
 import { 
   Sun, 
   Moon, 
@@ -11,8 +11,8 @@ import {
   Search,
   RotateCcw,
   Copy,
-  Cut,
-  Paste,
+  Scissors,
+  ClipboardPaste,
   Command,
   Terminal,
   Monitor,
@@ -20,7 +20,6 @@ import {
   Maximize,
   Plus,
   Minus,
-  RotateLeft,
   Zap,
   Play,
   Bug,
@@ -36,7 +35,7 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+} from '../ui/dropdown-menu';
 
 interface PrimaryMenuBarProps {
   onThemeToggle: () => void;
@@ -195,13 +194,13 @@ export const PrimaryMenuBar: React.FC<PrimaryMenuBarProps> = ({
               <span className="ml-auto text-xs text-muted-foreground">Ctrl+Z</span>
             </DropdownMenuItem>
             <DropdownMenuItem>
-              <RotateLeft className="w-4 h-4 mr-2" />
+              <RotateCcw className="w-4 h-4 mr-2" />
               Redo
               <span className="ml-auto text-xs text-muted-foreground">Ctrl+Y</span>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem>
-              <Cut className="w-4 h-4 mr-2" />
+              <Scissors className="w-4 h-4 mr-2" />
               Cut
               <span className="ml-auto text-xs text-muted-foreground">Ctrl+X</span>
             </DropdownMenuItem>
@@ -211,7 +210,7 @@ export const PrimaryMenuBar: React.FC<PrimaryMenuBarProps> = ({
               <span className="ml-auto text-xs text-muted-foreground">Ctrl+C</span>
             </DropdownMenuItem>
             <DropdownMenuItem>
-              <Paste className="w-4 h-4 mr-2" />
+              <ClipboardPaste className="w-4 h-4 mr-2" />
               Paste
               <span className="ml-auto text-xs text-muted-foreground">Ctrl+V</span>
             </DropdownMenuItem>

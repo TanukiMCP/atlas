@@ -19,26 +19,10 @@ export class EnhancedLLMService {
     this.router = new LLMRouter(this.llmService);
   }
 
-  async initialize(ollamaService: any, mcpHubService?: any): Promise<void> {
-    try {
-      // Set up Ollama service
-      this.llmService.setOllamaService(ollamaService);
-      
-      // Set up MCP client if available
-      if (mcpHubService) {
-        mcpClientAdapter.setMCPHubService(mcpHubService);
-        this.llmService.setMCPClient(mcpClientAdapter);
-      }
-
-      // Initialize LLM service
-      await this.llmService.initialize();
-      
-      this.isInitialized = true;
-      console.log('Enhanced LLM Service initialized successfully');
-    } catch (error) {
-      console.error('Failed to initialize Enhanced LLM Service:', error);
-      throw error;
-    }
+  async initialize(openRouterService?: any): Promise<void> {
+    console.log('Enhanced LLM Service initializing with OpenRouter...');
+    // Set up OpenRouter service integration
+    // this.llmService.setOpenRouterService(openRouterService);
   }
 
   async generateResponse(query: string, userId: string = 'default', metadata?: Record<string, any>): Promise<LLMResponse> {
