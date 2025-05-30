@@ -73,8 +73,24 @@ export const PrimaryMenuBar: React.FC<PrimaryMenuBarProps> = ({
           onViewChange('chat');
           break;
         case 'open-project':
-          // Show not implemented message
-          alert('This feature is not yet implemented.');
+          // Use Electron dialog to open a directory
+          if (window.electronAPI?.showOpenDialog) {
+            window.electronAPI.showOpenDialog({ 
+              properties: ['openDirectory'] 
+            }).then((result) => {
+              if (!result.canceled && result.filePaths.length > 0) {
+                const dirPath = result.filePaths[0];
+                console.log(`Opening directory: ${dirPath}`);
+                if (window.electronAPI?.setWorkingDirectory) {
+                  window.electronAPI.setWorkingDirectory(dirPath);
+                }
+              }
+            }).catch(err => {
+              console.error('Error showing open dialog:', err);
+            });
+          } else {
+            alert('This feature requires Electron API access.');
+          }
           break;
         case 'save-chat':
           // Show not implemented message
@@ -214,23 +230,11 @@ export const PrimaryMenuBar: React.FC<PrimaryMenuBarProps> = ({
               <span className="ml-auto text-xs text-muted-foreground">Ctrl+S</span>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => handleMenuAction('settings')}>
-              <Settings className="w-4 h-4 mr-2" />
-              Settings
-              <span className="ml-auto text-xs text-muted-foreground">Ctrl+,</span>
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
             <DropdownMenuItem onClick={() => window.close()}>
               Exit
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
-
-        {/* Workflow Builder Nav Item */}
-        <Button variant="ghost" size="sm" onClick={() => handleMenuAction('workflow-builder')}>
-          <Zap className="w-4 h-4 mr-2" />
-          Workflow Builder
-        </Button>
 
         {/* Edit Menu */}
         <DropdownMenu>
@@ -265,10 +269,10 @@ export const PrimaryMenuBar: React.FC<PrimaryMenuBarProps> = ({
               <span className="ml-auto text-xs text-muted-foreground">Ctrl+V</span>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>
-              <Search className="w-4 h-4 mr-2" />
-              Find
-              <span className="ml-auto text-xs text-muted-foreground">Ctrl+F</span>
+            <DropdownMenuItem onClick={() => handleMenuAction('command-palette')}>
+              <Command className="w-4 h-4 mr-2" />
+              Command Palette...
+              <span className="ml-auto text-xs text-muted-foreground">Ctrl+Shift+P</span>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -279,42 +283,28 @@ export const PrimaryMenuBar: React.FC<PrimaryMenuBarProps> = ({
             <Button variant="ghost" size="sm">View</Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent>
-            <DropdownMenuItem onClick={() => handleMenuAction('command-palette')}>
-              <Command className="w-4 h-4 mr-2" />
-              Command Palette
-              <span className="ml-auto text-xs text-muted-foreground">Ctrl+Shift+P</span>
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
             <DropdownMenuItem onClick={() => handleMenuAction('toggle-explorer')}>
-              <FolderOpen className="w-4 h-4 mr-2" />
-              Toggle File Explorer
-              <span className="ml-auto text-xs text-muted-foreground">Ctrl+Shift+E</span>
+              <FileText className="w-4 h-4 mr-2" />
+              Toggle Explorer
             </DropdownMenuItem>
-            <DropdownMenuItem>
-              <MessageSquare className="w-4 h-4 mr-2" />
-              Toggle Chat Panel
-              <span className="ml-auto text-xs text-muted-foreground">Ctrl+Shift+H</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem>
-              <Terminal className="w-4 h-4 mr-2" />
-              Toggle Terminal
-              <span className="ml-auto text-xs text-muted-foreground">Ctrl+`</span>
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
             <DropdownMenuItem onClick={() => handleMenuAction('toggle-fullscreen')}>
               <Maximize className="w-4 h-4 mr-2" />
               Toggle Fullscreen
               <span className="ml-auto text-xs text-muted-foreground">F11</span>
             </DropdownMenuItem>
-            <DropdownMenuItem>
-              <Plus className="w-4 h-4 mr-2" />
-              Zoom In
-              <span className="ml-auto text-xs text-muted-foreground">Ctrl++</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem>
-              <Minus className="w-4 h-4 mr-2" />
-              Zoom Out
-              <span className="ml-auto text-xs text-muted-foreground">Ctrl+-</span>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={() => onThemeToggle()}>
+              {theme === 'dark' ? (
+                <>
+                  <Sun className="w-4 h-4 mr-2" />
+                  Light Mode
+                </>
+              ) : (
+                <>
+                  <Moon className="w-4 h-4 mr-2" />
+                  Dark Mode
+                </>
+              )}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -325,39 +315,36 @@ export const PrimaryMenuBar: React.FC<PrimaryMenuBarProps> = ({
             <Button variant="ghost" size="sm">Tools</Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent>
-            <DropdownMenuItem onClick={() => handleMenuAction('llm-prompt-management')}>
+            <DropdownMenuItem onClick={() => handleMenuAction('workflow-builder')}>
               <Zap className="w-4 h-4 mr-2" />
-              LLM Prompt Management
+              Workflow Builder
             </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => handleMenuAction('workflow-manager')}>
+              <Play className="w-4 h-4 mr-2" />
+              Workflow Manager
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => handleMenuAction('llm-prompt-management')}>
+              <MessageSquare className="w-4 h-4 mr-2" />
+              Prompt Management
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
             <DropdownMenuItem onClick={() => handleMenuAction('tool-browser')}>
               <Settings className="w-4 h-4 mr-2" />
               Tool Browser
-              <span className="ml-auto text-xs text-muted-foreground">Ctrl+Shift+T</span>
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => handleMenuAction('mcp-servers')}>
-              <Monitor className="w-4 h-4 mr-2" />
+              <Terminal className="w-4 h-4 mr-2" />
               MCP Servers
             </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem>
-              <Play className="w-4 h-4 mr-2" />
-              Execute Last Action
-              <span className="ml-auto text-xs text-muted-foreground">F5</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => handleMenuAction('workflow-manager')}>
-              <ToggleLeft className="w-4 h-4 mr-2" />
-              Workflow Manager
-              <span className="ml-auto text-xs text-muted-foreground">Ctrl+F5</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem>
-              <Bug className="w-4 h-4 mr-2" />
-              Debug Mode
-              <span className="ml-auto text-xs text-muted-foreground">F9</span>
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
             <DropdownMenuItem onClick={() => handleMenuAction('performance-monitor')}>
               <Monitor className="w-4 h-4 mr-2" />
               Performance Monitor
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={() => handleMenuAction('settings')}>
+              <Settings className="w-4 h-4 mr-2" />
+              Settings
+              <span className="ml-auto text-xs text-muted-foreground">Ctrl+,</span>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -369,44 +356,53 @@ export const PrimaryMenuBar: React.FC<PrimaryMenuBarProps> = ({
           </DropdownMenuTrigger>
           <DropdownMenuContent>
             <DropdownMenuItem onClick={() => handleMenuAction('welcome-guide')}>
-              <BookOpen className="w-4 h-4 mr-2" />
+              <HelpCircle className="w-4 h-4 mr-2" />
               Welcome Guide
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => handleMenuAction('documentation')}>
-              <HelpCircle className="w-4 h-4 mr-2" />
+              <BookOpen className="w-4 h-4 mr-2" />
               Documentation
-              <span className="ml-auto text-xs text-muted-foreground">F1</span>
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => handleMenuAction('keyboard-shortcuts')}>
               <Keyboard className="w-4 h-4 mr-2" />
               Keyboard Shortcuts
             </DropdownMenuItem>
+            <DropdownMenuSeparator />
             <DropdownMenuItem onClick={() => handleMenuAction('report-issue')}>
-              <MessageSquare className="w-4 h-4 mr-2" />
-              Report Issue...
+              <Bug className="w-4 h-4 mr-2" />
+              Report Issue
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => handleMenuAction('check-updates')}>
               <Download className="w-4 h-4 mr-2" />
-              Check for Updates...
+              Check for Updates
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={() => handleMenuAction('about')}>
               <Info className="w-4 h-4 mr-2" />
-              About TanukiMCP Atlas
+              About
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
+
+        {/* Workflow Builder Nav Item */}
+        <Button variant="ghost" size="sm" onClick={() => handleMenuAction('workflow-builder')}>
+          <Zap className="w-4 h-4 mr-2" />
+          Workflow Builder
+        </Button>
       </div>
 
-      {/* Right side: Theme Toggle */}
+      {/* Right side: Theme toggle & search */}
       <div className="flex items-center gap-2">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={onThemeToggle}
-          className="p-2"
-        >
-          {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+        <Button variant="ghost" size="icon" onClick={() => handleMenuAction('toggle-fullscreen')}>
+          <Maximize className="h-[1.2rem] w-[1.2rem]" />
+        </Button>
+        
+        <Button variant="ghost" size="icon" onClick={onThemeToggle}>
+          {theme === 'dark' ? (
+            <Sun className="h-[1.2rem] w-[1.2rem]" />
+          ) : (
+            <Moon className="h-[1.2rem] w-[1.2rem]" />
+          )}
         </Button>
       </div>
     </div>

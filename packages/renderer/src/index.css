@@ -1,7 +1,7 @@
 /* TanukiMCP Atlas - Modern Design System */
-@import url('https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300..800&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400..800&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,400..700;1,400..700&display=swap');
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -83,6 +83,52 @@
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   }
   
+  /* Typography Improvements */
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-heading font-semibold tracking-tight;
+    letter-spacing: -0.015em;
+  }
+  
+  h1 {
+    @apply text-3xl font-bold md:text-4xl;
+    line-height: 1.2;
+  }
+  
+  h2 {
+    @apply text-2xl font-bold md:text-3xl;
+    line-height: 1.3;
+  }
+  
+  h3 {
+    @apply text-xl font-semibold md:text-2xl;
+    line-height: 1.4;
+  }
+  
+  h4 {
+    @apply text-lg font-semibold md:text-xl;
+    line-height: 1.5;
+  }
+  
+  p, li, blockquote, label, input, textarea, button {
+    @apply text-base;
+    line-height: 1.6;
+  }
+  
+  small, .text-sm {
+    @apply text-sm;
+    line-height: 1.5;
+  }
+  
+  .text-xs {
+    @apply text-xs;
+    line-height: 1.4;
+  }
+  
+  code, pre, .font-mono {
+    @apply font-mono;
+    font-weight: 500;
+  }
+  
   /* Remove default margins and paddings */
   * {
     margin: 0;
@@ -91,9 +137,14 @@
   }
   
   html, body, #root {
-  height: 100%;
-  overflow: hidden;
-}
+    height: 100%;
+    overflow: hidden;
+  }
+  
+  /* Text selection */
+  ::selection {
+    @apply bg-primary/20 text-foreground;
+  }
 }
 
 /* Custom Component Styles */
@@ -128,17 +179,29 @@
     @apply flex-1 overflow-auto;
   }
   
+  /* Enhanced panel resizing */
+  .resize-handle {
+    @apply relative flex items-center justify-center transition-colors;
+    @apply cursor-col-resize data-[panel-group-direction=vertical]:cursor-row-resize;
+    @apply w-2 data-[panel-group-direction=vertical]:w-full;
+    @apply h-full data-[panel-group-direction=vertical]:h-2;
+    @apply z-10 bg-border/70 hover:bg-primary active:bg-primary/90;
+  }
+  
   /* Chat Interface */
   .chat-message-user {
-    @apply bg-primary text-primary-foreground rounded-lg px-4 py-2 ml-auto max-w-[80%] mb-4;
+    @apply bg-primary text-primary-foreground rounded-lg px-4 py-2 ml-auto max-w-[80%] mb-4 shadow-sm;
+    line-height: 1.6;
   }
   
   .chat-message-assistant {
-    @apply bg-card border rounded-lg px-4 py-2 mr-auto max-w-[85%] mb-4;
+    @apply bg-card border rounded-lg px-4 py-2 mr-auto max-w-[85%] mb-4 shadow-sm;
+    line-height: 1.6;
   }
   
   .chat-message-system {
     @apply bg-muted text-muted-foreground text-center text-sm py-2 mx-auto max-w-fit px-4 rounded mb-4;
+    line-height: 1.5;
   }
   
   /* File Explorer */
@@ -211,28 +274,25 @@
 
 /* Custom scrollbar */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 10px;
+  height: 10px;
 }
 
 ::-webkit-scrollbar-track {
-  @apply bg-muted/30;
+  @apply bg-muted/30 rounded-full;
 }
 
 ::-webkit-scrollbar-thumb {
-  @apply bg-muted-foreground/30 rounded-full;
+  @apply bg-muted-foreground/40 rounded-full hover:bg-muted-foreground/60;
+  border: 2px solid transparent;
+  background-clip: content-box;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  @apply bg-muted-foreground/50;
+  @apply bg-muted-foreground/60;
 }
 
 /* Focus styles */
 :focus-visible {
   @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
-}
-
-/* Selection styles */
-::selection {
-  @apply bg-primary/20 text-foreground;
 } 

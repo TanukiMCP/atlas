@@ -76,17 +76,13 @@ export const ContextualToolbar: React.FC<ContextualToolbarProps> = ({
           </Button>
         </div>
 
-        {/* Stop Button */}
-        <Button
-          variant="destructive"
-          size="sm"
-          onClick={onStopProcessing}
-          disabled={!isProcessing}
-          className="gap-1"
-        >
-          <Square className="w-4 h-4" />
-          Stop
-        </Button>
+        {/* Processing Status */}
+        {isProcessing && (
+          <Badge variant="outline" className="gap-1 bg-amber-500/10 text-amber-500 border-amber-500/20">
+            <div className="w-2 h-2 rounded-full bg-amber-500 animate-pulse mr-1"></div>
+            Processing... (Press Enter to cancel)
+          </Badge>
+        )}
 
         {/* Current Mode Display */}
         <Badge variant="secondary" className="gap-1">

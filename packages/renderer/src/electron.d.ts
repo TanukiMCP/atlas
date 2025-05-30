@@ -1,10 +1,17 @@
+interface ElectronAPI {
+  showOpenDialog: (options: { properties: string[] }) => Promise<{ canceled: boolean, filePaths: string[] }>;
+  setWorkingDirectory: (path: string) => Promise<boolean>;
+  isMaximized: () => Promise<boolean>;
+  minimizeWindow: () => void;
+  maximizeWindow: () => void;
+  closeWindow: () => void;
+  onWindowMaximized: (callback: (event: any, maximized: boolean) => void) => void;
+  removeAllListeners: (eventName: string) => void;
+}
+
 declare global {
   interface Window {
-    electronAPI?: {
-      invoke: (channel: string, ...args: any[]) => Promise<any>;
-      on: (channel: string, callback: (...args: any[]) => void) => void;
-      removeAllListeners: (channel: string) => void;
-    };
+    electronAPI: ElectronAPI;
   }
 }
 

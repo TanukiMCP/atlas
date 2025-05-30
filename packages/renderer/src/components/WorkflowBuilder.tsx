@@ -1,307 +1,327 @@
-import React, { useState, useRef, useCallback } from 'react';
-import { Workflow, MCPTool, ProcessingTier } from '../types';
-
-interface WorkflowNode {
-  id: string;
-  type: 'tool' | 'condition' | 'loop' | 'input' | 'output';
-  name: string;
-  position: { x: number; y: number };
-  data: any;
-  connections: string[];
-}
+import React, { useState, useEffect } from 'react';
+import { Button } from './ui/button';
+import { Zap, Save, ChevronLeft, Layout, ZoomIn, ZoomOut, Play } from 'lucide-react';
 
 interface WorkflowBuilderProps {
-  availableTools: MCPTool[];
-  processingTiers: ProcessingTier[];
-  onSaveWorkflow: (workflow: Workflow) => void;
-  onLoadWorkflow: (workflowId: string) => void;
+  onClose: () => void;
+  onSave: (workflow: any) => void;
+  initialWorkflow?: any;
 }
 
-const WorkflowBuilder: React.FC<WorkflowBuilderProps> = ({
-  availableTools,
-  processingTiers,
-  onSaveWorkflow,
-  onLoadWorkflow
-}) => {
-  const [nodes, setNodes] = useState<WorkflowNode[]>([]);
-  const [selectedNode, setSelectedNode] = useState<string | null>(null);
-  const [draggedTool, setDraggedTool] = useState<MCPTool | null>(null);
-  const [workflowName, setWorkflowName] = useState('New Workflow');
-  const canvasRef = useRef<HTMLDivElement>(null);
-  const [isConnecting, setIsConnecting] = useState(false);
-  const [connectionStart, setConnectionStart] = useState<string | null>(null);
+export function WorkflowBuilder({ onClose, onSave, initialWorkflow }: WorkflowBuilderProps) {
+  const [isFullscreen, setIsFullscreen] = useState(true);
+  const [zoomLevel, setZoomLevel] = useState(1);
+  const [isDraggingNode, setIsDraggingNode] = useState(false);
+  const [nodes, setNodes] = useState<any[]>(initialWorkflow?.nodes || []);
+  const [connections, setConnections] = useState<any[]>(initialWorkflow?.connections || []);
+  const [activeNode, setActiveNode] = useState<any | null>(null);
+  const [workflowName, setWorkflowName] = useState(initialWorkflow?.name || 'New Workflow');
+  const [workflowDescription, setWorkflowDescription] = useState(
+    initialWorkflow?.description || 'Workflow description'
+  );
 
-  const handleDragStart = (tool: MCPTool) => {
-    setDraggedTool(tool);
-  };
-
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    if (!draggedTool || !canvasRef.current) return;
-
-    const rect = canvasRef.current.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-
-    const newNode: WorkflowNode = {
-      id: `node-${Date.now()}`,
-      type: 'tool',
-      name: draggedTool.name,
-      position: { x, y },
-      data: { tool: draggedTool },
-      connections: []
-    };
-
-    setNodes(prev => [...prev, newNode]);
-    setDraggedTool(null);
-  };
-
-  const handleNodeClick = (nodeId: string) => {
-    if (isConnecting && connectionStart && connectionStart !== nodeId) {
-      // Create connection
-      setNodes(prev => prev.map(node => 
-        node.id === connectionStart 
-          ? { ...node, connections: [...node.connections, nodeId] }
-          : node
-      ));
-      setIsConnecting(false);
-      setConnectionStart(null);
-    } else {
-      setSelectedNode(nodeId);
+  // Handle zoom in/out
+  const handleZoomIn = () => {
+    if (zoomLevel < 2) {
+      setZoomLevel(prev => prev + 0.1);
     }
   };
 
-  const startConnection = (nodeId: string) => {
-    setIsConnecting(true);
-    setConnectionStart(nodeId);
+  const handleZoomOut = () => {
+    if (zoomLevel > 0.5) {
+      setZoomLevel(prev => prev - 0.1);
+    }
   };
 
-  const deleteNode = (nodeId: string) => {
-    setNodes(prev => prev.filter(node => node.id !== nodeId));
-    // Remove connections to this node
-    setNodes(prev => prev.map(node => ({
-      ...node,
-      connections: node.connections.filter(conn => conn !== nodeId)
-    })));
-  };
-
-  const saveWorkflow = () => {
-    const workflow: Workflow = {
-      id: `workflow-${Date.now()}`,
+  // Handle save workflow
+  const handleSave = () => {
+    const workflow = {
+      id: initialWorkflow?.id || `workflow-${Date.now()}`,
       name: workflowName,
-      description: `Custom workflow with ${nodes.length} nodes`,
-      status: 'available'
+      description: workflowDescription,
+      nodes,
+      connections,
+      status: 'available',
     };
-    onSaveWorkflow(workflow);
+    onSave(workflow);
   };
 
-  const addControlNode = (type: 'condition' | 'loop' | 'input' | 'output') => {
-    const newNode: WorkflowNode = {
+  // Handle node addition
+  const addNode = (type: string) => {
+    const newNode = {
       id: `node-${Date.now()}`,
       type,
-      name: type.charAt(0).toUpperCase() + type.slice(1),
-      position: { x: 100, y: 100 },
-      data: { type },
-      connections: []
+      position: { x: 200, y: 200 },
+      data: { label: type, params: {} },
     };
-    setNodes(prev => [...prev, newNode]);
+    setNodes([...nodes, newNode]);
   };
 
-  const renderNode = (node: WorkflowNode) => {
-    const isSelected = selectedNode === node.id;
-    
-    return (
-      <div
-        key={node.id}
-        className={`absolute bg-card border-2 rounded-lg p-3 cursor-pointer min-w-[120px] ${
-          isSelected ? 'border-primary' : 'border-border'
-        } ${isConnecting ? 'hover:border-blue-500' : 'hover:border-primary'}`}
-        style={{ left: node.position.x, top: node.position.y }}
-        onClick={() => handleNodeClick(node.id)}
-      >
-        <div className="flex items-center justify-between mb-2">
-          <div className="text-sm font-medium">{node.name}</div>
-          <div className="flex gap-1">
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                startConnection(node.id);
-              }}
-              className="w-4 h-4 bg-blue-500 rounded-full text-xs text-white flex items-center justify-center hover:bg-blue-600"
-              title="Connect"
-            >
-              →
-            </button>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                deleteNode(node.id);
-              }}
-              className="w-4 h-4 bg-red-500 rounded-full text-xs text-white flex items-center justify-center hover:bg-red-600"
-              title="Delete"
-            >
-              ×
-            </button>
-          </div>
-        </div>
-        <div className="text-xs text-muted-foreground">
-          {node.type === 'tool' ? '🔧 Tool' : 
-           node.type === 'condition' ? '🔀 Condition' :
-           node.type === 'loop' ? '🔄 Loop' :
-           node.type === 'input' ? '📥 Input' : '📤 Output'}
-        </div>
-      </div>
+  // Handle connection creation
+  const addConnection = (source: string, target: string) => {
+    // Check if connection already exists
+    const exists = connections.some(
+      conn => conn.source === source && conn.target === target
     );
-  };
-
-  const renderConnections = () => {
-    return nodes.map(node => 
-      node.connections.map(targetId => {
-        const targetNode = nodes.find(n => n.id === targetId);
-        if (!targetNode) return null;
-
-        const startX = node.position.x + 60;
-        const startY = node.position.y + 30;
-        const endX = targetNode.position.x + 60;
-        const endY = targetNode.position.y + 30;
-
-        return (
-          <line
-            key={`${node.id}-${targetId}`}
-            x1={startX}
-            y1={startY}
-            x2={endX}
-            y2={endY}
-            stroke="currentColor"
-            strokeWidth="2"
-            className="text-primary"
-            markerEnd="url(#arrowhead)"
-          />
-        );
-      })
-    ).flat();
+    
+    if (!exists) {
+      const newConnection = {
+        id: `conn-${Date.now()}`,
+        source,
+        target,
+      };
+      setConnections([...connections, newConnection]);
+    }
   };
 
   return (
-    <div className="h-full flex">
-      {/* Tool Palette */}
-      <div className="w-64 bg-card border-r border-border p-4 overflow-y-auto">
-        <div className="space-y-4">
-          <div>
-            <h3 className="font-semibold mb-2">Available Tools</h3>
-            <div className="space-y-2">
-              {availableTools.map(tool => (
-                <div
-                  key={tool.name}
-                  draggable
-                  onDragStart={() => handleDragStart(tool)}
-                  className="p-2 bg-secondary rounded cursor-grab hover:bg-secondary/80 transition-colors"
-                >
-                  <div className="text-sm font-medium">{tool.name}</div>
-                  <div className="text-xs text-muted-foreground">{tool.description}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <h3 className="font-semibold mb-2">Control Nodes</h3>
-            <div className="space-y-2">
-              {['input', 'output', 'condition', 'loop'].map(type => (
-                <button
-                  key={type}
-                  onClick={() => addControlNode(type as any)}
-                  className="w-full p-2 bg-secondary rounded text-left hover:bg-secondary/80 transition-colors"
-                >
-                  <div className="text-sm font-medium capitalize">{type}</div>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <h3 className="font-semibold mb-2">Workflow</h3>
-            <input
-              type="text"
-              value={workflowName}
-              onChange={(e) => setWorkflowName(e.target.value)}
-              className="w-full p-2 bg-background border border-border rounded text-sm"
-              placeholder="Workflow name"
-            />
-            <button
-              onClick={saveWorkflow}
-              className="w-full mt-2 p-2 bg-primary text-primary-foreground rounded text-sm hover:bg-primary/90 transition-colors"
-            >
-              Save Workflow
-            </button>
-          </div>
+    <div className={`bg-background ${isFullscreen ? 'fixed inset-0 z-50' : 'h-full w-full'}`}>
+      {/* Workflow Builder Header */}
+      <div className="border-b border-border h-12 flex items-center justify-between px-4">
+        <div className="flex items-center gap-2">
+          <Button variant="ghost" size="sm" onClick={onClose}>
+            <ChevronLeft className="w-4 h-4" />
+            Back
+          </Button>
+          <h1 className="text-lg font-semibold">Workflow Builder</h1>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button variant="ghost" size="sm" onClick={() => setIsFullscreen(!isFullscreen)}>
+            <Layout className="w-4 h-4" />
+            {isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}
+          </Button>
+          <Button variant="ghost" size="sm" onClick={handleZoomOut}>
+            <ZoomOut className="w-4 h-4" />
+          </Button>
+          <div className="text-sm px-2">{Math.round(zoomLevel * 100)}%</div>
+          <Button variant="ghost" size="sm" onClick={handleZoomIn}>
+            <ZoomIn className="w-4 h-4" />
+          </Button>
+          <Button variant="outline" size="sm" className="gap-1">
+            <Play className="w-4 h-4" />
+            Test
+          </Button>
+          <Button variant="default" size="sm" className="gap-1" onClick={handleSave}>
+            <Save className="w-4 h-4" />
+            Save
+          </Button>
         </div>
       </div>
 
-      {/* Canvas */}
-      <div className="flex-1 relative overflow-hidden">
-        <div
-          ref={canvasRef}
-          className="w-full h-full relative bg-background"
-          onDragOver={handleDragOver}
-          onDrop={handleDrop}
-          onClick={() => {
-            setSelectedNode(null);
-            setIsConnecting(false);
-            setConnectionStart(null);
+      {/* Workflow Builder Content */}
+      <div className="flex h-[calc(100%-3rem)]">
+        {/* Left Sidebar - Node Palette */}
+        <div className="w-56 border-r border-border overflow-y-auto p-4">
+          <h2 className="font-medium mb-3">Node Types</h2>
+          <div className="space-y-2">
+            <div
+              className="p-2 border border-border rounded-md bg-card hover:bg-accent cursor-pointer"
+              onClick={() => addNode('Start')}
+            >
+              <div className="font-medium">Start</div>
+              <div className="text-xs text-muted-foreground">Entry point</div>
+            </div>
+            <div
+              className="p-2 border border-border rounded-md bg-card hover:bg-accent cursor-pointer"
+              onClick={() => addNode('Action')}
+            >
+              <div className="font-medium">Action</div>
+              <div className="text-xs text-muted-foreground">Execute a command</div>
+            </div>
+            <div
+              className="p-2 border border-border rounded-md bg-card hover:bg-accent cursor-pointer"
+              onClick={() => addNode('Condition')}
+            >
+              <div className="font-medium">Condition</div>
+              <div className="text-xs text-muted-foreground">Branch based on condition</div>
+            </div>
+            <div
+              className="p-2 border border-border rounded-md bg-card hover:bg-accent cursor-pointer"
+              onClick={() => addNode('Loop')}
+            >
+              <div className="font-medium">Loop</div>
+              <div className="text-xs text-muted-foreground">Iterate over items</div>
+            </div>
+            <div
+              className="p-2 border border-border rounded-md bg-card hover:bg-accent cursor-pointer"
+              onClick={() => addNode('Tool')}
+            >
+              <div className="font-medium">Tool</div>
+              <div className="text-xs text-muted-foreground">Use external tool</div>
+            </div>
+            <div
+              className="p-2 border border-border rounded-md bg-card hover:bg-accent cursor-pointer"
+              onClick={() => addNode('End')}
+            >
+              <div className="font-medium">End</div>
+              <div className="text-xs text-muted-foreground">Workflow endpoint</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Center - Workflow Canvas */}
+        <div 
+          className="flex-1 bg-secondary/20 overflow-auto relative"
+          style={{ 
+            transform: `scale(${zoomLevel})`,
+            transformOrigin: '0 0',
+            height: `${100 / zoomLevel}%`,
+            width: `${100 / zoomLevel}%`
           }}
         >
-          {/* Grid background */}
-          <div className="absolute inset-0 opacity-10">
-            <svg width="100%" height="100%">
-              <defs>
-                <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
-                  <path d="M 20 0 L 0 0 0 20" fill="none" stroke="currentColor" strokeWidth="1"/>
-                </pattern>
-              </defs>
-              <rect width="100%" height="100%" fill="url(#grid)" />
-            </svg>
-          </div>
-
-          {/* Connections */}
-          <svg className="absolute inset-0 pointer-events-none">
-            <defs>
-              <marker id="arrowhead" markerWidth="10" markerHeight="7" 
-                      refX="9" refY="3.5" orient="auto">
-                <polygon points="0 0, 10 3.5, 0 7" fill="currentColor" className="text-primary" />
-              </marker>
-            </defs>
-            {renderConnections()}
-          </svg>
-
-          {/* Nodes */}
-          {nodes.map(renderNode)}
-
-          {/* Instructions */}
-          {nodes.length === 0 && (
-            <div className="absolute inset-0 flex items-center justify-center text-muted-foreground">
-              <div className="text-center space-y-2">
-                <div className="text-xl">🔧</div>
-                <div>Drag tools from the palette to create your workflow</div>
-                <div className="text-sm">Click nodes to connect them</div>
+          {/* Render Nodes */}
+          {nodes.map(node => (
+            <div
+              key={node.id}
+              className="absolute p-4 bg-card border border-border rounded-md shadow-md w-48"
+              style={{
+                left: `${node.position.x}px`,
+                top: `${node.position.y}px`,
+                cursor: 'move'
+              }}
+              onClick={() => setActiveNode(node)}
+              draggable={true}
+              onDragStart={(e) => {
+                setIsDraggingNode(true);
+                e.dataTransfer.setData('node-id', node.id);
+              }}
+              onDragEnd={() => setIsDraggingNode(false)}
+            >
+              <div className="font-medium">{node.data.label}</div>
+              <div className="text-xs text-muted-foreground mt-1">{node.type}</div>
+              
+              {/* Connection Points */}
+              <div className="absolute right-0 top-1/2 transform translate-x-1/2 -translate-y-1/2">
+                <div 
+                  className="w-3 h-3 bg-primary rounded-full cursor-pointer border border-white"
+                  draggable
+                  onDragStart={(e) => {
+                    e.dataTransfer.setData('source-id', node.id);
+                  }}
+                ></div>
+              </div>
+              <div className="absolute left-0 top-1/2 transform -translate-x-1/2 -translate-y-1/2">
+                <div 
+                  className="w-3 h-3 bg-muted-foreground rounded-full cursor-pointer border border-white"
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    const sourceId = e.dataTransfer.getData('source-id');
+                    if (sourceId && sourceId !== node.id) {
+                      addConnection(sourceId, node.id);
+                    }
+                  }}
+                ></div>
               </div>
             </div>
-          )}
+          ))}
 
-          {/* Connection mode indicator */}
-          {isConnecting && (
-            <div className="absolute top-4 left-4 bg-blue-500 text-white px-3 py-1 rounded text-sm">
-              Click another node to connect
+          {/* Render Connections */}
+          <svg className="absolute top-0 left-0 w-full h-full pointer-events-none">
+            {connections.map(conn => {
+              const sourceNode = nodes.find(n => n.id === conn.source);
+              const targetNode = nodes.find(n => n.id === conn.target);
+              
+              if (!sourceNode || !targetNode) return null;
+              
+              const sourceX = sourceNode.position.x + 192; // Right of node
+              const sourceY = sourceNode.position.y + 32; // Middle of node
+              const targetX = targetNode.position.x; // Left of node
+              const targetY = targetNode.position.y + 32; // Middle of node
+              
+              return (
+                <g key={conn.id}>
+                  <path
+                    d={`M ${sourceX} ${sourceY} C ${sourceX + 50} ${sourceY}, ${targetX - 50} ${targetY}, ${targetX} ${targetY}`}
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    fill="none"
+                    className="text-primary"
+                  />
+                  {/* Arrow at the end */}
+                  <polygon
+                    points={`${targetX},${targetY} ${targetX - 8},${targetY - 4} ${targetX - 8},${targetY + 4}`}
+                    fill="currentColor"
+                    className="text-primary"
+                  />
+                </g>
+              );
+            })}
+          </svg>
+        </div>
+
+        {/* Right Sidebar - Properties */}
+        <div className="w-64 border-l border-border overflow-y-auto p-4">
+          <h2 className="font-medium mb-3">Properties</h2>
+          {activeNode ? (
+            <div>
+              <div className="mb-3">
+                <label className="block text-xs mb-1">Node Type</label>
+                <div className="p-2 bg-card border border-border rounded-md">
+                  {activeNode.type}
+                </div>
+              </div>
+              <div className="mb-3">
+                <label className="block text-xs mb-1">Label</label>
+                <input
+                  type="text"
+                  className="w-full p-2 bg-background border border-border rounded-md"
+                  value={activeNode.data.label}
+                  onChange={(e) => {
+                    const updatedNodes = nodes.map(n => 
+                      n.id === activeNode.id 
+                        ? { ...n, data: { ...n.data, label: e.target.value } } 
+                        : n
+                    );
+                    setNodes(updatedNodes);
+                    setActiveNode({ ...activeNode, data: { ...activeNode.data, label: e.target.value } });
+                  }}
+                />
+              </div>
+              
+              {/* Node-specific properties would go here */}
+              
+              <Button 
+                variant="destructive" 
+                size="sm"
+                className="mt-4 w-full"
+                onClick={() => {
+                  setNodes(nodes.filter(n => n.id !== activeNode.id));
+                  setConnections(connections.filter(
+                    c => c.source !== activeNode.id && c.target !== activeNode.id
+                  ));
+                  setActiveNode(null);
+                }}
+              >
+                Delete Node
+              </Button>
+            </div>
+          ) : (
+            <div>
+              <div className="mb-3">
+                <label className="block text-xs mb-1">Workflow Name</label>
+                <input
+                  type="text"
+                  className="w-full p-2 bg-background border border-border rounded-md"
+                  value={workflowName}
+                  onChange={(e) => setWorkflowName(e.target.value)}
+                />
+              </div>
+              <div className="mb-3">
+                <label className="block text-xs mb-1">Description</label>
+                <textarea
+                  className="w-full p-2 bg-background border border-border rounded-md h-24"
+                  value={workflowDescription}
+                  onChange={(e) => setWorkflowDescription(e.target.value)}
+                />
+              </div>
+              <div className="text-xs text-muted-foreground mt-4">
+                Select a node to view and edit its properties
+              </div>
             </div>
           )}
         </div>
       </div>
     </div>
   );
-};
-
-export default WorkflowBuilder; 
+} 

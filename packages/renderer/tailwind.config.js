@@ -18,9 +18,16 @@ module.exports = {
     },
     extend: {
       fontFamily: {
-        sans: ['Open Sans', 'system-ui', 'sans-serif'],
-        heading: ['Syne', 'Open Sans', 'system-ui', 'sans-serif'],
+        sans: ['Inter', 'system-ui', 'sans-serif'],
+        heading: ['Syne', 'Inter', 'system-ui', 'sans-serif'],
         mono: ['JetBrains Mono', 'Fira Code', 'Consolas', 'monospace'],
+      },
+      fontWeight: {
+        normal: 400,
+        medium: 500,
+        semibold: 600,
+        bold: 700,
+        extrabold: 800,
       },
       colors: {
         // TanukiMCP Brand Colors - Based on tanukimcp.com

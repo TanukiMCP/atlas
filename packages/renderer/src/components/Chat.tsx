@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import chatService from '../services/ChatService';
-import ErrorBoundary from './ErrorBoundary';
+import { ErrorBoundary } from './ErrorBoundary';
 
 interface ChatMessage {
   id: string;
@@ -133,11 +133,11 @@ const Chat: React.FC = () => {
         <div
           className={`max-w-[80%] rounded-lg px-4 py-2 ${
             isUser
-              ? 'bg-blue-500 text-white'
-              : 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100'
+              ? 'bg-primary text-primary-foreground shadow-sm'
+              : 'bg-card border shadow-sm text-card-foreground'
           }`}
         >
-          <div className="whitespace-pre-wrap">{message.content}</div>
+          <div className="whitespace-pre-wrap leading-relaxed">{message.content}</div>
           
           {/* Message metadata */}
           {message.metadata && (
