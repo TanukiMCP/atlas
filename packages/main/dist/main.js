@@ -1023,109 +1023,37 @@ function setupFileSystemHandlers() {
   });
 }
 function setupLLMHandlers() {
+  import_electron3.ipcMain.handle("openrouter:checkHealth", async () => {
+    const services = tanukiApp.getServices();
+    return await services.openrouter.checkHealth();
+  });
+  import_electron3.ipcMain.handle("openrouter:getAvailableModels", async () => {
+    const services = tanukiApp.getServices();
+    return await services.openrouter.getAvailableFreeModels();
+  });
+  import_electron3.ipcMain.handle("openrouter:generate", async (event, request) => {
+    const services = tanukiApp.getServices();
+    return await services.openrouter.generate(request);
+  });
+  import_electron3.ipcMain.handle("openrouter:getRecommendations", async (event, taskType) => {
+    const services = tanukiApp.getServices();
+    return await services.openrouter.getModelRecommendations(taskType);
+  });
+  import_electron3.ipcMain.handle("openrouter:getBestModel", async (event, taskType) => {
+    const services = tanukiApp.getServices();
+    return await services.openrouter.getBestFreeModelForTask(taskType);
+  });
+  import_electron3.ipcMain.handle("openrouter:getModelInfo", async (event, modelId) => {
+    const services = tanukiApp.getServices();
+    return services.openrouter.getModelInfo(modelId);
+  });
   import_electron3.ipcMain.handle("ollama:listModels", async () => {
-    const services = tanukiApp.getServices();
-    return await services.ollama.listModels();
-  });
-  import_electron3.ipcMain.handle("ollama:getModelCatalog", async () => {
-    const services = tanukiApp.getServices();
-    return await services.ollama.getModelCatalog();
-  });
-  import_electron3.ipcMain.handle("ollama:installModel", async (event, modelName) => {
-    const services = tanukiApp.getServices();
-    return await services.modelManager.installModel(modelName);
-  });
-  import_electron3.ipcMain.handle("ollama:deleteModel", async (event, modelName) => {
-    const services = tanukiApp.getServices();
-    return await services.ollama.deleteModel(modelName);
-  });
-  import_electron3.ipcMain.handle("ollama:generate", async (event, request) => {
-    const services = tanukiApp.getServices();
-    return await services.ollama.generateWithOptimization(request);
+    console.warn("Ollama handlers are deprecated. Use openrouter handlers instead.");
+    return [];
   });
   import_electron3.ipcMain.handle("ollama:checkHealth", async () => {
-    const services = tanukiApp.getServices();
-    return await services.ollama.checkOllamaHealth();
-  });
-  import_electron3.ipcMain.handle("ollama:benchmarkModel", async (event, modelName) => {
-    const services = tanukiApp.getServices();
-    return await services.ollama.benchmarkModel(modelName);
-  });
-  import_electron3.ipcMain.handle("system:getCapabilities", async () => {
-    const services = tanukiApp.getServices();
-    return await services.hardwareAssessor.assessSystemCapabilities();
-  });
-  import_electron3.ipcMain.handle("system:getCurrentMetrics", async () => {
-    const services = tanukiApp.getServices();
-    return await services.systemMonitor.getCurrentMetrics();
-  });
-  import_electron3.ipcMain.handle("models:getRecommendations", async () => {
-    const services = tanukiApp.getServices();
-    return await services.modelManager.getRecommendedModels();
-  });
-  import_electron3.ipcMain.handle("models:getInstallationStatus", async (event, modelName) => {
-    const services = tanukiApp.getServices();
-    return services.modelManager.getInstallationStatus(modelName);
-  });
-  import_electron3.ipcMain.handle("optimization:getProfiles", async () => {
-    const services = tanukiApp.getServices();
-    return services.optimizationEngine.getAllProfiles();
-  });
-  import_electron3.ipcMain.handle("optimization:optimizeForHardware", async (event, systemInfo) => {
-    const services = tanukiApp.getServices();
-    return await services.optimizationEngine.optimizeForHardware(systemInfo);
-  });
-  import_electron3.ipcMain.handle("parameters:getPreset", async (event, task) => {
-    const services = tanukiApp.getServices();
-    return services.parameterTuner.getPreset(task);
-  });
-  import_electron3.ipcMain.handle("parameters:getAllPresets", async () => {
-    const services = tanukiApp.getServices();
-    return services.parameterTuner.getAllPresets();
-  });
-  import_electron3.ipcMain.handle("parameters:optimizeForTask", async (event, task, modelName) => {
-    const services = tanukiApp.getServices();
-    return await services.parameterTuner.optimizeForTask(task, modelName);
-  });
-  import_electron3.ipcMain.handle("context:store", async (event, sessionId, type, key, value, importance) => {
-    const services = tanukiApp.getServices();
-    return await services.contextManager.storeContext(sessionId, type, key, value, importance);
-  });
-  import_electron3.ipcMain.handle("context:retrieve", async (event, sessionId, query, maxResults) => {
-    const services = tanukiApp.getServices();
-    return await services.contextManager.retrieveRelevantContext(sessionId, query, maxResults);
-  });
-  import_electron3.ipcMain.handle("context:optimize", async (event, sessionId) => {
-    const services = tanukiApp.getServices();
-    return await services.contextManager.optimizeContext(sessionId);
-  });
-  import_electron3.ipcMain.handle("enhancedLLM:processRequest", async (event, request) => {
-    const services = tanukiApp.getServices();
-    return await services.enhancedLLM.processRequest(request);
-  });
-  import_electron3.ipcMain.handle("enhancedLLM:getStatus", async (event) => {
-    const services = tanukiApp.getServices();
-    return services.enhancedLLM.getStatus();
-  });
-  import_electron3.ipcMain.handle("enhancedLLM:testTier", async (event, tier) => {
-    const services = tanukiApp.getServices();
-    return await services.enhancedLLM.testTier(tier);
-  });
-  import_electron3.ipcMain.handle("mcpHub:listServers", async (event) => {
-    const services = tanukiApp.getServices();
-    return services.mcpHub.listServers();
-  });
-  import_electron3.ipcMain.handle("mcpHub:connectServer", async (event, serverId) => {
-    const services = tanukiApp.getServices();
-    return await services.mcpHub.connectServer(serverId);
-  });
-  import_electron3.ipcMain.handle("mcpHub:disconnectServer", async (event, serverId) => {
-    const services = tanukiApp.getServices();
-    return await services.mcpHub.disconnectServer(serverId);
-  });
-  import_electron3.ipcMain.handle("mcpHub:executeCommand", async (event, serverId, command, params) => {
-    const services = tanukiApp.getServices();
-    return await services.mcpHub.executeCommand(serverId, command, params);
+    console.warn("Ollama handlers are deprecated. Use openrouter handlers instead.");
+    return { isConnected: false, error: "Ollama support removed. Use OpenRouter instead." };
   });
 }
 
@@ -1322,6 +1250,137 @@ var OllamaService = class {
   }
   getPerformanceMetrics(modelName) {
     return this.performanceCache.get(modelName);
+  }
+};
+
+// src/services/openrouter-service.ts
+var OpenRouterService = class {
+  baseUrl = "https://openrouter.ai/api/v1";
+  apiKey = null;
+  freeModels = [
+    {
+      id: "meta-llama/llama-3.1-8b-instruct:free",
+      displayName: "Llama 3.1 8B (Free)",
+      description: "Fast and capable model for general conversation and reasoning",
+      specialization: ["conversation", "reasoning", "general"],
+      isAvailable: true,
+      rateLimits: {
+        requestsPerMinute: 10,
+        tokensPerDay: 2e5
+      }
+    },
+    {
+      id: "google/gemma-2-9b-it:free",
+      displayName: "Gemma 2 9B (Free)",
+      description: "Google's efficient model optimized for instruction following",
+      specialization: ["conversation", "instruction-following", "coding"],
+      isAvailable: true,
+      rateLimits: {
+        requestsPerMinute: 10,
+        tokensPerDay: 2e5
+      }
+    },
+    {
+      id: "microsoft/phi-3-mini-128k-instruct:free",
+      displayName: "Phi-3 Mini (Free)",
+      description: "Compact yet powerful model from Microsoft, great for coding tasks",
+      specialization: ["coding", "problem-solving", "reasoning"],
+      isAvailable: true,
+      rateLimits: {
+        requestsPerMinute: 15,
+        tokensPerDay: 1e5
+      }
+    },
+    {
+      id: "mistralai/mistral-7b-instruct:free",
+      displayName: "Mistral 7B (Free)",
+      description: "Balanced model with strong multilingual capabilities",
+      specialization: ["conversation", "multilingual", "creative-writing"],
+      isAvailable: true,
+      rateLimits: {
+        requestsPerMinute: 10,
+        tokensPerDay: 15e4
+      }
+    }
+  ];
+  constructor() {
+    this.apiKey = process.env.OPENROUTER_API_KEY || null;
+  }
+  async checkHealth() {
+    try {
+      const availableModels = await this.getAvailableFreeModels();
+      return {
+        isConnected: true,
+        availableModels,
+        lastChecked: /* @__PURE__ */ new Date()
+      };
+    } catch (error) {
+      return {
+        isConnected: false,
+        availableModels: [],
+        lastChecked: /* @__PURE__ */ new Date(),
+        error: error instanceof Error ? error.message : "Unknown error"
+      };
+    }
+  }
+  async getAvailableFreeModels() {
+    try {
+      return this.freeModels.filter((model) => model.isAvailable);
+    } catch (error) {
+      console.error("Failed to get available free models:", error);
+      return [];
+    }
+  }
+  async generate(request) {
+    const headers = {
+      "Content-Type": "application/json",
+      "HTTP-Referer": "https://tanukimcp.com",
+      "X-Title": "TanukiMCP Atlas"
+    };
+    if (this.apiKey) {
+      headers["Authorization"] = `Bearer ${this.apiKey}`;
+    }
+    const response = await fetch(`${this.baseUrl}/chat/completions`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        model: request.model,
+        messages: request.messages,
+        temperature: request.temperature || 0.7,
+        max_tokens: request.max_tokens || 1e3,
+        stream: false
+        // For simplicity, we'll start without streaming
+      })
+    });
+    if (!response.ok) {
+      const errorData = await response.text();
+      throw new Error(`OpenRouter API error: ${response.status} - ${errorData}`);
+    }
+    const data = await response.json();
+    return {
+      content: data.choices[0].message.content,
+      usage: data.usage
+    };
+  }
+  async getModelRecommendations(taskType) {
+    const availableModels = await this.getAvailableFreeModels();
+    return availableModels.filter((model) => model.specialization.includes(taskType) || model.specialization.includes("general")).sort((a, b) => {
+      const aSpecific = a.specialization.includes(taskType) ? 1 : 0;
+      const bSpecific = b.specialization.includes(taskType) ? 1 : 0;
+      return bSpecific - aSpecific;
+    });
+  }
+  // Helper method to get the best free model for a task
+  async getBestFreeModelForTask(taskType) {
+    const recommendations = await this.getModelRecommendations(taskType);
+    return recommendations.length > 0 ? recommendations[0] : null;
+  }
+  // Check if we have enough quota for a request (simplified implementation)
+  canMakeRequest(modelId, estimatedTokens) {
+    return estimatedTokens < 4e3;
+  }
+  getModelInfo(modelId) {
+    return this.freeModels.find((model) => model.id === modelId) || null;
   }
 };
 
@@ -4663,6 +4722,7 @@ var TanukiMCPApp = class {
   protocolHandlerService;
   // Services that might be initialized later or conditionally
   ollamaService;
+  openrouterService;
   systemMonitor;
   modelManager;
   hardwareAssessor;
@@ -4678,6 +4738,7 @@ var TanukiMCPApp = class {
   async initializeServices() {
     console.log("\u{1F527} Initializing Phase 2 services...");
     this.ollamaService = new OllamaService();
+    this.openrouterService = new OpenRouterService();
     this.systemMonitor = new SystemMonitor();
     this.modelManager = new ModelManager();
     this.hardwareAssessor = new HardwareAssessor();
@@ -4823,6 +4884,7 @@ var TanukiMCPApp = class {
   getServices() {
     return {
       ollama: this.ollamaService,
+      openrouter: this.openrouterService,
       systemMonitor: this.systemMonitor,
       modelManager: this.modelManager,
       hardwareAssessor: this.hardwareAssessor,

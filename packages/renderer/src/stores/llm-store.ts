@@ -3,12 +3,36 @@
  */
 
 import { create } from 'zustand';
-import { ollamaService, OllamaModel, OllamaChatMessage, OllamaHealthStatus } from '../services/ollama-service';
+
+export interface FreeModel {
+  id: string;
+  displayName: string;
+  description: string;
+  specialization: string[];
+  isAvailable: boolean;
+  rateLimits: {
+    requestsPerMinute: number;
+    tokensPerDay: number;
+  };
+}
+
+export interface OpenRouterMessage {
+  role: 'user' | 'assistant' | 'system';
+  content: string;
+  timestamp?: Date;
+}
+
+export interface OpenRouterHealthStatus {
+  isConnected: boolean;
+  availableModels: FreeModel[];
+  lastChecked: Date;
+  error?: string;
+}
 
 export interface ChatSession {
   id: string;
   name: string;
-  messages: OllamaChatMessage[];
+  messages: OpenRouterMessage[];
   createdAt: Date;
   updatedAt: Date;
   model: string;
@@ -17,10 +41,10 @@ export interface ChatSession {
 export interface LLMState {
   // Connection state
   isConnected: boolean;
-  healthStatus: OllamaHealthStatus | null;
+  healthStatus: OpenRouterHealthStatus | null;
   
   // Models
-  availableModels: OllamaModel[];
+  availableModels: FreeModel[];
   currentModel: string | null;
   isLoadingModels: boolean;
   
@@ -46,7 +70,13 @@ export interface LLMState {
   // Utility actions
   setStreamingMessage: (message: string) => void;
   setIsStreaming: (streaming: boolean) => void;
-}export const useLLMStore = create<LLMState>((set, get) => ({
+  
+  // New OpenRouter specific actions
+  getModelRecommendations: (taskType: 'coding' | 'reasoning' | 'conversation' | 'creative' | 'general') => Promise<FreeModel[]>;
+  getBestModelForTask: (taskType: 'coding' | 'reasoning' | 'conversation' | 'creative' | 'general') => Promise<FreeModel | null>;
+}
+
+export const useLLMStore = create<LLMState>((set, get) => ({
   // Initial state
   isConnected: false,
   healthStatus: null,
@@ -60,16 +90,16 @@ export interface LLMState {
 
   // Health and connection actions
   checkHealth: async () => {
-    console.log('LLM Store: Checking health...');
+    console.log('LLM Store: Checking OpenRouter health...');
     try {
-      const healthStatus = await ollamaService.checkHealth();
+      const healthStatus = await window.electronAPI.invoke('openrouter:checkHealth');
       console.log('LLM Store: Health status:', healthStatus);
-      const selectedModel = healthStatus.models.length > 0 ? healthStatus.models[0].name : null;
+      const selectedModel = healthStatus.availableModels.length > 0 ? healthStatus.availableModels[0].id : null;
       console.log('LLM Store: Setting model to:', selectedModel);
       set({
         isConnected: healthStatus.isConnected,
         healthStatus,
-        availableModels: healthStatus.models,
+        availableModels: healthStatus.availableModels,
         currentModel: selectedModel
       });
     } catch (error) {
@@ -78,7 +108,7 @@ export interface LLMState {
         isConnected: false,
         healthStatus: {
           isConnected: false,
-          models: [],
+          availableModels: [],
           lastChecked: new Date(),
           error: error instanceof Error ? error.message : 'Unknown error'
         }
@@ -89,43 +119,29 @@ export interface LLMState {
   refreshModels: async () => {
     console.log('LLM Store: Starting refreshModels...');
     set({ isLoadingModels: true });
+    
     try {
-      const models = await ollamaService.getModels();
-      console.log('LLM Store: Got models:', models);
-      const currentModel = get().currentModel;
+      const availableModels = await window.electronAPI.invoke('openrouter:getAvailableModels');
+      console.log('LLM Store: Available models:', availableModels);
       
-      // Set default model if none is selected
-      if (!currentModel && models.length > 0) {
-        const defaultModel = models.find(m => m.name.includes('llama3.1')) || models[0];
-        console.log('LLM Store: Setting default model:', defaultModel.name);
-        ollamaService.setModel(defaultModel.name);
-        set({
-          availableModels: models,
-          currentModel: defaultModel.name,
-          isLoadingModels: false
-        });
-        console.log('LLM Store: Model set successfully:', defaultModel.name);
-      } else {
-        console.log('LLM Store: Using existing model:', currentModel);
-        set({
-          availableModels: models,
-          isLoadingModels: false
-        });
-      }
+      set({ 
+        availableModels,
+        isLoadingModels: false
+      });
     } catch (error) {
-      set({ isLoadingModels: false });
       console.error('LLM Store: Failed to refresh models:', error);
+      set({ 
+        availableModels: [],
+        isLoadingModels: false 
+      });
     }
   },
 
   setCurrentModel: (modelName: string) => {
-    try {
-      ollamaService.setModel(modelName);
-      set({ currentModel: modelName });
-    } catch (error) {
-      console.error('Failed to set model:', error);
-    }
-  },  // Chat actions
+    set({ currentModel: modelName });
+  },
+
+  // Chat actions
   createNewSession: (name?: string) => {
     const session: ChatSession = {
       id: `session_${Date.now()}`,
@@ -133,7 +149,7 @@ export interface LLMState {
       messages: [],
       createdAt: new Date(),
       updatedAt: new Date(),
-      model: get().currentModel || 'llama3.1:latest'
+      model: get().currentModel || 'meta-llama/llama-3.1-8b-instruct:free'
     };
     
     set(state => ({
@@ -160,12 +176,13 @@ export interface LLMState {
     }
     
     if (!state.isConnected) {
-      throw new Error('Not connected to Ollama. Please check if Ollama is running.');
+      throw new Error('Not connected to OpenRouter. Please check your internet connection.');
     }
 
-    const userMessage: OllamaChatMessage = {
+    const userMessage: OpenRouterMessage = {
       role: 'user',
-      content
+      content,
+      timestamp: new Date()
     };
 
     // Add user message to current session
@@ -179,41 +196,37 @@ export interface LLMState {
       streamingMessage: ''
     }));
 
-    let assistantMessage = '';
-
     try {
-      await ollamaService.chatStream(
-        [...(state.currentSession?.messages || []), userMessage],
-        (chunk) => {
-          if (chunk.message?.content) {
-            assistantMessage += chunk.message.content;
-            set({ streamingMessage: assistantMessage });
-            if (onChunk) {
-              onChunk(chunk.message.content);
-            }
-          }
-        },        (finalResponse) => {
-          // Add complete assistant message to session
-          const completeAssistantMessage: OllamaChatMessage = {
-            role: 'assistant',
-            content: assistantMessage
-          };
+      const response = await window.electronAPI.invoke('openrouter:generate', {
+        model: state.currentModel,
+        messages: [...(state.currentSession?.messages || []), userMessage].map(msg => ({
+          role: msg.role,
+          content: msg.content
+        })),
+        temperature: 0.7,
+        max_tokens: 1000
+      });
 
-          set(state => ({
-            currentSession: state.currentSession ? {
-              ...state.currentSession,
-              messages: [...state.currentSession.messages, completeAssistantMessage],
-              updatedAt: new Date()
-            } : null,
-            isStreaming: false,
-            streamingMessage: ''
-          }));
-        },
-        (error) => {
-          set({ isStreaming: false, streamingMessage: '' });
-          throw error;
-        }
-      );
+      const assistantMessage: OpenRouterMessage = {
+        role: 'assistant',
+        content: response.content,
+        timestamp: new Date()
+      };
+
+      // Add complete assistant message to session
+      set(state => ({
+        currentSession: state.currentSession ? {
+          ...state.currentSession,
+          messages: [...state.currentSession.messages, assistantMessage],
+          updatedAt: new Date()
+        } : null,
+        isStreaming: false,
+        streamingMessage: ''
+      }));
+
+      if (onChunk) {
+        onChunk(response.content);
+      }
     } catch (error) {
       set({ isStreaming: false, streamingMessage: '' });
       throw error;
@@ -221,7 +234,6 @@ export interface LLMState {
   },
 
   cancelCurrentRequest: () => {
-    ollamaService.cancelCurrentRequest();
     set({ isStreaming: false, streamingMessage: '' });
   },
 
@@ -249,5 +261,24 @@ export interface LLMState {
 
   setIsStreaming: (streaming: boolean) => {
     set({ isStreaming: streaming });
+  },
+
+  // New OpenRouter specific actions
+  getModelRecommendations: async (taskType: 'coding' | 'reasoning' | 'conversation' | 'creative' | 'general') => {
+    try {
+      return await window.electronAPI.invoke('openrouter:getRecommendations', taskType);
+    } catch (error) {
+      console.error('Failed to get model recommendations:', error);
+      return [];
+    }
+  },
+
+  getBestModelForTask: async (taskType: 'coding' | 'reasoning' | 'conversation' | 'creative' | 'general') => {
+    try {
+      return await window.electronAPI.invoke('openrouter:getBestModel', taskType);
+    } catch (error) {
+      console.error('Failed to get best model for task:', error);
+      return null;
+    }
   }
 }));

@@ -102,21 +102,21 @@ This package extends TanukiMCP Atlas to host a mobile-accessible server, allowin
 ### Mobile Server API
 ```typescript
 // Authentication
-POST /api/auth/token - Generate authentication token
-POST /api/auth/verify - Verify token validity
+POST /api/v1/auth/token - Generate authentication token
+POST /api/v1/auth/verify - Verify token validity
 
 // Chat Interface
-POST /api/chat/message - Send message to LLM
-GET /api/chat/history - Get chat history
-DELETE /api/chat/clear - Clear chat history
+POST /api/v1/chat/message - Send message to LLM
+GET /api/v1/chat/history - Get chat history
+DELETE /api/v1/chat/clear - Clear chat history
 
 // Tool Operations
-GET /api/tools/available - Get mobile-safe tools
-POST /api/tools/execute - Execute tool with parameters
+GET /api/v1/tools/available - Get mobile-safe tools
+POST /api/v1/tools/execute - Execute tool with parameters
 
 // System Status
-GET /api/status/health - Server health check
-GET /api/status/connection - Connection status
+GET /api/v1/status/health - Server health check
+GET /api/v1/status/connection - Connection status
 ```
 
 ### WebSocket Events

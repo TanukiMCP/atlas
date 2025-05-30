@@ -78,7 +78,7 @@ export class MobileServer {
       max: 100, // Limit each IP to 100 requests per windowMs
       message: 'Too many requests from this IP'
     });
-    this.app.use('/api/', limiter);
+    this.app.use('/api/v1/', limiter);
 
     // JSON parsing
     this.app.use(express.json({ limit: '10mb' }));
@@ -87,26 +87,26 @@ export class MobileServer {
     this.app.use(express.static(path.join(__dirname, '../client/dist')));
 
     // Authentication middleware
-    this.app.use('/api/', this.authenticateToken.bind(this));
+    this.app.use('/api/v1/', this.authenticateToken.bind(this));
   }
 
   private setupRoutes(): void {
     // Authentication routes (no auth required)
-    this.app.post('/api/auth/token', this.generateToken.bind(this));
-    this.app.post('/api/auth/qr', this.generateQRCode.bind(this));
+    this.app.post('/api/v1/auth/token', this.generateToken.bind(this));
+    this.app.post('/api/v1/auth/qr', this.generateQRCode.bind(this));
 
     // Chat routes
-    this.app.post('/api/chat/message', this.handleChatMessage.bind(this));
-    this.app.get('/api/chat/history', this.getChatHistory.bind(this));
-    this.app.delete('/api/chat/clear', this.clearChatHistory.bind(this));
+    this.app.post('/api/v1/chat/message', this.handleChatMessage.bind(this));
+    this.app.get('/api/v1/chat/history', this.getChatHistory.bind(this));
+    this.app.delete('/api/v1/chat/clear', this.clearChatHistory.bind(this));
 
     // Tool routes
-    this.app.get('/api/tools/available', this.getAvailableTools.bind(this));
-    this.app.post('/api/tools/execute', this.executeTool.bind(this));
+    this.app.get('/api/v1/tools/available', this.getAvailableTools.bind(this));
+    this.app.post('/api/v1/tools/execute', this.executeTool.bind(this));
 
     // Status routes
-    this.app.get('/api/status/health', this.getHealthStatus.bind(this));
-    this.app.get('/api/status/connection', this.getConnectionStatus.bind(this));
+    this.app.get('/api/v1/status/health', this.getHealthStatus.bind(this));
+    this.app.get('/api/v1/status/connection', this.getConnectionStatus.bind(this));
 
     // PWA manifest and service worker
     this.app.get('/manifest.json', this.servePWAManifest.bind(this));

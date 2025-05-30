@@ -2,10 +2,10 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Badge } from '../ui/badge';
 import { Progress } from '../ui/progress';
-import { Zap, Clock, Star, Crown } from 'lucide-react';
+import { Zap, Clock } from 'lucide-react';
 
 interface ProcessingTierIndicatorProps {
-  currentTier: 'basic' | 'advanced' | 'premium' | 'enterprise';
+  currentTier: 'basic' | 'advanced';
   isActive: boolean;
   complexity: number;
   estimatedTime?: string;
@@ -25,25 +25,13 @@ export const ProcessingTierIndicator: React.FC<ProcessingTierIndicatorProps> = (
         color: 'bg-blue-500', 
         icon: <Zap className="h-4 w-4" />, 
         label: 'Basic',
-        description: 'Standard processing'
+        description: 'Fast OpenRouter free models'
       },
       advanced: { 
         color: 'bg-purple-500', 
         icon: <Clock className="h-4 w-4" />, 
         label: 'Advanced',
-        description: 'Enhanced capabilities'
-      },
-      premium: { 
-        color: 'bg-orange-500', 
-        icon: <Star className="h-4 w-4" />, 
-        label: 'Premium',
-        description: 'Priority processing'
-      },
-      enterprise: { 
-        color: 'bg-gradient-to-r from-purple-500 to-pink-500', 
-        icon: <Crown className="h-4 w-4" />, 
-        label: 'Enterprise',
-        description: 'Maximum performance'
+        description: 'Enhanced free model capabilities'
       }
     };
     return configs[tier as keyof typeof configs] || configs.basic;

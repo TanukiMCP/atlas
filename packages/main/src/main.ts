@@ -4,6 +4,7 @@ import { createWindow } from './window';
 import { setupIPC } from './ipc/handlers';
 import { initializeDatabase } from './database/connection';
 import { OllamaService } from './services/ollama-service';
+import { OpenRouterService } from './services/openrouter-service';
 import { SystemMonitor } from './services/system-monitor';
 import { ModelManager } from './services/model-manager';
 import { HardwareAssessor } from './services/hardware-assessor';
@@ -31,6 +32,7 @@ class TanukiMCPApp {
 
   // Services that might be initialized later or conditionally
   private ollamaService!: OllamaService;
+  private openrouterService!: OpenRouterService;
   private systemMonitor!: SystemMonitor;
   private modelManager!: ModelManager;
   private hardwareAssessor!: HardwareAssessor;
@@ -50,6 +52,7 @@ class TanukiMCPApp {
     
     // Initialize all LLM and model management services
     this.ollamaService = new OllamaService();
+    this.openrouterService = new OpenRouterService();
     this.systemMonitor = new SystemMonitor();
     this.modelManager = new ModelManager();
     this.hardwareAssessor = new HardwareAssessor();
@@ -259,6 +262,7 @@ class TanukiMCPApp {
   public getServices() {
     return {
       ollama: this.ollamaService,
+      openrouter: this.openrouterService,
       systemMonitor: this.systemMonitor,
       modelManager: this.modelManager,
       hardwareAssessor: this.hardwareAssessor,

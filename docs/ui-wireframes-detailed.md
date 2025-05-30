@@ -143,13 +143,15 @@ interface LayoutComponents {
 interface FeatureComponents {
   ChatInterface: {
     base: 'Card + ScrollArea';
-    components: ['Avatar', 'Badge', 'Button', 'Input', 'Command'];
+    components: ['Avatar', 'Badge', 'Button', 'Input', 'Command', 'ModelSelector'];
     features: [
       'Message bubbles with proper spacing',
       'Typing indicators with animations', 
       'Tool selector with Command component',
       'File attachment previews',
-      'Code syntax highlighting'
+      'Code syntax highlighting',
+      'Model execution mode toggle (Local/Remote)',
+      'Real-time capability indicators'
     ];
   };
   
@@ -321,6 +323,7 @@ interface ChatInterfaceDesign {
     component: 'div with flex justify-between items-center';
     elements: [
       'Avatar + Model name (shadcn/ui Avatar + Badge)',
+      'Execution Mode Selector (Local/Remote PRO)',
       'Status indicator (Online/Offline)',
       'Action buttons (Settings, Clear, Export)'
     ];
@@ -365,6 +368,44 @@ interface ChatInterfaceDesign {
         rightActions: ['Send button (disabled when empty)']
       }
     ];
+  };
+}
+```
+
+### Model Execution Selector (Intelligence Amplification Toggle)
+```typescript
+interface ModelExecutionSelector {
+  location: 'Chat interface header - prominently displayed';
+  component: 'ToggleGroup showcasing free model options';
+  
+  modes: [
+    {
+      value: 'openrouter-free',
+      label: 'OpenRouter Free',
+      badge: 'Free',
+      description: 'Free OpenRouter models with full capabilities',
+      requirements: 'Internet connection required',
+      capabilities: [
+        'Access to multiple free models',
+        'Llama 3.1 8B, Gemma 2 9B, Phi-3 Mini, Mistral 7B',
+        'Task-specific model recommendations',
+        'Automatic model selection for optimal results',
+        'Rate-limited but generous free usage',
+        'No cost, no subscriptions'
+      ]
+    }
+  ];
+  
+  modelSelection: {
+    component: 'Dropdown with free model options',
+    options: [
+      'meta-llama/llama-3.1-8b-instruct:free',
+      'google/gemma-2-9b-it:free', 
+      'microsoft/phi-3-mini-128k-instruct:free',
+      'mistralai/mistral-7b-instruct:free'
+    ],
+    autoSelect: 'Best model for current task type',
+    fallback: 'Automatic fallback if rate limited'
   };
 }
 ```

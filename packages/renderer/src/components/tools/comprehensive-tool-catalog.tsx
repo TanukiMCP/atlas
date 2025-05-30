@@ -22,7 +22,7 @@ const SAMPLE_TOOLS: Tool[] = [
   { id: 'write_file', name: 'Write File', description: 'Create or modify files', category: 'file', icon: '✍️', version: '2.1.0', usage: 76, rating: 4.7, tags: ['core'], isInstalled: true, isPremium: false },
   { id: 'search_code', name: 'Code Search', description: 'Advanced code search with regex', category: 'code', icon: '🔍', version: '1.5.2', usage: 64, rating: 4.6, tags: ['search'], isInstalled: true, isPremium: false },
   { id: 'git_operations', name: 'Git Operations', description: 'Complete Git workflow automation', category: 'code', icon: '🔀', version: '3.0.1', usage: 58, rating: 4.9, tags: ['git'], isInstalled: false, isPremium: false },
-  { id: 'web_scraper', name: 'Web Scraper Pro', description: 'Advanced web scraping with AI', category: 'web', icon: '🕷️', version: '2.3.0', usage: 71, rating: 4.5, tags: ['scraping'], isInstalled: false, isPremium: true },
+  { id: 'web_scraper', name: 'Web Scraper', description: 'Web scraping capabilities', category: 'web', icon: '🕷️', version: '2.3.0', usage: 71, rating: 4.5, tags: ['scraping'], isInstalled: false, isPremium: false },
   { id: 'data_visualizer', name: 'Data Visualizer', description: 'Create charts and graphs', category: 'data', icon: '📈', version: '1.8.0', usage: 42, rating: 4.4, tags: ['charts'], isInstalled: true, isPremium: false }
 ];
 
@@ -126,7 +126,7 @@ export const ComprehensiveToolCatalog: React.FC = () => {
                         cursor: 'pointer'
                       }}
                     >
-                      {tool.isPremium ? '💎 Install Pro' : '📦 Install'}
+                      📦 Install
                     </button>
                   )}
                 </div>

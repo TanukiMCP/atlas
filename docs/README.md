@@ -1,71 +1,74 @@
 # TanukiMCP: Atlas - Documentation Index
 
-This directory contains the complete design documentation for TanukiMCP: Atlas, featuring a revolutionary **Enhanced LLM Processing Architecture** - a sophisticated multi-layered intelligence system that dramatically improves the quality, reliability, and capabilities of LLM interactions through structured planning, execution, and quality assurance mechanisms.
+This directory contains the complete design documentation for TanukiMCP: Atlas, featuring a revolutionary **AI Intelligence Amplification Platform** - proving that smaller models (7B-32B parameters) with sophisticated tool orchestration outperform massive 500B+ parameter models at 1/10th the cost through Context7 documentation intelligence, Mem0 memory management, subject-mode routing, and comprehensive verification systems.
 
 ## 🧠 Enhanced LLM Architecture (NEW)
 
 ### 🌟 **Core Innovation: Multi-Tiered Intelligence System**
-13. **[Enhanced LLM Processing Architecture](13-enhanced-llm-architecture.md)** - Revolutionary multi-layered intelligence system with adaptive complexity, tournament-bracket quality assurance, and sophisticated failure recovery mechanisms
+14. **[Enhanced LLM Processing Architecture](14-enhanced-llm-architecture.md)** - Revolutionary multi-layered intelligence system with adaptive complexity, tournament-bracket quality assurance, and sophisticated failure recovery mechanisms
 
-14. **[Agent Mode vs Chat Mode](14-agent-chat-modes.md)** - Dual operational modes: Agent Mode for autonomous execution and Chat Mode for conversational intelligence
+15. **[Agent Mode vs Chat Mode](15-agent-chat-modes.md)** - Dual operational modes: Agent Mode for autonomous execution and Chat Mode for conversational intelligence
 
-16. **[Local-Only Architecture Changes](16-local-only-architecture-changes.md)** - Summary of critical changes for fully local operation
+17. **[Local-Only Architecture Changes](17-local-only-architecture-changes.md)** - Summary of critical changes for fully local operation
 
 ## 📚 Complete Documentation Structure
 
 ### ✅ Foundational Architecture (All Complete)
 1. **[Project Overview](01-project-overview.md)** - Vision, requirements, competitive positioning  
-2. **[System Architecture](02-system-architecture.md)** - Tech stack, application structure, IPC
-3. **[Tool Interfaces](03-tool-interfaces.md)** - Core tool interface definitions
-4. **[Task Management](04-task-management-core.md)** - Task system and execution engine
-5. **[LLM Integration](05-llm-integration.md)** - Ollama integration and model management
-6. **[MCP Integration](06-mcp-integration.md)** - MCP client hub and configuration
-15. **[Complete MCP Architecture](15-mcp-architecture-complete.md)** - Hub-based dual MCP architecture with FastMCP integration
+2. **[Complete Design Map](02-design-map-updated.md)** - Comprehensive technical design and system overview
+3. **[System Architecture](03-system-architecture.md)** - Tech stack, application structure, IPC
+4. **[Tool System Architecture](04-tool-system-architecture.md)** - Comprehensive tool interface definitions and framework
+5. **[Task Management](05-task-management-core.md)** - Task system and execution engine
+6. **[LLM Integration](06-llm-integration.md)** - Ollama integration and model management
+7. **[MCP Integration](07-mcp-integration.md)** - MCP client hub and configuration
+16. **[Complete MCP Architecture](16-mcp-architecture-complete.md)** - Hub-based dual MCP architecture with FastMCP integration
 
 ### ✅ Data & Security Layer (All Complete)
-7. **[Database Schema](07-database-schema.md)** - SQLite schema and data structures
-8. **[Security Framework](08-security-framework.md)** - Security policies and sandboxing
+8. **[Database Schema](08-database-schema.md)** - SQLite schema and data structures
+9. **[Security Framework](09-security-framework.md)** - Security policies and sandboxing
 
 ### ✅ User Interface Layer (All Complete)  
-9. **[UI Components](09-ui-components.md)** - React component specifications
-- **[UI Wireframes](../ui-wireframes-detailed.md)** - Detailed visual wireframes (718 lines)
+10. **[UI Components](10-ui-components.md)** - React component specifications
+- **[UI Wireframes](ui-wireframes-detailed.md)** - Detailed visual wireframes
+- **[Toolbar Architecture](toolbar-architecture.md)** - Toolbar system design
 
 ### ✅ Performance & Operations (All Complete)
-10. **[Technical Specs](10-technical-specs.md)** - Performance and platform requirements
-11. **[Success Metrics](11-success-metrics.md)** - KPIs and measurement criteria
+11. **[Technical Specs](11-technical-specs.md)** - Performance and platform requirements
+12. **[Success Metrics](12-success-metrics.md)** - KPIs and measurement criteria
 
 ### ✅ Evolution & Growth (All Complete)
-12. **[Future Roadmap](12-future-roadmap.md)** - Post-MVP features and ecosystem
+13. **[Future Roadmap](13-future-roadmap.md)** - Post-MVP features and ecosystem
 
-### 🚀 Implementation Guide (NEW)
-17. **[8-Phase Implementation Prompts](17-implementation-prompts.md)** - Detailed prompts for building TanukiMCP Atlas in 8 phases
-18. **[Custom Workflow Architecture](18-custom-workflow-architecture.md)** - LangChain-powered workflow automation system with chat-to-workflow conversion
+### 🚀 Advanced Features (All Complete)
+18. **[Workflow System Architecture](18-workflow-system-architecture.md)** - Intelligent workflow generation and execution system with LLM-assisted creation
+19. **[LLM Prompt Management UI](19-llm-prompt-management-ui.md)** - System prompt management and customization interface
+20. **[Intelligent Orchestration Architecture](21-intelligent-orchestration-architecture.md)** - FREE-FIRST multi-model orchestration with zero cost anxiety
 
 ## 🎯 Quick Navigation Guide
 
 ### 🔨 **For Implementation**
-**Start Here**: [8-Phase Implementation Prompts](17-implementation-prompts.md) → [Custom Workflow Architecture](18-custom-workflow-architecture.md) → [Complete MCP Architecture](15-mcp-architecture-complete.md) → [System Architecture](02-system-architecture.md) → [UI Wireframes](../ui-wireframes-detailed.md)
+**Start Here**: [Complete Design Map](02-design-map-updated.md) → [System Architecture](03-system-architecture.md) → [Tool System Architecture](04-tool-system-architecture.md) → [Complete MCP Architecture](16-mcp-architecture-complete.md) → [Workflow System Architecture](18-workflow-system-architecture.md)
 
 ### 🧠 **For AI/LLM Engineers**
-**Start Here**: [Enhanced LLM Architecture](13-enhanced-llm-architecture.md) → [Agent Mode vs Chat Mode](14-agent-chat-modes.md) → [LLM Integration](05-llm-integration.md) → [Task Management](04-task-management-core.md)
+**Start Here**: [Enhanced LLM Architecture](14-enhanced-llm-architecture.md) → [Agent Mode vs Chat Mode](15-agent-chat-modes.md) → [LLM Integration](06-llm-integration.md) → [Task Management](05-task-management-core.md)
 
 ### 👨‍💻 **For Backend Developers**
-**Start Here**: [System Architecture](02-system-architecture.md) → [Enhanced LLM Architecture](13-enhanced-llm-architecture.md) → [Tool Interfaces](03-tool-interfaces.md) → [Database Schema](07-database-schema.md)
+**Start Here**: [System Architecture](03-system-architecture.md) → [Enhanced LLM Architecture](14-enhanced-llm-architecture.md) → [Tool System Architecture](04-tool-system-architecture.md) → [Database Schema](08-database-schema.md)
 
 ### 🎨 **For Frontend/UX Designers** 
-**Start Here**: [UI Components](09-ui-components.md) → [Agent Mode vs Chat Mode](14-agent-chat-modes.md) → [UI Wireframes](../ui-wireframes-detailed.md)
+**Start Here**: [UI Components](10-ui-components.md) → [Agent Mode vs Chat Mode](15-agent-chat-modes.md) → [UI Wireframes](ui-wireframes-detailed.md)
 
 ### 📊 **For Product Managers**
-**Start Here**: [Project Overview](01-project-overview.md) → [Agent Mode vs Chat Mode](14-agent-chat-modes.md) → [Enhanced LLM Architecture](13-enhanced-llm-architecture.md) → [Success Metrics](11-success-metrics.md) → [Future Roadmap](12-future-roadmap.md)
+**Start Here**: [Project Overview](01-project-overview.md) → [Complete Design Map](02-design-map-updated.md) → [Intelligent Orchestration Architecture](21-intelligent-orchestration-architecture.md) → [Agent Mode vs Chat Mode](15-agent-chat-modes.md) → [Success Metrics](12-success-metrics.md) → [Future Roadmap](13-future-roadmap.md)
 
 ### 🔒 **For Security Review**
-**Start Here**: [Security Framework](08-security-framework.md) → [Enhanced LLM Architecture](13-enhanced-llm-architecture.md) → [Technical Specs](10-technical-specs.md)
+**Start Here**: [Security Framework](09-security-framework.md) → [Enhanced LLM Architecture](14-enhanced-llm-architecture.md) → [Technical Specs](11-technical-specs.md)
 
 ### 🏗️ **For System Architects**
-**Start Here**: [Enhanced LLM Architecture](13-enhanced-llm-architecture.md) → [Agent Mode vs Chat Mode](14-agent-chat-modes.md) → [System Architecture](02-system-architecture.md) → [MCP Integration](06-mcp-integration.md)
+**Start Here**: [Enhanced LLM Architecture](14-enhanced-llm-architecture.md) → [Agent Mode vs Chat Mode](15-agent-chat-modes.md) → [System Architecture](03-system-architecture.md) → [MCP Integration](07-mcp-integration.md)
 
 ### 🔨 **For Developers Ready to Build**
-**Start Here**: [8-Phase Implementation Prompts](17-implementation-prompts.md) - Complete step-by-step implementation guide in 8 phases, each designed as a separate chat prompt for building the full application incrementally.
+**Start Here**: [DEVELOPMENT-GUIDE.md](DEVELOPMENT-GUIDE.md) - Complete development setup and implementation guide for building TanukiMCP Atlas.
 
 ## 🚀 Revolutionary Features Overview
 
@@ -166,6 +169,16 @@ Advanced stop, correction, and redirection capabilities that preserve context an
 
 ### **Failure Resilience**
 Multi-layered failure detection and recovery mechanisms ensure the system remains functional and helpful even when individual components encounter issues.
+
+## 📁 Archive
+
+Historical documentation has been moved to the [`archive/`](archive/) directory to maintain a clean documentation structure. This includes:
+- Phase validation documents
+- Implementation summaries  
+- Temporary documentation
+- Consolidated redundant files
+
+See [`archive/README.md`](archive/README.md) for details on archived content.
 
 ---
 

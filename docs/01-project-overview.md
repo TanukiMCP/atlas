@@ -1,17 +1,17 @@
 # TanukiMCP: Atlas - Project Overview
 
 ## 🎯 Project Vision
-**TanukiMCP: Atlas** is a free, local, AI-powered desktop IDE that combines the power of Ollama-hosted open-source LLMs with sophisticated tool management and methodical task execution capabilities. It addresses the high costs and complexity of cloud-based AI development tools by providing a self-contained, extensible development environment.
+**TanukiMCP: Atlas** is an Intelligence Amplification Platform that transforms any LLM into a superintelligent agent through sophisticated tool orchestration, contextual enhancement, and intelligent reasoning frameworks. Rather than relying on massive models, Atlas proves that smaller, efficient LLMs equipped with the right tools and guidance can outperform much larger models at a fraction of the cost.
 
 ## 📋 Core Requirements
 
 ### Primary Goals
-- **Local & Free**: Eliminate dependency on expensive cloud LLM APIs
-- **Self-Contained IDE**: Complete development environment with file management
-- **Intelligent Task Management**: Structured todolist-based approach to complex tasks
-- **Tool-Powered LLMs**: Enhanced capabilities through comprehensive tool integration
-- **Extensible Architecture**: MCP client hub for community extensions
-- **Professional UX**: Modern, clean interface competitive with Cursor/Windsurf
+- **Intelligence Amplification**: Transform small LLMs into high-performance agents through tool orchestration
+- **Built-in Enhancement Stack**: Context7, Mem0, LangChain, and reasoning tools as core architecture
+- **Intelligent Request Routing**: Hidden LLM layers classify and route requests for optimal processing
+- **Agent Orchestration**: Sophisticated handoff protocols with memory persistence between sessions
+- **Hybrid Deployment**: Seamless switching between local (free) and remote (enhanced) processing
+- **Flat-Rate Pricing**: Monthly subscriptions for unlimited usage, no per-token charges
 
 ### Target Users
 - **Primary**: Developers frustrated with Cursor/Windsurf costs and limitations
@@ -20,13 +20,14 @@
 
 ## 🚀 Competitive Positioning
 
-### vs. Cursor/Windsurf
-**Advantages**:
-- ✅ Free to use (no API costs)
-- ✅ Complete privacy (local processing)
-- ✅ Systematic task execution (todolist approach)
-- ✅ Extensible tool system
-- ✅ Multiple LLM support
+### vs. Cursor/Windsurf/Claude
+**Revolutionary Advantages**:
+- ✅ **Intelligence Amplification**: 7B models perform like 70B+ models through tool enhancement
+- ✅ **Built-in Context Management**: Context7 + Mem0 integration for superior code understanding
+- ✅ **Agent Orchestration**: Multi-agent handoffs with persistent memory between sessions
+- ✅ **Flat-Rate Pricing**: $29-79/month unlimited vs. $20-100+ variable costs
+- ✅ **Hybrid Deployment**: Local privacy + remote power when needed
+- ✅ **Subject Mode Specialization**: Math, Code, Science, Language experts built-in
 
 **Trade-offs**:
 - ❌ Requires local compute power

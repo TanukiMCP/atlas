@@ -73,13 +73,9 @@ export interface IPCChannels {
 export function setupIPC(): void {
   console.log('🔌 Setting up IPC handlers...');
   
-  // Database operations
+  // Phase 1: Essential handlers
   setupDatabaseHandlers();
-  
-  // Application state handlers
-  setupAppHandlers();
-  
-  // Settings handlers
+  setupAppHandlers(); 
   setupSettingsHandlers();
   
   // Chat session handlers
@@ -370,154 +366,46 @@ function handleIPC<T extends keyof IPCChannels>(
 }
 
 function setupLLMHandlers(): void {
-  // Ollama service handlers
+  // OpenRouter service handlers (free models only)
+  ipcMain.handle('openrouter:checkHealth', async () => {
+    const services = tanukiApp.getServices();
+    return await services.openrouter.checkHealth();
+  });
+  
+  ipcMain.handle('openrouter:getAvailableModels', async () => {
+    const services = tanukiApp.getServices();
+    return await services.openrouter.getAvailableFreeModels();
+  });
+  
+  ipcMain.handle('openrouter:generate', async (event: IpcMainInvokeEvent, request: any) => {
+    const services = tanukiApp.getServices();
+    return await services.openrouter.generate(request);
+  });
+  
+  ipcMain.handle('openrouter:getRecommendations', async (event: IpcMainInvokeEvent, taskType: string) => {
+    const services = tanukiApp.getServices();
+    return await services.openrouter.getModelRecommendations(taskType as any);
+  });
+
+  ipcMain.handle('openrouter:getBestModel', async (event: IpcMainInvokeEvent, taskType: string) => {
+    const services = tanukiApp.getServices();
+    return await services.openrouter.getBestFreeModelForTask(taskType as any);
+  });
+
+  ipcMain.handle('openrouter:getModelInfo', async (event: IpcMainInvokeEvent, modelId: string) => {
+    const services = tanukiApp.getServices();
+    return services.openrouter.getModelInfo(modelId);
+  });
+
+  // Legacy compatibility handlers (will return empty/error responses)
   ipcMain.handle('ollama:listModels', async () => {
-    const services = tanukiApp.getServices();
-    return await services.ollama.listModels();
-  });
-  
-  ipcMain.handle('ollama:getModelCatalog', async () => {
-    const services = tanukiApp.getServices();
-    return await services.ollama.getModelCatalog();
-  });
-  
-  ipcMain.handle('ollama:installModel', async (event: IpcMainInvokeEvent, modelName: string) => {
-    const services = tanukiApp.getServices();
-    return await services.modelManager.installModel(modelName);
-  });
-  
-  ipcMain.handle('ollama:deleteModel', async (event: IpcMainInvokeEvent, modelName: string) => {
-    const services = tanukiApp.getServices();
-    return await services.ollama.deleteModel(modelName);
-  });
-  
-  ipcMain.handle('ollama:generate', async (event: IpcMainInvokeEvent, request: any) => {
-    const services = tanukiApp.getServices();
-    return await services.ollama.generateWithOptimization(request);
+    console.warn('Ollama handlers are deprecated. Use openrouter handlers instead.');
+    return [];
   });
   
   ipcMain.handle('ollama:checkHealth', async () => {
-    const services = tanukiApp.getServices();
-    return await services.ollama.checkOllamaHealth();
-  });
-  
-  ipcMain.handle('ollama:benchmarkModel', async (event: IpcMainInvokeEvent, modelName: string) => {
-    const services = tanukiApp.getServices();
-    return await services.ollama.benchmarkModel(modelName);
-  });
-  
-  // System monitoring handlers
-  ipcMain.handle('system:getCapabilities', async () => {
-    const services = tanukiApp.getServices();
-    return await services.hardwareAssessor.assessSystemCapabilities();
-  });
-  
-  ipcMain.handle('system:getCurrentMetrics', async () => {
-    const services = tanukiApp.getServices();
-    return await services.systemMonitor.getCurrentMetrics();
-  });
-  
-  // Model management handlers
-  ipcMain.handle('models:getRecommendations', async () => {
-    const services = tanukiApp.getServices();
-    return await services.modelManager.getRecommendedModels();
-  });
-  
-  ipcMain.handle('models:getInstallationStatus', async (event: IpcMainInvokeEvent, modelName: string) => {
-    const services = tanukiApp.getServices();
-    return services.modelManager.getInstallationStatus(modelName);
-  });
-  
-  // Optimization handlers
-  ipcMain.handle('optimization:getProfiles', async () => {
-    const services = tanukiApp.getServices();
-    return services.optimizationEngine.getAllProfiles();
-  });
-  
-  ipcMain.handle('optimization:optimizeForHardware', async (event: IpcMainInvokeEvent, systemInfo: any) => {
-    const services = tanukiApp.getServices();
-    return await services.optimizationEngine.optimizeForHardware(systemInfo);
-  });
-  
-  // Parameter tuning handlers
-  ipcMain.handle('parameters:getPreset', async (event: IpcMainInvokeEvent, task: string) => {
-    const services = tanukiApp.getServices();
-    return services.parameterTuner.getPreset(task);
-  });
-  
-  ipcMain.handle('parameters:getAllPresets', async () => {
-    const services = tanukiApp.getServices();
-    return services.parameterTuner.getAllPresets();
-  });
-  
-  ipcMain.handle('parameters:optimizeForTask', async (event: IpcMainInvokeEvent, task: string, modelName: string) => {
-    const services = tanukiApp.getServices();
-    return await services.parameterTuner.optimizeForTask(task, modelName);
-  });
-  
-  // Context management handlers
-  ipcMain.handle('context:store', async (
-    event: IpcMainInvokeEvent,
-    sessionId: string,
-    type: string,
-    key: string,
-    value: string,
-    importance?: number
-  ) => {
-    const services = tanukiApp.getServices();
-    return await services.contextManager.storeContext(sessionId, type as any, key, value, importance);
-  });
-  
-  ipcMain.handle('context:retrieve', async (
-    event: IpcMainInvokeEvent,
-    sessionId: string,
-    query: string,
-    maxResults?: number
-  ) => {
-    const services = tanukiApp.getServices();
-    return await services.contextManager.retrieveRelevantContext(sessionId, query, maxResults);
-  });
-  
-  ipcMain.handle('context:optimize', async (event: IpcMainInvokeEvent, sessionId: string) => {
-    const services = tanukiApp.getServices();
-    return await services.contextManager.optimizeContext(sessionId);
-  });
-  
-  // Enhanced LLM handlers
-  ipcMain.handle('enhancedLLM:processRequest', async (event: IpcMainInvokeEvent, request: any) => {
-    const services = tanukiApp.getServices();
-    return await services.enhancedLLM.processRequest(request);
-  });
-  
-  ipcMain.handle('enhancedLLM:getStatus', async (event: IpcMainInvokeEvent) => {
-    const services = tanukiApp.getServices();
-    return services.enhancedLLM.getStatus();
-  });
-  
-  ipcMain.handle('enhancedLLM:testTier', async (event: IpcMainInvokeEvent, tier: number) => {
-    const services = tanukiApp.getServices();
-    return await services.enhancedLLM.testTier(tier);
-  });
-  
-  // MCP Hub handlers
-  ipcMain.handle('mcpHub:listServers', async (event: IpcMainInvokeEvent) => {
-    const services = tanukiApp.getServices();
-    return services.mcpHub.listServers();
-  });
-  
-  ipcMain.handle('mcpHub:connectServer', async (event: IpcMainInvokeEvent, serverId: string) => {
-    const services = tanukiApp.getServices();
-    return await services.mcpHub.connectServer(serverId);
-  });
-  
-  ipcMain.handle('mcpHub:disconnectServer', async (event: IpcMainInvokeEvent, serverId: string) => {
-    const services = tanukiApp.getServices();
-    return await services.mcpHub.disconnectServer(serverId);
-  });
-  
-  ipcMain.handle('mcpHub:executeCommand', async (event: IpcMainInvokeEvent, serverId: string, command: string, params: any) => {
-    const services = tanukiApp.getServices();
-    return await services.mcpHub.executeCommand(serverId, command, params);
+    console.warn('Ollama handlers are deprecated. Use openrouter handlers instead.');
+    return { isConnected: false, error: 'Ollama support removed. Use OpenRouter instead.' };
   });
 }
 
