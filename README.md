@@ -1,39 +1,38 @@
 # 🦝 TanukiMCP Atlas
 
-**The Future of Local AI: Revolutionary Multi-Layered Intelligence System**
+**The Future of AI Development: Revolutionary Cloud-Powered Intelligence System**
 
-TanukiMCP Atlas is a groundbreaking **100% local AI reasoning platform** that redefines how we interact with artificial intelligence. Built on an innovative Enhanced LLM Processing Architecture, Atlas delivers sophisticated AI capabilities without compromising your privacy or requiring cloud subscriptions.
+TanukiMCP Atlas is a groundbreaking **OpenRouter-powered AI development platform** that redefines how we interact with artificial intelligence. Built on an innovative Enhanced LLM Processing Architecture, Atlas delivers sophisticated AI capabilities through a streamlined, user-friendly interface.
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey.svg)
-![Local](https://img.shields.io/badge/AI-100%25%20Local-green.svg)
 ![Open Source](https://img.shields.io/badge/open%20source-community%20driven-orange.svg)
+![OpenRouter](https://img.shields.io/badge/powered%20by-OpenRouter-green.svg)
 
 ## 🌟 What Makes Atlas Revolutionary?
 
 ### 🧠 **Enhanced Multi-Layered Intelligence**
-Atlas features a sophisticated **4-tier processing architecture** that adapts to task complexity:
-- **Tier 1**: Lightning-fast simple requests (instant responses)
-- **Tier 2**: Atomic task processing (optimized single-step execution)  
-- **Tier 3**: Moderate complexity handling (multi-step reasoning)
-- **Tier 4**: Complex task orchestration (full AI agent capabilities)
+Atlas features a sophisticated architecture that leverages OpenRouter's powerful models:
+- **Free Model Access**: Utilize powerful models through OpenRouter's free tier
+- **Task-Optimized Processing**: Intelligent routing to the right model for each task
+- **Advanced Reasoning**: Multi-step reasoning through Clear-Thought integration
+- **Agent Capabilities**: Comprehensive tool access and orchestration
 
 ### 🎭 **Dual-Mode Operation**
 - **Agent Mode**: Full autonomous execution with comprehensive tool access
 - **Chat Mode**: High-quality conversational intelligence with thinking tools
 - **Seamless Switching**: Context-preserving transitions between modes
 
-### 🏆 **AI Quality Assurance Council**
-- **Tournament Bracket Enhancement**: 4-agent competition system
-- **Voting Panel Consensus**: 10-judge quality evaluation
-- **Expert Panel Review**: Final validation for critical tasks
-- **80% Agreement Requirement**: Ensures exceptional output quality
+### 🏆 **AI Quality Assurance**
+- **Enhanced Reasoning Tools**: Clear-Thought's advanced reasoning capabilities
+- **Tool Integration**: Comprehensive toolkit for complex workflows
+- **Quality Verification**: Multi-stage verification of complex outputs
 
-### 🛡️ **Complete Privacy & Control**
-- **100% Local Operation**: No cloud APIs, no data tracking, no subscriptions
+### 🛡️ **Simplified Setup & Control**
+- **OpenRouter Integration**: Easy setup with just an API key
 - **Always-Available Stop Button**: Instant halt capability for any operation
 - **Granular Control**: Intervene at any phase, task, or tool level
-- **Your Data Stays Yours**: Everything runs on your hardware
+- **Privacy-Respecting**: Configure data sharing settings to your preferences
 
 ## 🚀 One-Click Setup
 
@@ -114,7 +113,10 @@ chmod +x start.sh
 tanukimcp-atlas/
 ├── packages/
 │   ├── main/           # Electron main process
-│   └── renderer/       # React frontend
+│   ├── renderer/       # React frontend
+│   ├── shared/         # Shared utilities and types
+│   ├── mcp-server/     # MCP integration server
+│   └── tools/          # Tool definitions and implementations
 ├── setup.bat           # Windows setup script
 ├── setup.sh            # Unix setup script
 ├── install-dependencies.ps1  # PowerShell setup script
@@ -132,12 +134,11 @@ tanukimcp-atlas/
 - Decision frameworks
 - Scientific method application
 
-### 🤖 **Model Management (TanukiMCP Apollo)**
-- Greek mythology-themed model categorization
-- Real-time model switching
-- Performance benchmarking
-- System capability assessment
-- Installation progress tracking
+### 🤖 **OpenRouter Model Integration**
+- Access to powerful AI models through OpenRouter
+- Easy API key management
+- Performance optimized requests
+- Free model tier support
 
 ### 🔧 **MCP Tools & Workflows**
 - Tool execution interface
@@ -164,6 +165,7 @@ tanukimcp-atlas/
 - **Node.js** 18.x or higher
 - **npm** (comes with Node.js)
 - **Git** (optional but recommended)
+- **OpenRouter API Key** (free tier available at [openrouter.ai](https://openrouter.ai))
 
 ### Manual Setup (if scripts don't work)
 
@@ -199,7 +201,8 @@ Create a `.env` file in the root directory:
 NODE_ENV=development
 ELECTRON_IS_DEV=true
 VITE_DEV_SERVER_URL=http://localhost:3000
-# Add your custom variables below
+# Add your OpenRouter API key below
+OPENROUTER_API_KEY=your_api_key_here
 ```
 
 ## 🔍 Troubleshooting
@@ -216,9 +219,10 @@ VITE_DEV_SERVER_URL=http://localhost:3000
 - Check if port 3000 is available
 - Verify `.env` file exists and has correct values
 
-**File System Errors:**
-- Ensure you're running the desktop application, not in browser
-- Check file permissions in the workspace directory
+**OpenRouter Connection Issues:**
+- Verify your API key is correctly entered in settings
+- Check your internet connection
+- Ensure you're using a valid OpenRouter API key
 
 ### Getting Help
 
@@ -254,11 +258,9 @@ See the [LICENSE](LICENSE) file for full details.
 
 ## 🎉 Start Your AI Journey Today
 
-Atlas represents a **new paradigm in AI interaction** - one where you have complete control, absolute privacy, and unlimited potential. Whether you're a developer, researcher, student, or just curious about AI, Atlas provides the tools and intelligence you need.
+Atlas represents a **new paradigm in AI interaction** - one where you have access to powerful AI capabilities through a streamlined, user-friendly interface. Whether you're a developer, researcher, student, or just curious about AI, Atlas provides the tools and intelligence you need.
 
-**No subscriptions. No cloud dependencies. No limits.**
-
-**Just pure, local AI intelligence that grows with your needs.**
+**Just pure AI intelligence that grows with your needs.**
 
 ### Ready to experience the future of AI?
 
@@ -273,4 +275,105 @@ npm install && npm run dev
 ---
 
 *Built with ❤️ by the community, for the community*  
-*Empowering everyone with local AI intelligence*
+*Empowering everyone with AI intelligence*
+
+## Features
+
+- Connect to OpenRouter API for access to state-of-the-art language models
+- Advanced reasoning capabilities with Clear-Thought MCPs
+- Contextual code analysis and generation
+- Media understanding (OCR, image analysis, document processing)
+- Mobile companion app for on-the-go access
+- Desktop-to-mobile proxy for seamless cross-device experience
+- File system isolation for secure operation
+- Modern, accessible UI built with shadcn/ui
+
+## Quick Start
+
+### Installation
+
+```bash
+# Clone the repository
+git clone https://github.com/yourusername/tanukimcp-atlas.git
+cd tanukimcp-atlas
+
+# Install dependencies
+npm install
+
+# Start the development version
+npm run dev
+```
+
+### Configuration
+
+1. Launch the application
+2. Navigate to Settings
+3. Enter your OpenRouter API key
+4. Select your preferred models
+
+## Desktop-Mobile Connection
+
+TanukiMCP Atlas includes a unique cross-device experience:
+
+1. Enable the mobile proxy from the desktop toolbar
+2. Scan the QR code with the TanukiMCP Atlas mobile app
+3. Your mobile device will connect to your desktop instance
+4. Use all AI capabilities from your mobile device, powered by your desktop
+
+## Architecture
+
+The application is built using Electron with a TypeScript/React frontend. The main components are:
+
+- **Main Process**: Handles system operations, file access, and proxy server
+- **Renderer**: The user interface built with React and shadcn/ui
+- **Mobile App**: React Native application for iOS and Android
+- **Proxy Server**: WebSocket server enabling desktop-mobile communication
+
+## Directory Structure
+
+```
+tanukimcp-atlas/
+├── docs/                 # Documentation and architecture diagrams
+├── packages/
+│   ├── main/             # Electron main process
+│   ├── preload/          # Electron preload scripts
+│   ├── renderer/         # Frontend UI (React)
+│   └── mobile/           # Mobile companion app (React Native)
+├── scripts/              # Build and development scripts
+└── README.md             # This file
+```
+
+## Development
+
+### Available Scripts
+
+- `npm run dev` - Start the application in development mode
+- `npm run build` - Build the application for production
+- `npm run lint` - Run the linter
+- `npm run test` - Run tests
+
+### Mobile Development
+
+For mobile app development, see the [Mobile README](packages/mobile/README.md).
+
+## Media Processing
+
+TanukiMCP Atlas can process various media types:
+
+- **Images**: OCR, object detection, analysis
+- **Documents**: Text extraction, summarization
+- **Video**: Frame analysis, transcription
+- **Audio**: Speech-to-text, analysis
+
+The media processing pipeline uses specialized libraries like Tesseract.js for OCR and integrates with OpenRouter for advanced AI analysis.
+
+## License
+
+MIT License - see LICENSE file for details.
+
+## Acknowledgements
+
+- OpenRouter for API access to state-of-the-art models
+- Electron for the cross-platform desktop framework
+- React and shadcn/ui for the beautiful UI
+- React Native for the mobile experience

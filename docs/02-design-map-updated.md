@@ -1,21 +1,21 @@
-# TanukiMCP: Atlas - Complete Design Map (2025 Updated)
+# TanukiMCP Atlas - Complete Design Map
 
 ## Executive Summary
 
-TanukiMCP: Atlas is an Intelligence Amplification Platform that transforms small, efficient LLMs into superintelligent agents through sophisticated tool orchestration and contextual enhancement. The revolutionary insight: properly guided 7B-32B models with comprehensive tooling outperform 70B+ models at a fraction of the cost.
+TanukiMCP Atlas is an Intelligence Amplification Platform that transforms LLMs accessed via OpenRouter into superintelligent agents. This is achieved through sophisticated tool orchestration (MCP Tools), contextual enhancement, and advanced reasoning frameworks (Clear-Thought). The core insight is that well-equipped LLMs, regardless of size, can achieve superior performance when provided with the right tools and guidance.
 
 **Core Value Proposition:**
-- **Intelligence Amplification**: Small models + smart tools = superior performance
-- **Built-in Enhancement Stack**: Context7, Mem0, LangChain, reasoning tools as core architecture
-- **Intelligent Request Routing**: Hidden classification layers for optimal request processing
-- **Agent Orchestration**: Multi-agent handoffs with persistent memory and context
-- **Hybrid Deployment**: Local privacy + remote enhancement with flat-rate pricing
+- **Intelligence Amplification**: OpenRouter LLMs + MCP Tools + Clear-Thought = superior performance.
+- **Built-in Enhancement Stack**: Clear-Thought for reasoning, MCP Tools for action, and robust context management.
+- **Intelligent Request Routing**: Smart routing of requests to appropriate OpenRouter models.
+- **Agent Orchestration**: Multi-agent handoffs with persistent memory and context.
+- **Cloud-Powered**: All LLM operations are via OpenRouter; requires an API key.
 
-## 1. Intelligence Amplification Architecture (2025)
+## 1. Intelligence Amplification Architecture
 
 ### Core Request Processing Pipeline
 ```
-User Request → Request Router (LLM-powered) → Subject Mode Selection → Tool Context Assembly → Enhanced Model Processing → Agent Orchestration → Response Generation
+User Request → Request Router (LLM-powered) → Subject Mode Selection → Tool Context Assembly (MCP) → Enhanced Model Processing (OpenRouter + Clear-Thought) → Agent Orchestration → Response Generation
 ```
 
 ### Enhancement Stack (Built-in)
@@ -24,193 +24,153 @@ Intelligence Amplification Platform
 ├── Request Classification Router
 │   ├── Subject Mode Detection (Math/Code/Science/Language)
 │   ├── Complexity Analysis (Simple/Complex/Multi-agent)
-│   └── Tool Requirement Assessment
-├── Tool Context Assembly Layer
-│   ├── Context7 MCP (Documentation Retrieval)
-│   ├── Mem0 MCP (User Memory Management)
-│   ├── Desktop Commander (File Operations)
-│   ├── Clear Thought (Reasoning Enhancement)
+│   └── Tool Requirement Assessment (for MCP Tools)
+├── Tool Context Assembly Layer (MCP-centric)
+│   ├── Documentation Retrieval (via MCP Tools)
+│   ├── User Memory Management (via MCP Tools & session state)
+│   ├── File Operations (via MCP Tools like Desktop Commander)
+│   ├── Clear-Thought (Reasoning Enhancement)
 │   └── Custom MCP Extensions
-├── Enhanced Model Processing
-│   ├── Local Models (7B-14B, via Ollama)
-│   ├── Remote Basic (32B, shared GPU)
-│   ├── Remote Pro (32B, dedicated GPU)
-│   └── Dynamic Model Switching
+├── Enhanced Model Processing (OpenRouter)
+│   ├── Access to various models via OpenRouter API
+│   └── Dynamic Model Selection based on task
 └── Agent Orchestration Engine
     ├── Multi-agent Task Distribution
     ├── Agent Handoff Protocols
     ├── Shift Notes & Context Preservation
     └── Memory Persistence Between Sessions
-└── Preload Scripts (Security bridge)
+└── Preload Scripts (Security bridge for Electron)
 ```
 
-### Technology Choices (Based on 2025 Research)
-- **Bundler**: Vite (fastest for Electron + React)
+### Technology Choices
+- **Bundler**: Vite (Electron + React)
 - **TypeScript**: v5.x with project references
-- **Package Manager**: PNPM (fastest workspace support)
-- **Database**: SQLite with WAL mode + better-sqlite3
-- **IPC**: Batched messages with structured cloning
-- **Architecture**: Nx monorepo with workspaces
+- **Package Manager**: PNPM (workspace support)
+- **Database**: SQLite with Drizzle ORM (via `better-sqlite3`)
+- **IPC**: Batched messages with structured cloning for Electron
+- **Monorepo Structure**: Likely Turborepo or similar for managing `packages/*`
 
-## 2. Ollama Integration Layer (Enhanced)
+## 2. OpenRouter Integration Layer
 
-### Model Management
+### Model Management & Access
+- All models are accessed via the OpenRouter API.
+- The application manages an OpenRouter API key (user-provided).
+- `ModelConfiguration`, `ModelCapability` and similar local management concepts are superseded by OpenRouter's model offerings and API.
+- The system may still internally track preferred models or capabilities available through OpenRouter.
+
+### OpenRouter Service Implementation
 ```typescript
-interface ModelConfiguration {
-  id: string;
-  name: string;
-  size: string;
-  capabilities: ModelCapability[];
-  resourceRequirements: ResourceSpec;
-  contextWindow: number;
-  streamingSupport: boolean;
-}
+// Simplified conceptual representation
+class OpenRouterService {
+  private apiKey: string;
+  private currentModelId?: string; // User-selected or task-selected OpenRouter model
 
-interface ModelCapability {
-  type: 'coding' | 'reasoning' | 'vision' | 'embedding';
-  specialty?: string[];
-  performance: PerformanceMetric;
-}
-```
+  constructor(apiKey: string) {
+    this.apiKey = apiKey;
+  }
 
-### Ollama Service Implementation
-```typescript
-class OllamaService {
-  private models = new Map<string, ModelInstance>();
-  private requestQueue = new PriorityQueue<OllamaRequest>();
-  
-  async streamCompletion(request: CompletionRequest): Promise<AsyncIterator<string>> {
-    // Batched streaming with backpressure handling
-    return this.createBatchedStream(request);
+  async streamCompletion(request: OpenRouterCompletionRequest): Promise<AsyncIterator<string>> {
+    // Interface with OpenRouter API for streaming completions
+    // Handle API key, model selection, parameters
+  }
+
+  async getEmbeddings(text: string, modelId: string): Promise<number[]> {
+    // Interface with OpenRouter API for embeddings (if supported by selected model)
   }
   
-  async embeddings(text: string, model: string): Promise<number[]> {
-    // For RAG and semantic search
-    return this.getEmbeddings(text, model);
-  }
-  
-  private createBatchedStream(request: CompletionRequest) {
-    // Implement streaming with 50ms batching window
-    // Based on performance research
+  async listAvailableModels(): Promise<OpenRouterModel[]> {
+    // Fetch and cache available models from OpenRouter
   }
 }
 ```
+- The `OllamaService` is replaced by a dedicated `OpenRouterService`.
+- Request queuing and model instance management are handled by OpenRouter.
 
 ### Model Selection Intelligence
-```typescript
-interface TaskModelSelector {
-  selectOptimalModel(task: TaskDescription): Promise<ModelRecommendation>;
-  
-  // Examples:
-  // - Small fast model for simple queries
-  // - Large reasoning model for complex problems
-  // - Code-specialized model for development tasks
-}
-```
+- The system selects the most appropriate OpenRouter model for a given task based on:
+  - Task requirements (coding, reasoning, etc.)
+  - User preferences (e.g., preferred free models)
+  - Model capabilities listed by OpenRouter.
+- This is less about managing local model instances and more about choosing the right OpenRouter endpoint/model.
 
-## 3. Tool System Architecture (MCP + Desktop Commander)
+## 3. Tool System Architecture (MCP Tools + Clear-Thought)
 
 ### Tool Discovery and Management
+- Tools are managed via the MCP (Management Center Platform) framework.
+- This includes "Desktop Commander" like file system tools, and Clear-Thought reasoning tools.
 ```typescript
-interface ToolManager {
+interface ToolManager { // Conceptual
   // MCP Integration
-  registerMCPServer(server: MCPServerConfig): Promise<void>;
-  discoverMCPTools(): Promise<MCPTool[]>;
-  
-  // Desktop Commander Integration
-  getSystemTools(): DesktopCommanderTool[];
-  
+  discoverMCPTools(): Promise<MCPTool[]>; // Tools defined within the MCP ecosystem
+
   // Intelligent Tool Selection
-  selectTools(context: TaskContext): Promise<ToolSet>;
+  selectTools(context: TaskContext): Promise<ToolSet>; // Select appropriate MCP tools
 }
 
-interface MCPTool {
+interface MCPTool { // Simplified
   id: string;
   name: string;
   description: string;
-  schema: JSONSchema;
-  capabilities: ToolCapability[];
-  security: SecurityConstraints;
+  schema: JSONSchema; // Input schema for the tool
+  execute(params: any): Promise<any>; // Tool execution logic
 }
 ```
 
-### @ Symbol Tool Interface (Like Cursor)
+### @ Symbol Tool Interface (Similar to Cursor)
+- The UI provides a way to invoke MCP Tools, potentially using an "@" symbol or similar mechanism.
+- Suggestions are based on context and available MCP Tools.
 ```typescript
-interface ToolSelector {
-  // When user types @, show available tools
-  getAvailableTools(context: string): Tool[];
-  
-  // Intelligent suggestions based on context
-  suggestTools(codeContext: CodeContext): ToolSuggestion[];
-  
-  // Visual tool picker with search
-  renderToolPicker(): ReactElement;
+interface ToolSelectorUI {
+  getAvailableTools(context: string): MCPTool[]; // Show available MCP Tools
+  suggestTools(codeContext: CodeContext): MCPTool[]; // Suggest relevant MCP Tools
+  renderToolPicker(): ReactElement; // UI for selecting tools
 }
 ```
 
-## 4. Todolist Engine (Core Innovation)
+## 4. Task Engine (Powered by Clear-Thought & MCP Tools)
 
 ### Task Decomposition System
+- Complex goals are broken down into a sequence of tasks.
+- Clear-Thought tools can be used for planning and decomposition.
+- Each task may involve one or more MCP tool calls.
 ```typescript
-interface TodolistEngine {
-  createTodolist(goal: string, context: ProjectContext): Promise<Todolist>;
-  executeTodolist(todolist: Todolist): Promise<ExecutionResult>;
-  adaptTodolist(todolist: Todolist, feedback: Feedback): Promise<Todolist>;
+interface TaskEngine {
+  createPlan(goal: string, context: ProjectContext): Promise<TaskPlan>; // Uses Clear-Thought
+  executePlan(plan: TaskPlan): Promise<ExecutionResult>; // Executes MCP Tools
+  adaptPlan(plan: TaskPlan, feedback: Feedback): Promise<TaskPlan>; // Re-planning with Clear-Thought
 }
 
-interface TodoItem {
+interface TaskStep { // A step in the plan
   id: string;
   description: string;
-  type: TaskType;
+  toolId: string; // MCP Tool to use
+  toolParams: any; // Parameters for the MCP tool
   dependencies: string[];
-  estimatedComplexity: number;
-  requiredTools: string[];
-  validationCriteria: ValidationRule[];
   status: 'pending' | 'in-progress' | 'completed' | 'failed';
 }
-
-enum TaskType {
-  FILE_READ = 'file_read',
-  FILE_WRITE = 'file_write',
-  CODE_ANALYSIS = 'code_analysis',
-  RESEARCH = 'research',
-  TESTING = 'testing',
-  REFACTORING = 'refactoring'
-}
 ```
+- The concept of a `TodolistEngine` evolves into a more dynamic `TaskEngine` that heavily relies on Clear-Thought for planning and MCP Tools for execution, rather than predefined `TodoItem` types. Task types are implicitly defined by the capabilities of the available MCP Tools.
 
 ### Execution Engine with Error Recovery
+- The Task Engine executes the plan step-by-step.
+- Error handling involves:
+  - Retrying MCP tool calls.
+  - Using Clear-Thought to analyze failures and suggest alternative steps or tools.
+  - Allowing user intervention.
 ```typescript
-class TodolistExecutor {
-  async executeItem(item: TodoItem): Promise<ExecutionResult> {
+class TaskExecutor { // Conceptual
+  async executeStep(step: TaskStep): Promise<ExecutionResult> {
     try {
-      // Pre-execution validation
-      await this.validatePreConditions(item);
-      
-      // Execute with selected tools
-      const result = await this.executeWithTools(item);
-      
-      // Post-execution validation
-      await this.validateResult(result, item.validationCriteria);
-      
+      // Pre-execution validation (e.g., tool availability, schema match)
+      const tool = getMCPToolById(step.toolId);
+      // Execute MCP tool
+      const result = await tool.execute(step.toolParams);
+      // Post-execution validation (can use Clear-Thought for complex checks)
       return result;
     } catch (error) {
-      // Intelligent error recovery
-      return this.handleExecutionError(error, item);
+      // Error recovery: May involve Clear-Thought to re-plan or select alternative MCP tool
+      return this.handleExecutionError(error, step);
     }
-  }
-  
-  private async handleExecutionError(error: Error, item: TodoItem): Promise<ExecutionResult> {
-    // Analyze error and suggest fixes
-    const analysis = await this.analyzeError(error);
-    
-    // Attempt automated recovery
-    if (analysis.canAutoRecover) {
-      return this.attemptRecovery(item, analysis.recoveryStrategy);
-    }
-    
-    // Request human intervention with context
-    return this.requestHumanIntervention(error, item, analysis);
   }
 }
 ```

@@ -35,6 +35,19 @@ import_electron.contextBridge.exposeInMainWorld("electronAPI", {
   },
   closeWindow: () => {
     import_electron.ipcRenderer.send("close-window");
+  },
+  // New window functions
+  onWindowMaximized: (callback) => {
+    import_electron.ipcRenderer.on("window-maximized-change", callback);
+  },
+  toggleFullScreen: () => {
+    import_electron.ipcRenderer.send("toggle-fullscreen");
+  },
+  isFullScreen: () => {
+    return import_electron.ipcRenderer.invoke("window:isFullScreen");
+  },
+  isMaximized: () => {
+    return import_electron.ipcRenderer.invoke("window:isMaximized");
   }
 });
 //# sourceMappingURL=preload.js.map

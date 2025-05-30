@@ -148,7 +148,8 @@ try {
 NODE_ENV=development
 ELECTRON_IS_DEV=true
 VITE_DEV_SERVER_URL=http://localhost:3000
-# Add your custom environment variables below
+# Add your OpenRouter API key below
+# OPENROUTER_API_KEY=your_api_key_here
 "@
         Set-Content -Path ".env" -Value $envContent
         Write-Status "Created .env file" "Success"
@@ -172,8 +173,9 @@ VITE_DEV_SERVER_URL=http://localhost:3000
     Write-Host "  npm run lint       - Run linter"
     Write-Host ""
     Write-Host "🚀 To get started:" -ForegroundColor Green
-    Write-Host "  1. Run: npm run dev"
-    Write-Host "  2. In another terminal: npm start"
+    Write-Host "  1. Set up your OpenRouter API key in the app settings or .env file"
+    Write-Host "  2. Run: npm run dev"
+    Write-Host "  3. In another terminal: npm start"
     Write-Host ""
     Write-Host "Or use the convenience scripts:"
     Write-Host "  .\start.bat        - Start both dev server and Electron app"

@@ -5,24 +5,7 @@
  */
 
 import { useMCPStore } from '../stores/mcp-store';
-
-export interface MCPTool {
-  name: string;
-  description: string;
-  category: 'file' | 'code' | 'web' | 'task' | 'project' | 'thinking';
-  icon: string;
-  parameters: MCPToolParameter[];
-  operationalMode: 'agent' | 'chat' | 'both';
-  schema?: any;
-}
-
-export interface MCPToolParameter {
-  name: string;
-  type: 'string' | 'number' | 'boolean' | 'file' | 'array';
-  description: string;
-  required: boolean;
-  defaultValue?: any;
-}
+import type { MCPTool, MCPToolParameter, MCPExecutionContext } from '../types/index';
 
 export interface MCPToolResult {
   success: boolean;
@@ -31,13 +14,6 @@ export interface MCPToolResult {
   executionTime: number;
   toolName: string;
   timestamp: Date;
-}
-
-export interface MCPExecutionContext {
-  toolName: string;
-  parameters: Record<string, any>;
-  operationalMode: 'agent' | 'chat';
-  sessionId?: string;
 }
 
 class MCPService {
@@ -58,6 +34,7 @@ class MCPService {
         category: 'file',
         icon: '📖',
         operationalMode: 'agent',
+        available: true,
         parameters: [
           { name: 'path', type: 'file', description: 'File path to read', required: true }
         ]
@@ -68,6 +45,7 @@ class MCPService {
         category: 'file',
         icon: '✏️',
         operationalMode: 'agent',
+        available: true,
         parameters: [
           { name: 'path', type: 'file', description: 'File path to write', required: true },
           { name: 'content', type: 'string', description: 'Content to write', required: true }
@@ -79,6 +57,7 @@ class MCPService {
         category: 'file',
         icon: '📁',
         operationalMode: 'agent',
+        available: true,
         parameters: [
           { name: 'path', type: 'string', description: 'Directory path to create', required: true }
         ]
@@ -89,6 +68,7 @@ class MCPService {
         category: 'file',
         icon: '📋',
         operationalMode: 'agent',
+        available: true,
         parameters: [
           { name: 'path', type: 'string', description: 'Directory path to list', required: true }
         ]
@@ -99,6 +79,7 @@ class MCPService {
         category: 'file',
         icon: '🗑️',
         operationalMode: 'agent',
+        available: true,
         parameters: [
           { name: 'path', type: 'file', description: 'Path to delete', required: true }
         ]
@@ -111,6 +92,7 @@ class MCPService {
         category: 'task',
         icon: '⚡',
         operationalMode: 'agent',
+        available: true,
         parameters: [
           { name: 'command', type: 'string', description: 'Command to execute', required: true },
           { name: 'timeout', type: 'number', description: 'Timeout in seconds', required: false, defaultValue: 30 }
@@ -122,6 +104,7 @@ class MCPService {
         category: 'file',
         icon: '🔍',
         operationalMode: 'agent',
+        available: true,
         parameters: [
           { name: 'path', type: 'string', description: 'Search directory', required: true },
           { name: 'pattern', type: 'string', description: 'Search pattern', required: true }
@@ -135,6 +118,7 @@ class MCPService {
         category: 'thinking',
         icon: '🧠',
         operationalMode: 'chat',
+        available: true,
         parameters: [
           { name: 'thought', type: 'string', description: 'Current thinking step', required: true },
           { name: 'total_thoughts', type: 'number', description: 'Estimated total thoughts', required: true }
@@ -146,6 +130,7 @@ class MCPService {
         category: 'web',
         icon: '🌐',
         operationalMode: 'chat',
+        available: true,
         parameters: [
           { name: 'search_term', type: 'string', description: 'Search query', required: true }
         ]
@@ -158,6 +143,7 @@ class MCPService {
         category: 'project',
         icon: '📊',
         operationalMode: 'both',
+        available: true,
         parameters: [
           { name: 'path', type: 'string', description: 'Project root path', required: true }
         ]
@@ -190,7 +176,7 @@ class MCPService {
   /**
    * Execute a tool with given parameters
    */
-  async executeTool(context: MCPExecutionContext): Promise<MCPToolResult> {
+  async executeTool(context: MCPExecutionContext & { operationalMode: 'agent' | 'chat' }): Promise<MCPToolResult> {
     const startTime = Date.now();
     
     try {
@@ -230,6 +216,7 @@ class MCPService {
   }
 
   private validateParameters(tool: MCPTool, parameters: Record<string, any>) {
+    if (!tool.parameters) return;
     for (const param of tool.parameters) {
       if (param.required && !(param.name in parameters)) {
         throw new Error(`Required parameter '${param.name}' is missing`);

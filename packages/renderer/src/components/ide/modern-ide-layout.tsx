@@ -54,13 +54,15 @@ import {
   Loader2,
   MessageSquare,
   Code,
-  Brain
+  Brain,
+  Save
 } from 'lucide-react';
 import { cn, formatTimeAgo, formatFileSize, truncateText } from '../../lib/utils';
 import { fileService, FileContent, FileInfo, getFileTypeIcon } from '../../services/file-service';
 import { LLMStatus } from '../llm/llm-status';
 import { MCPServersTab } from '../mcp/MCPServersTab';
 import { MCPAvailableToolsTab } from '../mcp/MCPAvailableToolsTab';
+import MonacoEditor from '../MonacoEditor';
 
 // Type definitions
 interface ChatMessage {
@@ -324,6 +326,9 @@ export const ModernIDELayout: React.FC = () => {
   const [isFileLoading, setIsFileLoading] = useState(false);
   const [isLoadingFiles, setIsLoadingFiles] = useState(false);
   const [fileLoadError, setFileLoadError] = useState<string | null>(null);
+  const [editorContent, setEditorContent] = useState<string>('');
+  const [isDirty, setIsDirty] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   // Load real file content when file is selected
   useEffect(() => {
@@ -363,6 +368,58 @@ export const ModernIDELayout: React.FC = () => {
 
     loadRootFiles();
   }, [files.length, setFiles]);
+
+  // Load file content into editor when selectedFile changes
+  useEffect(() => {
+    if (selectedFile && selectedFile.type === 'file') {
+      setIsFileLoading(true);
+      fileService.readFile(selectedFile.path)
+        .then(fc => {
+          setEditorContent(fc.content);
+          setIsDirty(false);
+        })
+        .catch(() => {
+          setEditorContent('');
+        })
+        .finally(() => setIsFileLoading(false));
+    } else {
+      setEditorContent('');
+      setIsDirty(false);
+    }
+  }, [selectedFile]);
+
+  // Track dirty state
+  useEffect(() => {
+    if (selectedFile && selectedFile.type === 'file' && fileContent) {
+      setIsDirty(editorContent !== fileContent.content);
+    } else {
+      setIsDirty(false);
+    }
+  }, [editorContent, fileContent, selectedFile]);
+
+  // Helper to get Monaco language from file extension
+  const getMonacoLanguage = (filename: string): string => {
+    const ext = filename.split('.').pop()?.toLowerCase();
+    switch (ext) {
+      case 'ts': case 'tsx': return 'typescript';
+      case 'js': case 'jsx': return 'javascript';
+      case 'json': return 'json';
+      case 'html': return 'html';
+      case 'css': return 'css';
+      case 'scss': return 'scss';
+      case 'md': return 'markdown';
+      case 'py': return 'python';
+      case 'java': return 'java';
+      case 'cpp': return 'cpp';
+      case 'c': return 'c';
+      case 'go': return 'go';
+      case 'rs': return 'rust';
+      case 'xml': return 'xml';
+      case 'yaml': case 'yml': return 'yaml';
+      case 'sh': case 'bash': case 'zsh': return 'shell';
+      default: return 'plaintext';
+    }
+  };
 
   // File tree handlers
   const handleFileSelect = (node: FileNode) => {
@@ -755,33 +812,67 @@ export const ModernIDELayout: React.FC = () => {
                         <span>{selectedFile.path}</span>
                         <span>•</span>
                         <span>{formatTimeAgo(selectedFile.modified)}</span>
+                        {isDirty && <span className="text-orange-500 ml-2">● Unsaved</span>}
                       </div>
                     )}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  {selectedFile ? (
+                  {selectedFile && selectedFile.type === 'file' ? (
                     <div className="space-y-4">
-                      <div className="bg-muted p-4 rounded-lg">
-                        <p className="text-sm text-muted-foreground mb-2">File content preview:</p>
+                      <div className="bg-muted p-0 rounded-lg">
                         {isFileLoading ? (
-                          <div className="text-sm text-muted-foreground">Loading file content...</div>
-                        ) : fileContent ? (
-                          <pre className="text-sm bg-background p-3 rounded border overflow-auto whitespace-pre-wrap break-words">
-                            {fileContent.content}
-                          </pre>
+                          <div className="text-sm text-muted-foreground p-4">Loading file content...</div>
                         ) : (
-                          <div className="text-sm text-muted-foreground">No file content available</div>
+                          <MonacoEditor
+                            value={editorContent}
+                            language={getMonacoLanguage(selectedFile.name)}
+                            onChange={setEditorContent}
+                            onSave={async (val) => {
+                              setIsSaving(true);
+                              await fileService.writeFile(selectedFile.path, val);
+                              setIsDirty(false);
+                              setFileContent(fileContent ? {
+                                ...fileContent,
+                                content: val,
+                                encoding: fileContent.encoding || 'utf-8',
+                              } : {
+                                content: val,
+                                encoding: 'utf-8',
+                                size: 0,
+                                lastModified: new Date(),
+                              });
+                              setIsSaving(false);
+                            }}
+                            theme={darkMode ? 'vs-dark' : 'vs-light'}
+                            readOnly={false}
+                            height="500px"
+                          />
                         )}
                       </div>
-                      
                       <div className="flex gap-2">
-                        <Button variant="default">
-                          <Play className="w-4 h-4 mr-2" />
-                          Run
+                        <Button variant="default" disabled={isSaving || !isDirty} onClick={async () => {
+                          setIsSaving(true);
+                          await fileService.writeFile(selectedFile.path, editorContent);
+                          setIsDirty(false);
+                          setFileContent(fileContent ? {
+                            ...fileContent,
+                            content: editorContent,
+                            encoding: fileContent.encoding || 'utf-8',
+                          } : {
+                            content: editorContent,
+                            encoding: 'utf-8',
+                            size: 0,
+                            lastModified: new Date(),
+                          });
+                          setIsSaving(false);
+                        }}>
+                          <Save className="w-4 h-4 mr-2" />
+                          {isSaving ? 'Saving...' : 'Save'}
                         </Button>
                         <Button variant="outline">
-                          Save
+                          <Play className="w-4 h-4 mr-2" />
+                          Run
                         </Button>
                         <Button variant="outline">
                           Format

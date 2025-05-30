@@ -38,16 +38,17 @@ const Header: React.FC<EnhancedHeaderProps> = ({
   isProcessing,
   onStopProcessing
 }) => {
+  // Wrapper function to handle ViewType to string conversion
+  const handleViewChange = (view: string) => {
+    onViewChange(view as ViewType);
+  };
+
+  // Keyboard navigation handler for accessibility
   const handleKeyDown = (e: React.KeyboardEvent, action: () => void) => {
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
       action();
     }
-  };
-
-  // Wrapper function to handle ViewType to string conversion
-  const handleViewChange = (view: string) => {
-    onViewChange(view as ViewType);
   };
 
   return (
@@ -71,6 +72,7 @@ const Header: React.FC<EnhancedHeaderProps> = ({
         onStopProcessing={onStopProcessing}
         onToolSelect={() => console.log('Tool selection triggered')}
         onQuickSettings={() => onViewChange('settings')}
+        onViewChange={handleViewChange}
       />
     </>
   );

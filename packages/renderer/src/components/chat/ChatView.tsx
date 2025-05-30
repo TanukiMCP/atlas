@@ -162,12 +162,12 @@ export const ChatView: React.FC<ChatViewProps> = ({
 
   return (
     <div className="flex-1 flex flex-col h-full">
-      {/* Chat Header */}
+      {/* Chat Header - Simplified */}
       <div className="p-4 border-b border-border">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Bot className="w-6 h-6 text-primary" />
-            <h2 className="text-lg font-semibold">TanukiMCP Enhanced Chat</h2>
+            <Bot className="w-5 h-5 text-primary" />
+            <h2 className="text-lg font-semibold">Chat</h2>
             <Badge variant={isConnected ? 'default' : 'destructive'}>
               {isConnected ? 'Connected' : 'Offline'}
             </Badge>
@@ -199,116 +199,91 @@ export const ChatView: React.FC<ChatViewProps> = ({
                   ? 'bg-destructive/10 border-destructive'
                   : msg.isOffline
                   ? 'bg-yellow-500/10 border-yellow-500'
-                  : 'bg-muted'
+                  : 'bg-card'
               }`}>
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="flex items-center gap-2">
+                <CardContent className="p-4 pb-3">
+                  <div className="flex gap-2 items-start">
+                    <div className="mt-1 shrink-0">
                       {msg.type === 'user' ? (
-                        <User className="w-4 h-4" />
+                        <User className="h-6 w-6" />
                       ) : (
-                        <Bot className="w-4 h-4" />
+                        <Bot className="h-6 w-6" />
                       )}
-                      <span className="text-sm font-medium">
-                        {msg.type === 'user' ? 'You' : 'TanukiMCP Assistant'}
-                      </span>
                     </div>
-                    
-                    {msg.tier && (
-                      <Badge variant="secondary" className={`text-xs ${getTierColor(msg.tier)} text-white`}>
-                        {msg.tier}
-                      </Badge>
-                    )}
-                    
-                    <div className="flex items-center gap-1 text-xs text-muted-foreground ml-auto">
-                      <Clock className="w-3 h-3" />
-                      {msg.timestamp.toLocaleTimeString()}
-                    </div>
-                  </div>
-                  
-                  <p className="leading-relaxed whitespace-pre-wrap text-sm">
-                    {msg.content}
-                  </p>
-                  
-                  {msg.tokenUsage && (
-                    <div className="mt-2 flex items-center gap-4 text-xs text-muted-foreground">
-                      <div className="flex items-center gap-1">
-                        <Zap className="w-3 h-3" />
-                        Tokens: {msg.tokenUsage.total}
-                      </div>
-                      {msg.processingTime && (
-                        <div className="flex items-center gap-1">
-                          <Clock className="w-3 h-3" />
-                          {msg.processingTime}ms
+                    <div className="flex-1">
+                      <div className="whitespace-pre-wrap">{msg.content}</div>
+                      {(msg.tokenUsage || msg.processingTime) && (
+                        <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                          {msg.tokenUsage && (
+                            <div>Tokens: {msg.tokenUsage.total}</div>
+                          )}
+                          {msg.processingTime && (
+                            <div className="flex items-center gap-1">
+                              <Clock className="w-3 h-3" />
+                              {msg.processingTime.toFixed(2)}s
+                            </div>
+                          )}
+                          {msg.tier && (
+                            <div className="flex items-center gap-1">
+                              <Zap className="w-3 h-3" />
+                              {msg.tier}
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>
-                  )}
-                  
-                  {(msg.isError || msg.isOffline) && (
-                    <div className="mt-2 flex items-center gap-1 text-xs">
-                      <AlertCircle className="w-3 h-3" />
-                      {msg.isError ? 'Error occurred' : 'Offline mode'}
-                    </div>
-                  )}
+                  </div>
                 </CardContent>
               </Card>
             </div>
           ))}
-          
-          {isTyping && (
-            <div className="flex justify-start">
-              <Card className="bg-muted">
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Bot className="w-4 h-4" />
-                    <span className="text-sm font-medium">TanukiMCP Assistant</span>
-                    <span className="text-xs text-muted-foreground">thinking...</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <div className="w-2 h-2 bg-primary rounded-full animate-bounce"></div>
-                    <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
-                    <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          )}
           <div ref={messagesEndRef} />
         </div>
       </div>
 
-      {/* Input Area */}
+      {/* Input Area with Emergency Stop Button */}
       <div className="p-4 border-t border-border">
-        <div className="max-w-4xl mx-auto">
-          <div className="flex gap-3">
+        <div className="max-w-4xl mx-auto relative">
+          {isTyping && (
+            <Button
+              variant="destructive"
+              size="sm"
+              className="absolute right-2 top-1/2 transform -translate-y-1/2 z-10"
+              onClick={() => {
+                // Cancel generation (no cancelGeneration method, just stop typing state)
+                setIsTyping(false);
+                onProcessingChange?.(false);
+              }}
+            >
+              <Square className="w-4 h-4 mr-1" />
+              Stop Generation
+            </Button>
+          )}
+          <div className={`flex gap-2 rounded-lg border ${isTyping ? 'pr-36' : ''} focus-within:ring-1 focus-within:ring-primary focus-within:border-primary p-2 bg-background`}>
             <textarea
               value={inputMessage}
               onChange={(e) => setInputMessage(e.target.value)}
               onKeyDown={handleKeyPress}
-              placeholder="Type your message... (use @tool_name for tool calls)"
-              disabled={isTyping}
-              className="flex-1 bg-background border border-border rounded-lg px-4 py-3 text-foreground placeholder-muted-foreground focus:border-primary focus:outline-none resize-none min-h-[44px] max-h-32"
-              rows={1}
+              placeholder={isTyping ? "Press Enter to submit a new message..." : "Type your message here..."}
+              className="flex-1 bg-transparent border-none focus:outline-none resize-none h-12 max-h-48 text-foreground placeholder:text-muted-foreground"
+              disabled={!isConnected}
             />
-            <Button 
+            <Button
+              variant="default"
+              size="icon"
+              disabled={!inputMessage.trim() || isTyping || !isConnected}
               onClick={sendMessage}
-              disabled={!inputMessage.trim() || isTyping}
-              size="lg"
-              className="px-6"
+              className="shrink-0"
             >
-              {isTyping ? (
-                <Square className="w-4 h-4" />
-              ) : (
-                <Send className="w-4 h-4" />
-              )}
+              <Send className="h-5 w-5" />
             </Button>
           </div>
-          
-          <div className="flex items-center justify-between mt-2 text-xs text-muted-foreground">
-            <span>Press Enter to send, Shift+Enter for new line</span>
-            <span>Available tools: @file_read, @web_search, @calculator, @code_execute</span>
-          </div>
+          {!isConnected && (
+            <div className="mt-2 text-center text-sm text-destructive">
+              <AlertCircle className="w-4 h-4 inline-block mr-1" />
+              Not connected to OpenRouter. Please check your API key in Settings.
+            </div>
+          )}
         </div>
       </div>
     </div>

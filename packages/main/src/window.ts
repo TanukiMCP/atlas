@@ -18,8 +18,8 @@ export function createWindow(): BrowserWindow {
     center: true,
     
     // Window appearance
-    titleBarStyle: process.platform === 'darwin' ? 'hiddenInset' : 'default',
-    frame: true,
+    titleBarStyle: 'hidden', // Use hidden for all platforms to show custom frame
+    frame: false, // Hide default window frame
     transparent: false,
     backgroundColor: '#1a1a1a', // Dark theme background
     vibrancy: process.platform === 'darwin' ? 'under-window' : undefined,

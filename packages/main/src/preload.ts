@@ -43,5 +43,22 @@ contextBridge.exposeInMainWorld('electronAPI', {
   
   closeWindow: () => {
     ipcRenderer.send('close-window');
+  },
+  
+  // New window functions
+  onWindowMaximized: (callback: (event: any, isMaximized: boolean) => void) => {
+    ipcRenderer.on('window-maximized-change', callback);
+  },
+  
+  toggleFullScreen: () => {
+    ipcRenderer.send('toggle-fullscreen');
+  },
+  
+  isFullScreen: () => {
+    return ipcRenderer.invoke('window:isFullScreen');
+  },
+  
+  isMaximized: () => {
+    return ipcRenderer.invoke('window:isMaximized');
   }
 });

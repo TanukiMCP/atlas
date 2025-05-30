@@ -83,6 +83,9 @@ export function setupIPC(): void {
   // Phase 2: LLM and Model Management handlers
   setupLLMHandlers();
   
+  // Window control handlers
+  setupWindowControlHandlers();
+  
   console.log('✅ IPC handlers registered');
 }
 
@@ -663,15 +666,79 @@ function setupLLMHandlers(): void {
       throw error;
     }
   });
+}
+
+function setupWindowControlHandlers(): void {
+  const { BrowserWindow, ipcMain } = require('electron');
   
-  ipcMain.handle('openrouter:checkHealth', async () => {
-    try {
-      // Implementation for OpenRouter health check
-      return { isConnected: true };
-    } catch (error) {
-      console.error('OpenRouter health check error:', error);
-      return { isConnected: false, error: error.message };
+  // Minimize window
+  ipcMain.on('minimize-window', (event: Electron.IpcMainEvent) => {
+    const win = BrowserWindow.fromWebContents(event.sender);
+    if (win) {
+      win.minimize();
     }
+  });
+  
+  // Maximize window
+  ipcMain.on('maximize-window', (event: Electron.IpcMainEvent) => {
+    const win = BrowserWindow.fromWebContents(event.sender);
+    if (win) {
+      if (win.isMaximized()) {
+        win.unmaximize();
+      } else {
+        win.maximize();
+      }
+      // Notify the renderer of the maximized state change
+      event.sender.send('window-maximized-change', win.isMaximized());
+    }
+  });
+  
+  // Close window
+  ipcMain.on('close-window', (event: Electron.IpcMainEvent) => {
+    const win = BrowserWindow.fromWebContents(event.sender);
+    if (win) {
+      win.close();
+    }
+  });
+  
+  // Toggle fullscreen
+  ipcMain.on('toggle-fullscreen', (event: Electron.IpcMainEvent) => {
+    const win = BrowserWindow.fromWebContents(event.sender);
+    if (win) {
+      win.setFullScreen(!win.isFullScreen());
+    }
+  });
+  
+  // Check if window is maximized
+  ipcMain.handle('window:isMaximized', (event: Electron.IpcMainInvokeEvent) => {
+    const win = BrowserWindow.fromWebContents(event.sender);
+    return win ? win.isMaximized() : false;
+  });
+  
+  // Check if window is in fullscreen
+  ipcMain.handle('window:isFullScreen', (event: Electron.IpcMainInvokeEvent) => {
+    const win = BrowserWindow.fromWebContents(event.sender);
+    return win ? win.isFullScreen() : false;
+  });
+  
+  // Set up event listeners for window state changes
+  const allWindows = BrowserWindow.getAllWindows();
+  allWindows.forEach((win: Electron.BrowserWindow) => {
+    win.on('maximize', () => {
+      win.webContents.send('window-maximized-change', true);
+    });
+    
+    win.on('unmaximize', () => {
+      win.webContents.send('window-maximized-change', false);
+    });
+    
+    win.on('enter-full-screen', () => {
+      win.webContents.send('window-fullscreen-change', true);
+    });
+    
+    win.on('leave-full-screen', () => {
+      win.webContents.send('window-fullscreen-change', false);
+    });
   });
 }
 

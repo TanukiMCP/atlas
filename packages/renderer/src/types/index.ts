@@ -10,7 +10,8 @@ export type ViewType =
   | 'tool-browser'
   | 'mcp-servers'
   | 'performance-monitor'
-  | 'about';
+  | 'about'
+  | 'workflow-builder';
 
 export type Theme = 'light' | 'dark';
 export type ConnectionStatus = 'connected' | 'disconnected' | 'connecting' | 'error';
@@ -39,7 +40,26 @@ export interface ToolItem {
 export interface MCPTool {
   name: string;
   description: string;
+  category?: string;
   available: boolean;
+  icon: string;
+  operationalMode: 'agent' | 'chat' | 'both';
+  parameters?: MCPToolParameter[];
+  examples?: string[];
+}
+
+export interface MCPToolParameter {
+  name: string;
+  type: 'string' | 'number' | 'boolean' | 'file' | 'array';
+  description: string;
+  required: boolean;
+  defaultValue?: any;
+}
+
+export interface MCPExecutionContext {
+  toolName: string;
+  parameters: any;
+  requestId?: string;
 }
 
 export interface Workflow {
@@ -70,8 +90,12 @@ export interface HeaderProps {
 }
 
 export interface FileExplorerProps {
-  files: FileSystemItem[];
-  onFileSelect?: (file: FileSystemItem) => void;
+  onFileSelect: (filePath: string) => void;
+  selectedFile?: string;
+  onDeleteFile?: (filePath: string) => Promise<void>;
+  onCreateFile?: (filePath: string, content: string) => Promise<void>;
+  onCreateFolder?: (folderPath: string) => Promise<void>;
+  workspaceName?: string;
 }
 
 export interface ToolsPanelProps {
@@ -207,4 +231,52 @@ export interface SystemCapabilities {
   };
   diskSpace: number;
   recommendedModels: string[];
+}
+
+export interface OpenRouterResponse {
+  // Add the OpenRouter response types here
+}
+
+// Define the ElectronAPI interface for window object
+export interface ElectronAPI {
+  // System
+  platform: string;
+  
+  // Window management
+  minimize: () => void;
+  maximize: () => void;
+  close: () => void;
+  
+  // OpenRouter integration
+  storeOpenRouterKey: (key: string) => Promise<any>;
+  getOpenRouterKey: () => Promise<string>;
+  
+  // Mobile proxy management
+  startProxyServer: () => Promise<{ success: boolean; active: boolean; port: number; clients: number; error?: string }>;
+  stopProxyServer: () => Promise<{ success: boolean; error?: string }>;
+  getProxyStatus: () => Promise<{ active: boolean; port: number | null; clients: number; clientDetails?: any[] }>;
+  generatePairingQRCode: () => Promise<{ success: boolean; qrCode: string; token: string; connectionUrl: string; error?: string }>;
+  showProxyStatusWindow: () => Promise<{ success: boolean; error?: string }>;
+  sendProxyChatResponse: (clientId: string, message: string, messageId: string) => Promise<{ success: boolean }>;
+  
+  // Proxy event listeners
+  onProxyStatusChanged: (callback: (status: any) => void) => void;
+  onProxyClientConnected: (callback: (data: any) => void) => void;
+  onProxyClientDisconnected: (callback: (data: any) => void) => void;
+  onProxyChatMessage: (callback: (data: any) => void) => void;
+  onProxyMediaProcessed: (callback: (data: any) => void) => void;
+  
+  // Remove event listeners
+  removeProxyStatusListener: () => void;
+  removeProxyClientConnectedListener: () => void;
+  removeProxyClientDisconnectedListener: () => void;
+  removeProxyChatMessageListener: () => void;
+  removeProxyMediaProcessedListener: () => void;
+}
+
+// Add ElectronAPI to Window interface
+declare global {
+  interface Window {
+    electronAPI: ElectronAPI;
+  }
 } 

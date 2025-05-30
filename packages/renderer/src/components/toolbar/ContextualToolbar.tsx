@@ -1,6 +1,6 @@
 import React from 'react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import { Button } from '../ui/button';
+import { Badge } from '../ui/badge';
 import { 
   Play, 
   Square, 
@@ -14,14 +14,19 @@ import {
   TestTube,
   ZoomIn,
   ZoomOut,
-  AlignCenter
+  AlignCenter,
+  ArrowLeft,
+  Menu,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+} from '../ui/dropdown-menu';
+import MobileProxyToggle from './MobileProxyToggle';
 
 interface ContextualToolbarProps {
   currentView: string;
@@ -31,6 +36,8 @@ interface ContextualToolbarProps {
   onStopProcessing?: () => void;
   onToolSelect?: () => void;
   onQuickSettings?: () => void;
+  onViewChange?: (view: string) => void;
+  onToggleMenu: () => void;
 }
 
 export const ContextualToolbar: React.FC<ContextualToolbarProps> = ({
@@ -40,7 +47,9 @@ export const ContextualToolbar: React.FC<ContextualToolbarProps> = ({
   onAgentModeToggle,
   onStopProcessing,
   onToolSelect,
-  onQuickSettings
+  onQuickSettings,
+  onViewChange,
+  onToggleMenu
 }) => {
   const renderChatToolbar = () => (
     <div className="flex items-center justify-between w-full">
@@ -79,17 +88,6 @@ export const ContextualToolbar: React.FC<ContextualToolbarProps> = ({
           Stop
         </Button>
 
-        {/* @Tools Button */}
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={onToolSelect}
-          className="gap-1"
-        >
-          <Wrench className="w-4 h-4" />
-          @Tools
-        </Button>
-
         {/* Current Mode Display */}
         <Badge variant="secondary" className="gap-1">
           {agentMode ? <Bot className="w-3 h-3" /> : <MessageSquare className="w-3 h-3" />}
@@ -116,17 +114,6 @@ export const ContextualToolbar: React.FC<ContextualToolbarProps> = ({
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
-
-        {/* Tool Execution Panel */}
-        <Button variant="ghost" size="sm" className="gap-1">
-          <Wrench className="w-4 h-4" />
-          Tools
-        </Button>
-
-        {/* Chat Settings */}
-        <Button variant="ghost" size="sm" onClick={onQuickSettings}>
-          <Settings className="w-4 h-4" />
-        </Button>
 
         {/* Chat Analytics */}
         <Button variant="ghost" size="sm">
@@ -179,15 +166,25 @@ export const ContextualToolbar: React.FC<ContextualToolbarProps> = ({
   const renderDefaultToolbar = () => (
     <div className="flex items-center justify-between w-full">
       <div className="flex items-center gap-2">
+        {currentView !== 'chat' && onViewChange && (
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={() => onViewChange('chat')} 
+            className="gap-1"
+            aria-label="Back to chat"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Back to Chat
+          </Button>
+        )}
         <span className="text-sm text-muted-foreground">
           {currentView.charAt(0).toUpperCase() + currentView.slice(1).replace('-', ' ')}
         </span>
       </div>
       
       <div className="flex items-center gap-1">
-        <Button variant="ghost" size="sm" onClick={onQuickSettings}>
-          <Settings className="w-4 h-4" />
-        </Button>
+        {/* No buttons needed here, settings is in main menu */}
       </div>
     </div>
   );
@@ -205,6 +202,26 @@ export const ContextualToolbar: React.FC<ContextualToolbarProps> = ({
 
   return (
     <div className="h-10 bg-background border-b border-border px-4 flex items-center">
+      <div className="flex items-center gap-2">
+        <Button 
+          variant="ghost"
+          size="sm"
+          onClick={onToggleMenu}
+          className="menu-button"
+        >
+          <Menu className="w-4 h-4" />
+        </Button>
+        <div className="h-4 mx-1 border-r border-border"></div>
+        <Button variant="ghost" size="sm">
+          <ChevronLeft className="w-4 h-4" />
+        </Button>
+        <Button variant="ghost" size="sm">
+          <ChevronRight className="w-4 h-4" />
+        </Button>
+      </div>
+      <div className="flex items-center ml-4">
+        <MobileProxyToggle />
+      </div>
       {renderToolbar()}
     </div>
   );

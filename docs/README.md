@@ -1,48 +1,45 @@
-# TanukiMCP: Atlas - Documentation Index
+# TanukiMCP Atlas - Documentation Index
 
-This directory contains the complete design documentation for TanukiMCP: Atlas, featuring a revolutionary **AI Intelligence Amplification Platform** - proving that smaller models (7B-32B parameters) with sophisticated tool orchestration outperform massive 500B+ parameter models at 1/10th the cost through Context7 documentation intelligence, Mem0 memory management, subject-mode routing, and comprehensive verification systems.
+This directory contains the design and technical documentation for TanukiMCP Atlas, an Electron-based AI development platform powered by OpenRouter, enhanced by Clear-Thought reasoning, and orchestrated by MCP Tools.
 
-## 🧠 Enhanced LLM Architecture (NEW)
+## Documentation Categories
 
-### 🌟 **Core Innovation: Multi-Tiered Intelligence System**
-14. **[Enhanced LLM Processing Architecture](14-enhanced-llm-architecture.md)** - Revolutionary multi-layered intelligence system with adaptive complexity, tournament-bracket quality assurance, and sophisticated failure recovery mechanisms
+### 1. Overview
+1. [Project Overview](01-project-overview.md) – Vision, goals, and high-level requirements
+2. [Design Map](02-design-map-updated.md) – Comprehensive system design overview
 
-15. **[Agent Mode vs Chat Mode](15-agent-chat-modes.md)** - Dual operational modes: Agent Mode for autonomous execution and Chat Mode for conversational intelligence
+### 2. Core Architecture
+3. [System Architecture](03-system-architecture.md) – Electron processes, IPC, and application structure
+4. [Tool System Architecture](04-tool-system-architecture.md) – Tool framework and integration
+5. [Task Management Core](05-task-management-core.md) – Task execution engine and workflow management
+6. [Enhanced LLM Architecture](14-enhanced-llm-architecture.md) – Clear-Thought reasoning and multi-tier processing
+7. [Agent vs Chat Modes](15-agent-chat-modes.md) – Dual operation modes and seamless switching
+8. [Intelligent Orchestration](21-intelligent-orchestration-architecture.md) – Model and workflow orchestration strategies
+9. [Workflow System Architecture](18-workflow-system-architecture.md) – Automated workflow generation and execution
 
-17. **[Local-Only Architecture Changes](17-local-only-architecture-changes.md)** - Summary of critical changes for fully local operation
+### 3. Integration & Data
+10. [LLM Integration](06-llm-integration.md) – OpenRouter API usage and model management
+11. [MCP Integration](07-mcp-integration.md) – MCP server and client interaction
+12. [Database Schema](08-database-schema.md) – SQLite schema and data models
+13. [Security Framework](09-security-framework.md) – Security policies and sandbox guidelines
 
-## 📚 Complete Documentation Structure
+### 4. UI/UX
+14. [UI Components](10-ui-components.md) – React components and design system
+15. [UI Wireframes](ui-wireframes-detailed.md) – Detailed interface mockups
+16. [Toolbar Architecture](toolbar-architecture.md) – Toolbar design and functionality
+17. [Prompt Management UI](19-llm-prompt-management-ui.md) – System prompt customization interface
 
-### ✅ Foundational Architecture (All Complete)
-1. **[Project Overview](01-project-overview.md)** - Vision, requirements, competitive positioning  
-2. **[Complete Design Map](02-design-map-updated.md)** - Comprehensive technical design and system overview
-3. **[System Architecture](03-system-architecture.md)** - Tech stack, application structure, IPC
-4. **[Tool System Architecture](04-tool-system-architecture.md)** - Comprehensive tool interface definitions and framework
-5. **[Task Management](05-task-management-core.md)** - Task system and execution engine
-6. **[LLM Integration](06-llm-integration.md)** - OpenRouter integration and model management
-7. **[MCP Integration](07-mcp-integration.md)** - MCP client hub and configuration
-16. **[Complete MCP Architecture](16-mcp-architecture-complete.md)** - Hub-based dual MCP architecture with FastMCP integration
+### 5. Guides & Reference
+18. [Development Guide](DEVELOPMENT-GUIDE.md) – Setup, coding practices, and contributing
+19. [Setup Guide](../scripts/SETUP-GUIDE.md) – One-click setup instructions
+20. [Technical Specs](11-technical-specs.md) – Performance requirements and environment details
+21. [Success Metrics](12-success-metrics.md) – Key performance indicators
+22. [Future Roadmap](13-future-roadmap.md) – Upcoming features and long-term plans
 
-### ✅ Data & Security Layer (All Complete)
-8. **[Database Schema](08-database-schema.md)** - SQLite schema and data structures
-9. **[Security Framework](09-security-framework.md)** - Security policies and sandboxing
-
-### ✅ User Interface Layer (All Complete)  
-10. **[UI Components](10-ui-components.md)** - React component specifications
-- **[UI Wireframes](ui-wireframes-detailed.md)** - Detailed visual wireframes
-- **[Toolbar Architecture](toolbar-architecture.md)** - Toolbar system design
-
-### ✅ Performance & Operations (All Complete)
-11. **[Technical Specs](11-technical-specs.md)** - Performance and platform requirements
-12. **[Success Metrics](12-success-metrics.md)** - KPIs and measurement criteria
-
-### ✅ Evolution & Growth (All Complete)
-13. **[Future Roadmap](13-future-roadmap.md)** - Post-MVP features and ecosystem
-
-### 🚀 Advanced Features (All Complete)
-18. **[Workflow System Architecture](18-workflow-system-architecture.md)** - Intelligent workflow generation and execution system with LLM-assisted creation
-19. **[LLM Prompt Management UI](19-llm-prompt-management-ui.md)** - System prompt management and customization interface
-20. **[Intelligent Orchestration Architecture](21-intelligent-orchestration-architecture.md)** - FREE-FIRST multi-model orchestration with zero cost anxiety
+## Deprecated & Archived
+The following legacy documents have been archived in the `archive/` directory as they no longer reflect the current OpenRouter-only architecture:
+- `17-local-only-architecture-changes.md`
+- Any documents referencing Ollama or local-only model tiers
 
 ## 🎯 Quick Navigation Guide
 

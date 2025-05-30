@@ -67,48 +67,86 @@ export const PrimaryMenuBar: React.FC<PrimaryMenuBarProps> = ({
   const handleMenuAction = (action: string) => {
     console.log(`Menu action: ${action}`);
     
-    switch (action) {
-      case 'new-chat':
-        onViewChange('chat');
-        break;
-      case 'open-project':
-        // TODO: Open file dialog
-        break;
-      case 'save-chat':
-        // TODO: Export chat
-        break;
-      case 'settings':
-        onViewChange('settings');
-        break;
-      case 'toggle-explorer':
-        onFileExplorerToggle();
-        break;
-      case 'toggle-fullscreen':
-        // TODO: Toggle fullscreen
-        break;
-      case 'command-palette':
-        // TODO: Open command palette
-        break;
-      case 'workflow-manager':
-        onViewChange('workflow-manager');
-        break;
-      case 'llm-prompt-management':
-        onViewChange('prompt-management');
-        break;
-      case 'tool-browser':
-        onViewChange('tool-browser');
-        break;
-      case 'mcp-servers':
-        onViewChange('mcp-servers');
-        break;
-      case 'performance-monitor':
-        onViewChange('performance-monitor');
-        break;
-      case 'about':
-        onViewChange('about');
-        break;
-      default:
-        console.log(`Unhandled action: ${action}`);
+    try {
+      switch (action) {
+        case 'new-chat':
+          onViewChange('chat');
+          break;
+        case 'open-project':
+          // Show not implemented message
+          alert('This feature is not yet implemented.');
+          break;
+        case 'save-chat':
+          // Show not implemented message
+          alert('This feature is not yet implemented.');
+          break;
+        case 'settings':
+          onViewChange('settings');
+          break;
+        case 'toggle-explorer':
+          onFileExplorerToggle();
+          break;
+        case 'toggle-fullscreen':
+          // Request fullscreen or exit fullscreen
+          if (document.fullscreenElement) {
+            document.exitFullscreen().catch(err => {
+              console.error('Error exiting fullscreen:', err);
+            });
+          } else {
+            document.documentElement.requestFullscreen().catch(err => {
+              console.error('Error requesting fullscreen:', err);
+              alert('Failed to enter fullscreen mode. Your browser may not support this feature.');
+            });
+          }
+          break;
+        case 'command-palette':
+          // Show not implemented message
+          alert('Command palette not yet implemented.');
+          break;
+        case 'workflow-manager':
+          onViewChange('workflow-manager');
+          break;
+        case 'llm-prompt-management':
+          onViewChange('prompt-management');
+          break;
+        case 'tool-browser':
+          onViewChange('tool-browser');
+          break;
+        case 'mcp-servers':
+          onViewChange('mcp-servers');
+          break;
+        case 'performance-monitor':
+          onViewChange('performance-monitor');
+          break;
+        case 'about':
+          onViewChange('about');
+          break;
+        case 'welcome-guide':
+          alert('Welcome guide not yet implemented.');
+          break;
+        case 'documentation':
+          // Open documentation in browser
+          window.open('https://github.com/user/tanukimcp-atlas/docs', '_blank');
+          break;
+        case 'keyboard-shortcuts':
+          alert('Keyboard shortcuts guide not yet implemented.');
+          break;
+        case 'report-issue':
+          window.open('https://github.com/user/tanukimcp-atlas/issues', '_blank');
+          break;
+        case 'check-updates':
+          alert('Update checking not yet implemented.');
+          break;
+        case 'workflow-builder':
+          onViewChange('workflow-builder');
+          break;
+        default:
+          console.log(`Unhandled action: ${action}`);
+          alert('This feature is not yet implemented.');
+      }
+    } catch (error) {
+      console.error('Error handling menu action:', error);
+      alert('An error occurred while performing this action.');
     }
   };
 
@@ -118,7 +156,13 @@ export const PrimaryMenuBar: React.FC<PrimaryMenuBarProps> = ({
     <div className="h-12 bg-background border-b border-border flex items-center justify-between px-4">
       {/* Left side: Logo + App Title + Subject Mode */}
       <div className="flex items-center gap-4">
-        <div className="flex items-center gap-2">
+        <div 
+          className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity"
+          onClick={() => onViewChange('chat')} 
+          role="button"
+          tabIndex={0}
+          aria-label="Back to chat"
+        >
           <div className="text-xl">🦝</div>
           <span className="font-semibold text-foreground">TanukiMCP Atlas</span>
         </div>
@@ -181,6 +225,12 @@ export const PrimaryMenuBar: React.FC<PrimaryMenuBarProps> = ({
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
+
+        {/* Workflow Builder Nav Item */}
+        <Button variant="ghost" size="sm" onClick={() => handleMenuAction('workflow-builder')}>
+          <Zap className="w-4 h-4 mr-2" />
+          Workflow Builder
+        </Button>
 
         {/* Edit Menu */}
         <DropdownMenu>
@@ -318,24 +368,24 @@ export const PrimaryMenuBar: React.FC<PrimaryMenuBarProps> = ({
             <Button variant="ghost" size="sm">Help</Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent>
-            <DropdownMenuItem>
+            <DropdownMenuItem onClick={() => handleMenuAction('welcome-guide')}>
               <BookOpen className="w-4 h-4 mr-2" />
               Welcome Guide
             </DropdownMenuItem>
-            <DropdownMenuItem>
+            <DropdownMenuItem onClick={() => handleMenuAction('documentation')}>
               <HelpCircle className="w-4 h-4 mr-2" />
               Documentation
               <span className="ml-auto text-xs text-muted-foreground">F1</span>
             </DropdownMenuItem>
-            <DropdownMenuItem>
+            <DropdownMenuItem onClick={() => handleMenuAction('keyboard-shortcuts')}>
               <Keyboard className="w-4 h-4 mr-2" />
               Keyboard Shortcuts
             </DropdownMenuItem>
-            <DropdownMenuItem>
+            <DropdownMenuItem onClick={() => handleMenuAction('report-issue')}>
               <MessageSquare className="w-4 h-4 mr-2" />
               Report Issue...
             </DropdownMenuItem>
-            <DropdownMenuItem>
+            <DropdownMenuItem onClick={() => handleMenuAction('check-updates')}>
               <Download className="w-4 h-4 mr-2" />
               Check for Updates...
             </DropdownMenuItem>

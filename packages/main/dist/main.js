@@ -50,8 +50,10 @@ function createWindow() {
     minHeight: 768,
     center: true,
     // Window appearance
-    titleBarStyle: process.platform === "darwin" ? "hiddenInset" : "default",
-    frame: true,
+    titleBarStyle: "hidden",
+    // Use hidden for all platforms to show custom frame
+    frame: false,
+    // Hide default window frame
     transparent: false,
     backgroundColor: "#1a1a1a",
     // Dark theme background
@@ -831,6 +833,7 @@ function setupIPC() {
   setupChatHandlers();
   setupFileSystemHandlers();
   setupLLMHandlers();
+  setupWindowControlHandlers();
   console.log("\u2705 IPC handlers registered");
 }
 function setupDatabaseHandlers() {
@@ -1261,13 +1264,60 @@ function setupLLMHandlers() {
       throw error;
     }
   });
-  import_electron3.ipcMain.handle("openrouter:checkHealth", async () => {
-    try {
-      return { isConnected: true };
-    } catch (error) {
-      console.error("OpenRouter health check error:", error);
-      return { isConnected: false, error: error.message };
+}
+function setupWindowControlHandlers() {
+  const { BrowserWindow: BrowserWindow9, ipcMain: ipcMain2 } = require("electron");
+  ipcMain2.on("minimize-window", (event) => {
+    const win = BrowserWindow9.fromWebContents(event.sender);
+    if (win) {
+      win.minimize();
     }
+  });
+  ipcMain2.on("maximize-window", (event) => {
+    const win = BrowserWindow9.fromWebContents(event.sender);
+    if (win) {
+      if (win.isMaximized()) {
+        win.unmaximize();
+      } else {
+        win.maximize();
+      }
+      event.sender.send("window-maximized-change", win.isMaximized());
+    }
+  });
+  ipcMain2.on("close-window", (event) => {
+    const win = BrowserWindow9.fromWebContents(event.sender);
+    if (win) {
+      win.close();
+    }
+  });
+  ipcMain2.on("toggle-fullscreen", (event) => {
+    const win = BrowserWindow9.fromWebContents(event.sender);
+    if (win) {
+      win.setFullScreen(!win.isFullScreen());
+    }
+  });
+  ipcMain2.handle("window:isMaximized", (event) => {
+    const win = BrowserWindow9.fromWebContents(event.sender);
+    return win ? win.isMaximized() : false;
+  });
+  ipcMain2.handle("window:isFullScreen", (event) => {
+    const win = BrowserWindow9.fromWebContents(event.sender);
+    return win ? win.isFullScreen() : false;
+  });
+  const allWindows = BrowserWindow9.getAllWindows();
+  allWindows.forEach((win) => {
+    win.on("maximize", () => {
+      win.webContents.send("window-maximized-change", true);
+    });
+    win.on("unmaximize", () => {
+      win.webContents.send("window-maximized-change", false);
+    });
+    win.on("enter-full-screen", () => {
+      win.webContents.send("window-fullscreen-change", true);
+    });
+    win.on("leave-full-screen", () => {
+      win.webContents.send("window-fullscreen-change", false);
+    });
   });
 }
 
@@ -1352,7 +1402,17 @@ var OpenRouterService = class {
       return [];
     }
   }
+  // Ensure model is a free model (used to enforce free-only approach)
+  ensureFreeModel(modelId) {
+    const isFreeModel = this.freeModels.some((model) => model.id === modelId);
+    if (isFreeModel) {
+      return modelId;
+    }
+    console.log(`Warning: Non-free model requested (${modelId}). Using default free model instead.`);
+    return "meta-llama/llama-3.1-8b-instruct:free";
+  }
   async generate(request) {
+    const model = this.ensureFreeModel(request.model);
     const headers = {
       "Content-Type": "application/json",
       "HTTP-Referer": "https://tanukimcp.com",
@@ -1365,7 +1425,7 @@ var OpenRouterService = class {
       method: "POST",
       headers,
       body: JSON.stringify({
-        model: request.model,
+        model,
         messages: request.messages,
         temperature: request.temperature || 0.7,
         max_tokens: request.max_tokens || 1e3,
@@ -1551,418 +1611,6 @@ var SystemMonitor = class {
       gpu: [],
       disk: { readSpeed: 0, writeSpeed: 0, usage: 0 }
     };
-  }
-};
-
-// src/services/hardware-assessor.ts
-var HardwareAssessor = class {
-  async assessSystemCapabilities() {
-    const os = require("os");
-    const cpus = os.cpus();
-    const cpu = {
-      cores: os.cpus().length,
-      threads: os.cpus().length,
-      architecture: os.arch(),
-      clockSpeed: cpus[0]?.speed || 0,
-      brand: cpus[0]?.model || "Unknown"
-    };
-    const memory = {
-      total: Math.round(os.totalmem() / 1024 ** 3),
-      available: Math.round(os.freemem() / 1024 ** 3),
-      type: "DDR4"
-    };
-    const gpu = await this.detectGPU();
-    const storage = await this.assessStorage();
-    return { cpu, memory, gpu, storage };
-  }
-  async getModelRecommendations(systemCaps, availableModels) {
-    return availableModels.map((model) => {
-      const compatibility = this.assessCompatibility(model, systemCaps);
-      const expectedPerformance = this.predictPerformance(model, systemCaps);
-      const optimizations = this.suggestOptimizations(model, systemCaps);
-      const warnings = this.generateWarnings(model, systemCaps);
-      return {
-        model,
-        compatibility,
-        expectedPerformance,
-        optimizations,
-        warnings: warnings.length > 0 ? warnings : void 0
-      };
-    }).sort((a, b) => {
-      const compatibilityScore = {
-        "perfect": 4,
-        "good": 3,
-        "marginal": 2,
-        "incompatible": 1
-      };
-      const scoreA = compatibilityScore[a.compatibility] * a.expectedPerformance.tokensPerSecond;
-      const scoreB = compatibilityScore[b.compatibility] * b.expectedPerformance.tokensPerSecond;
-      return scoreB - scoreA;
-    });
-  }
-  assessCompatibility(model, system) {
-    const ramOk = system.memory.available >= model.requirements.minRam;
-    const ramGood = system.memory.available >= model.requirements.recommendedRam;
-    if (!ramOk)
-      return "incompatible";
-    if (system.gpu && system.gpu.length > 0) {
-      const totalVram = system.gpu.reduce((sum, gpu) => sum + gpu.vram, 0);
-      const vramOk = totalVram >= (model.requirements.minVram || 0);
-      const vramGood = totalVram >= (model.requirements.recommendedVram || 0);
-      if (ramGood && vramGood)
-        return "perfect";
-      if (ramGood && vramOk)
-        return "good";
-      if (ramOk)
-        return "marginal";
-    }
-    if (ramGood)
-      return "good";
-    return "marginal";
-  }
-  predictPerformance(model, system) {
-    let tokensPerSecond = model.estimatedPerformance.tokensPerSecondCPU;
-    if (system.gpu && system.gpu.length > 0) {
-      const totalVram = system.gpu.reduce((sum, gpu) => sum + gpu.vram, 0);
-      if (totalVram >= (model.requirements.recommendedVram || 0)) {
-        tokensPerSecond = model.estimatedPerformance.tokensPerSecondGPU || tokensPerSecond * 2;
-      }
-    }
-    const cpuMultiplier = Math.min(system.cpu.cores / 8, 1.5);
-    tokensPerSecond *= cpuMultiplier;
-    return {
-      tokensPerSecond: Math.round(tokensPerSecond),
-      ramUsage: model.size * 1.2,
-      vramUsage: system.gpu ? model.size * 0.8 : void 0,
-      responseTime: 100 / tokensPerSecond * 1e3
-    };
-  }
-  suggestOptimizations(model, system) {
-    const suggestions = [];
-    if (system.memory.available < model.requirements.recommendedRam) {
-      suggestions.push({
-        type: "quantization",
-        description: "Use Q4_K_M quantization to reduce memory usage",
-        impact: "Reduces RAM usage by 60-70% with minimal quality loss"
-      });
-    }
-    if (system.gpu && system.gpu.length > 0) {
-      suggestions.push({
-        type: "gpu_acceleration",
-        description: "Enable GPU acceleration for faster inference",
-        impact: "Can improve speed by 2-5x depending on model size"
-      });
-    }
-    suggestions.push({
-      type: "context_optimization",
-      description: "Optimize context window based on usage patterns",
-      impact: "Reduces memory usage and improves response time"
-    });
-    return suggestions;
-  }
-  generateWarnings(model, system) {
-    const warnings = [];
-    if (system.memory.available < model.requirements.minRam) {
-      warnings.push("Insufficient RAM - performance will be severely degraded");
-    }
-    if (!system.gpu || system.gpu.length === 0) {
-      warnings.push("No GPU detected - will use CPU-only inference (slower)");
-    }
-    if (system.storage.type === "HDD") {
-      warnings.push("HDD storage detected - SSD recommended for better performance");
-    }
-    return warnings;
-  }
-  async detectGPU() {
-    try {
-      if (process.platform === "win32") {
-        return await this.detectWindowsGPU();
-      } else if (process.platform === "linux") {
-        return await this.detectLinuxGPU();
-      }
-      return [];
-    } catch (error) {
-      console.error("GPU detection failed:", error);
-      return [];
-    }
-  }
-  async detectWindowsGPU() {
-    return [];
-  }
-  async detectLinuxGPU() {
-    return [];
-  }
-  async assessStorage() {
-    return {
-      available: 100,
-      type: "SSD",
-      speed: 500
-    };
-  }
-};
-
-// src/services/model-manager.ts
-var ModelManager = class {
-  hardwareAssessor;
-  configurations = /* @__PURE__ */ new Map();
-  availableModels = [];
-  constructor() {
-    this.hardwareAssessor = new HardwareAssessor();
-    this.initializeDefaultConfigurations();
-  }
-  initializeDefaultConfigurations() {
-    const defaultConfig = {
-      name: "default",
-      parameters: {
-        temperature: 0.7,
-        top_p: 0.9,
-        max_tokens: 2048,
-        frequency_penalty: 0,
-        presence_penalty: 0
-      },
-      isDefault: true
-    };
-    this.configurations.set("default", defaultConfig);
-  }
-};
-
-// src/services/optimization-engine.ts
-var OptimizationEngine = class {
-  profiles = /* @__PURE__ */ new Map();
-  activeProfile = "balanced";
-  constructor() {
-    this.initializeProfiles();
-  }
-  async optimizeForHardware(systemInfo) {
-    if (systemInfo.memory.available > 16 && systemInfo.gpu?.length > 0) {
-      return this.profiles.get("performance");
-    } else if (systemInfo.memory.available < 8) {
-      return this.profiles.get("memory");
-    }
-    return this.profiles.get("balanced");
-  }
-  getProfile(name) {
-    return this.profiles.get(name);
-  }
-  getAllProfiles() {
-    return Array.from(this.profiles.values());
-  }
-  setActiveProfile(name) {
-    if (this.profiles.has(name)) {
-      this.activeProfile = name;
-    }
-  }
-  initializeProfiles() {
-    this.profiles.set("performance", {
-      name: "Performance",
-      description: "Maximum speed, higher memory usage",
-      settings: {
-        kvCacheType: "f16",
-        numParallel: 8,
-        maxLoadedModels: 1,
-        flashAttention: true,
-        memoryMapping: true,
-        memoryLocking: true,
-        contextLength: 4096,
-        batchSize: 512,
-        threadCount: -1,
-        gpuLayers: -1
-      }
-    });
-    this.profiles.set("memory", {
-      name: "Memory Efficient",
-      description: "Lower memory usage, moderate speed",
-      settings: {
-        kvCacheType: "q4_0",
-        numParallel: 2,
-        maxLoadedModels: 1,
-        flashAttention: true,
-        memoryMapping: false,
-        memoryLocking: false,
-        contextLength: 2048,
-        batchSize: 128,
-        threadCount: 4,
-        gpuLayers: 20
-      }
-    });
-    this.profiles.set("balanced", {
-      name: "Balanced",
-      description: "Good balance of speed and memory usage",
-      settings: {
-        kvCacheType: "q8_0",
-        numParallel: 4,
-        maxLoadedModels: 2,
-        flashAttention: true,
-        memoryMapping: true,
-        memoryLocking: false,
-        contextLength: 3072,
-        batchSize: 256,
-        threadCount: 6,
-        gpuLayers: 32
-      }
-    });
-  }
-  async applyOptimizations(profile) {
-    console.log(`Applied optimization profile: ${profile.name}`);
-    console.log(`Settings: ${JSON.stringify(profile.settings, null, 2)}`);
-  }
-};
-
-// src/services/parameter-tuner.ts
-var ParameterTuner = class {
-  presets = /* @__PURE__ */ new Map();
-  tuningHistory = [];
-  constructor() {
-    this.initializePresets();
-  }
-  getPreset(task) {
-    return this.presets.get(task);
-  }
-  getDefaultParameters() {
-    return {
-      temperature: 0.5,
-      top_p: 0.9,
-      top_k: 40,
-      repeat_penalty: 1.1,
-      num_ctx: 2048
-    };
-  }
-  getAllPresets() {
-    return new Map(this.presets);
-  }
-  initializePresets() {
-    this.presets.set("coding", {
-      temperature: 0.1,
-      top_p: 0.95,
-      top_k: 40,
-      repeat_penalty: 1.1,
-      num_ctx: 4096
-    });
-    this.presets.set("creative", {
-      temperature: 0.8,
-      top_p: 0.9,
-      top_k: 50,
-      repeat_penalty: 1.05,
-      num_ctx: 2048
-    });
-    this.presets.set("analytical", {
-      temperature: 0.2,
-      top_p: 0.9,
-      top_k: 30,
-      repeat_penalty: 1.15,
-      num_ctx: 4096
-    });
-    this.presets.set("conversational", {
-      temperature: 0.7,
-      top_p: 0.95,
-      top_k: 40,
-      repeat_penalty: 1.1,
-      num_ctx: 2048
-    });
-  }
-  async generateParameterVariations(base) {
-    const variations = [];
-    const tempVariations = [base.temperature * 0.8, base.temperature, base.temperature * 1.2];
-    const topPVariations = [Math.max(0.1, base.top_p - 0.1), base.top_p, Math.min(1, base.top_p + 0.1)];
-    for (const temp of tempVariations) {
-      for (const topP of topPVariations) {
-        variations.push({
-          ...base,
-          temperature: Math.max(0.01, Math.min(2, temp)),
-          top_p: topP
-        });
-      }
-    }
-    return variations;
-  }
-  async optimizeForTask(task, modelName) {
-    const preset = this.getPreset(task) || this.getDefaultParameters();
-    return preset;
-  }
-};
-
-// src/services/context-manager.ts
-var ContextManager = class {
-  vectorCache = /* @__PURE__ */ new Map();
-  mcpContextServer;
-  constructor() {
-    this.mcpContextServer = {};
-  }
-  async storeContext(sessionId, type, key, value, importance = 1) {
-    const embedding = await this.generateEmbedding(value);
-    const entry = {
-      id: crypto.randomUUID(),
-      sessionId,
-      type,
-      key,
-      value,
-      vectorEmbedding: embedding,
-      importance,
-      lastUsed: /* @__PURE__ */ new Date(),
-      created: /* @__PURE__ */ new Date()
-    };
-    await this.persistContextEntry(entry);
-    await this.mcpContextServer.updateContext(sessionId, entry);
-  }
-  async retrieveRelevantContext(sessionId, query, maxResults = 10) {
-    const queryEmbedding = await this.generateEmbedding(query);
-    const allEntries = await this.getSessionContext(sessionId);
-    const scoredEntries = allEntries.map((entry) => ({
-      entry,
-      score: this.calculateSimilarity(queryEmbedding, entry.vectorEmbedding || new Float32Array())
-    }));
-    scoredEntries.sort((a, b) => b.score * b.entry.importance - a.score * a.entry.importance);
-    return scoredEntries.slice(0, maxResults).map((item) => item.entry);
-  }
-  async optimizeContext(sessionId) {
-    const entries = await this.getSessionContext(sessionId);
-    const cutoffDate = new Date(Date.now() - 7 * 24 * 60 * 60 * 1e3);
-    const toRemove = entries.filter(
-      (entry) => entry.importance < 0.3 && entry.lastUsed < cutoffDate
-    );
-    for (const entry of toRemove) {
-      await this.removeContextEntry(entry.id);
-    }
-    await this.compressSimilarEntries(sessionId);
-  }
-  async generateEmbedding(text2) {
-    const hash = this.simpleHash(text2);
-    const embedding = new Float32Array(384);
-    for (let i = 0; i < embedding.length; i++) {
-      embedding[i] = Math.sin(hash + i) * 0.1;
-    }
-    return embedding;
-  }
-  simpleHash(str) {
-    let hash = 0;
-    for (let i = 0; i < str.length; i++) {
-      const char = str.charCodeAt(i);
-      hash = (hash << 5) - hash + char;
-      hash = hash & hash;
-    }
-    return hash;
-  }
-  calculateSimilarity(a, b) {
-    if (a.length !== b.length)
-      return 0;
-    let dotProduct = 0;
-    let normA = 0;
-    let normB = 0;
-    for (let i = 0; i < a.length; i++) {
-      dotProduct += a[i] * b[i];
-      normA += a[i] * a[i];
-      normB += b[i] * b[i];
-    }
-    return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
-  }
-  async persistContextEntry(entry) {
-  }
-  async getSessionContext(sessionId) {
-    return [];
-  }
-  async removeContextEntry(entryId) {
-  }
-  async compressSimilarEntries(sessionId) {
   }
 };
 
@@ -2575,26 +2223,16 @@ var TanukiMCPApp = class {
   // Services that might be initialized later or conditionally
   openrouterService;
   systemMonitor;
-  modelManager;
-  hardwareAssessor;
-  optimizationEngine;
-  parameterTuner;
-  contextManager;
   isQuitting = false;
   constructor() {
     this.setupEventHandlers();
   }
   async initializeServices() {
-    console.log("\u{1F527} Initializing Phase 2 services...");
+    console.log("\u{1F527} Initializing services...");
     this.openrouterService = new OpenRouterService();
     this.systemMonitor = new SystemMonitor();
-    this.modelManager = new ModelManager();
-    this.hardwareAssessor = new HardwareAssessor();
-    this.optimizationEngine = new OptimizationEngine();
-    this.parameterTuner = new ParameterTuner();
-    this.contextManager = new ContextManager();
-    console.log("\u2705 Phase 2 services initialized");
-    console.log("\u{1F527} Initializing Enhanced LLM and MCP Hub...");
+    console.log("\u2705 Core services initialized");
+    console.log("\u{1F527} Initializing desktop integration...");
     if (this.mainWindow) {
       this.crashReporterService = new CrashReporterService(this.mainWindow);
       this.notificationService = new NotificationService(this.mainWindow);
@@ -2626,19 +2264,22 @@ var TanukiMCPApp = class {
   }
   async onReady() {
     try {
-      await this.initializeServices();
       console.log("\u{1F680} TanukiMCP Atlas starting...");
+      await this.initializeServices();
       console.log("\u{1F4CA} Initializing database...");
       await initializeDatabase();
       console.log("\u2705 Database initialized");
-      console.log("\u{1F50D} Assessing system capabilities...");
-      await this.assessSystemCapabilities();
-      console.log("\u2705 System assessment complete");
+      console.log("\u{1F50C} Connecting to OpenRouter...");
+      await this.loadStoredApiKey();
+      const status = await this.openrouterService.checkHealth();
+      if (status.isConnected) {
+        console.log("\u2705 Connected to OpenRouter service");
+      } else {
+        console.log("\u26A0\uFE0F Not connected to OpenRouter - free models will still be available");
+      }
       console.log("\u{1FA9F} Creating main window...");
       this.mainWindow = createWindow();
-      console.log("\u{1F5A5}\uFE0F Initializing desktop integration...");
       await this.initializeDesktopServices();
-      console.log("\u2705 Desktop integration ready");
       console.log("\u{1F50C} Setting up IPC handlers...");
       setupIPC();
       console.log("\u2705 IPC handlers ready");
@@ -2731,34 +2372,6 @@ var TanukiMCPApp = class {
       console.error("Failed to load stored API key:", error);
     }
   }
-  async assessSystemCapabilities() {
-    try {
-      await this.loadStoredApiKey();
-      const openrouterHealthy = await this.openrouterService.checkHealth();
-      if (openrouterHealthy.isConnected) {
-        console.log("\u2705 OpenRouter service is connected");
-        console.log(`\u{1F4E6} Available free models: ${openrouterHealthy.availableModels.length}`);
-      } else {
-        console.log("\u26A0\uFE0F  OpenRouter service not connected - model management will be limited");
-        if (openrouterHealthy.error) {
-          console.log("\u274C OpenRouter error:", openrouterHealthy.error);
-        }
-      }
-      const systemCaps = await this.hardwareAssessor.assessSystemCapabilities();
-      console.log("\u{1F4BB} System specs:", {
-        cpu: systemCaps.cpu.cores + " cores",
-        memory: systemCaps.memory.total + "GB RAM",
-        gpu: systemCaps.gpu?.length ? systemCaps.gpu.length + " GPU(s)" : "None detected"
-      });
-      const catalog = await this.openrouterService.getAvailableFreeModels();
-      console.log("\u{1F916} Available free models:", catalog.slice(0, 3).map((m) => m.displayName));
-      const optimalProfile = await this.optimizationEngine.optimizeForHardware(systemCaps);
-      await this.optimizationEngine.applyOptimizations(optimalProfile);
-      console.log("\u26A1 Applied optimization profile:", optimalProfile.name);
-    } catch (error) {
-      console.error("Failed to assess system capabilities:", error);
-    }
-  }
   getMainWindow() {
     return this.mainWindow;
   }
@@ -2767,11 +2380,6 @@ var TanukiMCPApp = class {
     return {
       openrouter: this.openrouterService,
       systemMonitor: this.systemMonitor,
-      modelManager: this.modelManager,
-      hardwareAssessor: this.hardwareAssessor,
-      optimizationEngine: this.optimizationEngine,
-      parameterTuner: this.parameterTuner,
-      contextManager: this.contextManager,
       systemTray: this.trayService,
       nativeMenu: this.menuService,
       autoUpdater: this.autoUpdaterService,

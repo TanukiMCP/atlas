@@ -8,6 +8,10 @@ import { useLLMStore } from '../../stores/llm-store';
 import { WorkflowGenerationDialog } from '../workflows/workflow-generation-dialog';
 import { ChatTranscript, WorkflowTemplate } from '../../types/workflow-types';
 import { AlertCircle, Bot, User, Loader2, StopCircle, Settings } from 'lucide-react';
+import ToolCallsContainer from './ToolCallsContainer';
+import ModelSelector from '../llm/ModelSelector';
+import { SubjectModeDropdown } from '../shared/subject-mode-dropdown';
+import { useViewStore } from '../../stores/viewStore';
 
 interface RealChatInterfaceProps {
   onAtSymbolTrigger?: (event: React.KeyboardEvent, position: { x: number; y: number }) => void;
@@ -38,6 +42,22 @@ export const RealChatInterface: React.FC<RealChatInterfaceProps> = ({ onAtSymbol
     clearCurrentSession
   } = useLLMStore();
 
+  // View store for agent/chat mode and subject mode
+  const agentMode = useViewStore(state => state.agentMode);
+  const setAgentMode = useViewStore(state => state.setAgentMode);
+  const subjectMode = useViewStore(state => state.subjectMode);
+  const setSubjectMode = useViewStore(state => state.setSubjectMode);
+
+  // Handler for agent/chat toggle
+  const handleModeToggle = (mode: 'agent' | 'chat') => {
+    setAgentMode(mode === 'agent');
+  };
+
+  // Handler for subject mode change
+  const handleSubjectModeChange = (mode: string) => {
+    setSubjectMode(mode as any);
+  };
+
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
@@ -51,15 +71,23 @@ export const RealChatInterface: React.FC<RealChatInterfaceProps> = ({ onAtSymbol
     checkHealth();
   }, [checkHealth]);
 
-  const handleKeyDown = (event: React.KeyboardEvent) => {
+  const handleKeyDown = async (event: React.KeyboardEvent) => {
     if (event.key === '@' && onAtSymbolTrigger) {
       const rect = event.currentTarget.getBoundingClientRect();
       onAtSymbolTrigger(event, { x: rect.left, y: rect.bottom });
     }
-    
+
     if (event.key === 'Enter' && !event.shiftKey) {
       event.preventDefault();
-      handleSendMessage();
+      if (isStreaming) {
+        // Cancel current streaming, then send the new message
+        await cancelCurrentRequest();
+        if (message.trim()) {
+          await handleSendMessage();
+        }
+      } else {
+        await handleSendMessage();
+      }
     }
   };
 
@@ -144,7 +172,43 @@ export const RealChatInterface: React.FC<RealChatInterfaceProps> = ({ onAtSymbol
   }
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full relative">
+      {/* Redesigned Chat Header */}
+      <div className="w-full px-6 py-3 border-b border-border bg-background flex flex-col md:flex-row md:items-center md:justify-between gap-2 md:gap-6 shadow-sm">
+        <div className="flex items-center gap-3 min-w-0">
+          <Bot className="w-6 h-6 text-primary shrink-0" />
+          <span className="font-bold text-lg truncate">TanukiMCP Atlas Chat</span>
+        </div>
+        <div className="flex flex-wrap items-center gap-3 md:gap-4">
+          {/* Model Indicator */}
+          <div className="flex items-center gap-2 px-3 py-1 rounded bg-muted border border-border">
+            <span className="text-xs font-semibold text-muted-foreground">Model</span>
+            <ModelSelector />
+          </div>
+          {/* Mode/Subject Context */}
+          <div className="flex items-center gap-2 px-3 py-1 rounded bg-muted border border-border">
+            <span className="text-xs font-semibold text-muted-foreground">Mode</span>
+            <button
+              className={`px-2 py-1 rounded font-medium text-xs flex items-center gap-1 ${agentMode ? 'bg-primary text-primary-foreground' : 'hover:bg-muted-foreground/10'}`}
+              onClick={() => handleModeToggle('agent')}
+              aria-pressed={agentMode}
+            >
+              <Bot className="w-4 h-4" /> Agent
+            </button>
+            <button
+              className={`px-2 py-1 rounded font-medium text-xs flex items-center gap-1 ${!agentMode ? 'bg-primary text-primary-foreground' : 'hover:bg-muted-foreground/10'}`}
+              onClick={() => handleModeToggle('chat')}
+              aria-pressed={!agentMode}
+            >
+              <span className="w-4 h-4">💬</span> Chat
+            </button>
+            <span className="text-xs font-semibold text-muted-foreground ml-3">Subject</span>
+            <div className="min-w-[180px]">
+              <SubjectModeDropdown currentMode={subjectMode} onModeChange={handleSubjectModeChange} />
+            </div>
+          </div>
+        </div>
+      </div>
       {/* Chat Messages */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {currentSession?.messages.map((msg, index) => (
@@ -223,6 +287,27 @@ export const RealChatInterface: React.FC<RealChatInterfaceProps> = ({ onAtSymbol
             setShowWorkflowDialog(false);
           }}
         />
+      )}
+
+      {/* Tool Calls Container (floating overlay) */}
+      <div className="pointer-events-none">
+        <div className="pointer-events-auto fixed bottom-4 right-4 z-50">
+          <ToolCallsContainer />
+        </div>
+      </div>
+
+      {/* Emergency Stop Button (floating in chat area) */}
+      {isStreaming && (
+        <div className="fixed bottom-24 right-4 z-50">
+          <button
+            onClick={cancelCurrentRequest}
+            className="flex items-center gap-2 px-5 py-3 bg-red-600 text-white rounded-full shadow-lg hover:bg-red-700 transition-colors font-semibold text-base focus:outline-none focus:ring-2 focus:ring-red-400 animate-pulse"
+            aria-label="Emergency Stop"
+          >
+            <StopCircle className="w-6 h-6" />
+            Emergency Stop
+          </button>
+        </div>
       )}
     </div>
   );

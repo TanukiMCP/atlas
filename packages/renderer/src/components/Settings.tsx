@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useLLMStore } from '../stores/llm-store';
+import ToolSettings, { ToolSettings as ToolSettingsType } from './settings/ToolSettings';
+import { toolContextService } from '../services/ToolContextService';
 
 // Type declaration for electronAPI
 declare global {
@@ -117,6 +119,10 @@ const Settings: React.FC<SettingsProps> = ({ onApiKeyChange }) => {
     }
   };
 
+  const handleToolSettingsChange = (newSettings: ToolSettingsType) => {
+    toolContextService.updateSettings(newSettings);
+  };
+
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       <div className="flex items-center gap-3 mb-6">
@@ -216,6 +222,9 @@ const Settings: React.FC<SettingsProps> = ({ onApiKeyChange }) => {
           </div>
         </div>
       </div>
+
+      {/* Tool Settings */}
+      <ToolSettings onSettingsChange={handleToolSettingsChange} />
 
       {/* Information Section */}
       <div className="bg-card rounded-lg border border-border p-6">

@@ -99,7 +99,8 @@ if not exist ".env" (
     echo NODE_ENV=development >> .env
     echo ELECTRON_IS_DEV=true >> .env
     echo VITE_DEV_SERVER_URL=http://localhost:3000 >> .env
-    echo # Add your custom environment variables below >> .env
+    echo # Add your OpenRouter API key below >> .env
+    echo # OPENROUTER_API_KEY=your_api_key_here >> .env
 )
 
 echo.
@@ -126,8 +127,9 @@ echo   npm run test       - Run tests
 echo   npm run lint       - Run linter
 echo.
 echo 🚀 To get started:
-echo   1. Run: npm run dev
-echo   2. In another terminal: npm start
+echo   1. Set up your OpenRouter API key in the app settings or .env file
+echo   2. Run: npm run dev
+echo   3. In another terminal: npm start
 echo.
 echo Press any key to exit...
 pause >nul 

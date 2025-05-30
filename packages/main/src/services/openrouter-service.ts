@@ -127,6 +127,20 @@ export class OpenRouterService {
     }
   }
 
+  // Ensure model is a free model (used to enforce free-only approach)
+  ensureFreeModel(modelId: string): string {
+    // If the provided model ID is in our free model list, use it
+    const isFreeModel = this.freeModels.some(model => model.id === modelId);
+    
+    if (isFreeModel) {
+      return modelId;
+    }
+    
+    // If not a free model, return the default free model
+    console.log(`Warning: Non-free model requested (${modelId}). Using default free model instead.`);
+    return 'meta-llama/llama-3.1-8b-instruct:free';
+  }
+
   async generate(request: {
     model: string;
     messages: Array<{ role: string; content: string }>;
@@ -141,6 +155,9 @@ export class OpenRouterService {
       total_tokens: number;
     };
   }> {
+    // Ensure we're only using free models
+    const model = this.ensureFreeModel(request.model);
+    
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
       'HTTP-Referer': 'https://tanukimcp.com',
@@ -155,7 +172,7 @@ export class OpenRouterService {
       method: 'POST',
       headers,
       body: JSON.stringify({
-        model: request.model,
+        model: model,
         messages: request.messages,
         temperature: request.temperature || 0.7,
         max_tokens: request.max_tokens || 1000,

@@ -5,11 +5,6 @@ import { setupIPC } from './ipc/handlers';
 import { initializeDatabase } from './database/connection';
 import { OpenRouterService } from './services/openrouter-service';
 import { SystemMonitor } from './services/system-monitor';
-import { ModelManager } from './services/model-manager';
-import { HardwareAssessor } from './services/hardware-assessor';
-import { OptimizationEngine } from './services/optimization-engine';
-import { ParameterTuner } from './services/parameter-tuner';
-import { ContextManager } from './services/context-manager';
 import { SystemTrayService } from './services/system-tray';
 import { NativeMenuService } from './services/native-menu';
 import { AutoUpdaterService } from './services/auto-updater';
@@ -29,11 +24,6 @@ class TanukiMCPApp {
   // Services that might be initialized later or conditionally
   private openrouterService!: OpenRouterService;
   private systemMonitor!: SystemMonitor;
-  private modelManager!: ModelManager;
-  private hardwareAssessor!: HardwareAssessor;
-  private optimizationEngine!: OptimizationEngine;
-  private parameterTuner!: ParameterTuner;
-  private contextManager!: ContextManager;
   private isQuitting = false;
 
   constructor() {
@@ -41,21 +31,18 @@ class TanukiMCPApp {
   }
   
   private async initializeServices(): Promise<void> {
-    console.log('🔧 Initializing Phase 2 services...');
+    console.log('🔧 Initializing services...');
     
-    // Initialize all LLM and model management services
+    // Initialize core services - keep only what's needed for OpenRouter
     this.openrouterService = new OpenRouterService();
     this.systemMonitor = new SystemMonitor();
-    this.modelManager = new ModelManager();
-    this.hardwareAssessor = new HardwareAssessor();
-    this.optimizationEngine = new OptimizationEngine();
-    this.parameterTuner = new ParameterTuner();
-    this.contextManager = new ContextManager();
     
-    console.log('✅ Phase 2 services initialized');
+    // Skip hardware-specific services since we're using OpenRouter free models only
     
-    // Initialize Phase 2.5: Enhanced LLM and MCP Hub
-    console.log('🔧 Initializing Enhanced LLM and MCP Hub...');
+    console.log('✅ Core services initialized');
+    
+    // Initialize Enhanced LLM and MCP Hub
+    console.log('🔧 Initializing desktop integration...');
     
     // Initialize crash reporter first
     if (this.mainWindow) {
@@ -108,27 +95,32 @@ class TanukiMCPApp {
 
   private async onReady(): Promise<void> {
     try {
-      await this.initializeServices();
       console.log('🚀 TanukiMCP Atlas starting...');
       
-      // Initialize database first
+      // Initialize services
+      await this.initializeServices();
+      
+      // Initialize database
       console.log('📊 Initializing database...');
       await initializeDatabase();
       console.log('✅ Database initialized');
       
-      // Assess system capabilities for model recommendations
-      console.log('🔍 Assessing system capabilities...');
-      await this.assessSystemCapabilities();
-      console.log('✅ System assessment complete');
+      // Connect to OpenRouter service
+      console.log('🔌 Connecting to OpenRouter...');
+      await this.loadStoredApiKey();
+      const status = await this.openrouterService.checkHealth();
+      if (status.isConnected) {
+        console.log('✅ Connected to OpenRouter service');
+      } else {
+        console.log('⚠️ Not connected to OpenRouter - free models will still be available');
+      }
       
       // Create main window
       console.log('🪟 Creating main window...');
       this.mainWindow = createWindow();
       
       // Initialize desktop integration services
-      console.log('🖥️ Initializing desktop integration...');
       await this.initializeDesktopServices();
-      console.log('✅ Desktop integration ready');
       
       // Setup IPC handlers
       console.log('🔌 Setting up IPC handlers...');
@@ -259,45 +251,6 @@ class TanukiMCPApp {
     }
   }
 
-  private async assessSystemCapabilities(): Promise<void> {
-    try {
-      // Load stored API key for OpenRouter
-      await this.loadStoredApiKey();
-      
-      // Check OpenRouter health and available models
-      const openrouterHealthy = await this.openrouterService.checkHealth();
-      if (openrouterHealthy.isConnected) {
-        console.log('✅ OpenRouter service is connected');
-        console.log(`📦 Available free models: ${openrouterHealthy.availableModels.length}`);
-      } else {
-        console.log('⚠️  OpenRouter service not connected - model management will be limited');
-        if (openrouterHealthy.error) {
-          console.log('❌ OpenRouter error:', openrouterHealthy.error);
-        }
-      }
-      
-      // Get system info and recommendations
-      const systemCaps = await this.hardwareAssessor.assessSystemCapabilities();
-      console.log('💻 System specs:', {
-        cpu: systemCaps.cpu.cores + ' cores',
-        memory: systemCaps.memory.total + 'GB RAM',
-        gpu: systemCaps.gpu?.length ? systemCaps.gpu.length + ' GPU(s)' : 'None detected'
-      });
-      
-      // Get model recommendations
-      const catalog = await this.openrouterService.getAvailableFreeModels();
-      console.log('🤖 Available free models:', catalog.slice(0, 3).map(m => m.displayName));
-      
-      // Apply optimal settings
-      const optimalProfile = await this.optimizationEngine.optimizeForHardware(systemCaps);
-      await this.optimizationEngine.applyOptimizations(optimalProfile);
-      console.log('⚡ Applied optimization profile:', optimalProfile.name);
-      
-    } catch (error) {
-      console.error('Failed to assess system capabilities:', error);
-    }
-  }
-
   public getMainWindow(): BrowserWindow | null {
     return this.mainWindow;
   }
@@ -307,11 +260,6 @@ class TanukiMCPApp {
     return {
       openrouter: this.openrouterService,
       systemMonitor: this.systemMonitor,
-      modelManager: this.modelManager,
-      hardwareAssessor: this.hardwareAssessor,
-      optimizationEngine: this.optimizationEngine,
-      parameterTuner: this.parameterTuner,
-      contextManager: this.contextManager,
       systemTray: this.trayService,
       nativeMenu: this.menuService,
       autoUpdater: this.autoUpdaterService,

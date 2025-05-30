@@ -9,6 +9,8 @@ interface ToolbarProps {
   onEmergencyStop?: () => void;
   onShowProcessingTier?: () => void;
   onShowToolPanel?: () => void;
+  onShowSettings?: () => void;
+  onShowAnalytics?: () => void;
   isProcessing?: boolean;
 }
 
@@ -21,6 +23,8 @@ export const Toolbar: React.FC<ToolbarProps> = ({
   onEmergencyStop,
   onShowProcessingTier,
   onShowToolPanel,
+  onShowSettings,
+  onShowAnalytics,
   isProcessing = false
 }) => {
   return (
@@ -130,6 +134,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
           🛠️
         </button>
         <button 
+          onClick={onShowSettings}
           className="btn btn-sm"
           style={{ padding: '6px' }}
           title="Settings"
@@ -137,6 +142,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
           ⚙️
         </button>
         <button 
+          onClick={onShowAnalytics}
           className="btn btn-sm"
           style={{ padding: '6px' }}
           title="Analytics"
