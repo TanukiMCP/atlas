@@ -1,4 +1,4 @@
-import { MCPTool } from '../types';
+import { MCPTool } from '../types/index';
 
 /**
  * Generates a formatted context message about available tools for LLMs
@@ -11,9 +11,8 @@ export function generateToolContext(tools: MCPTool[], detailedMode = false): str
     return "No tools are currently available.";
   }
 
-  let context = `You have access to the following tools that can help you perform tasks:\n\n`;
+  let context = `You have access to the following tools that can help you perform tasks and enhance your reasoning capabilities.\nThese tools are organized by category. When a tool from the 'Clear Thought' category is used, it implies a more advanced reasoning process is being invoked.\n\n`;
   
-  // Group tools by category if available
   const categorizedTools: Record<string, MCPTool[]> = {};
   
   tools.forEach(tool => {
@@ -55,7 +54,7 @@ export function generateToolContext(tools: MCPTool[], detailedMode = false): str
     }
   }
   
-  context += `\nTo use these tools, you can call them by name. You should select the most appropriate tool based on the user's request and the task at hand.`;
+  context += `\nTo use these tools, you should call them by their fully qualified name (e.g., 'clear.thought.sequentialThinking' or 'file.system.readFile'). You should select the most appropriate tool based on the user's request and the task at hand. For complex problems requiring structured thought, consider using tools from the 'Clear Thought' category.`;
   
   return context;
 }
@@ -64,47 +63,19 @@ export function generateToolContext(tools: MCPTool[], detailedMode = false): str
  * Generates a system prompt with tool context
  * @param basePrompt Base system prompt
  * @param tools Array of available MCP tools
- * @param detailedMode Whether to include detailed tool descriptions
+ * @param detailedMode Whether to include detailed tool descriptions for all tools.
+ *                   This can be linked to a setting like 'clearThoughtReasoning' if 
+ *                   detailed context is desired when advanced reasoning is enabled.
  * @returns System prompt with tool context
  */
 export function generateSystemPromptWithToolContext(
   basePrompt: string, 
   tools: MCPTool[], 
-  detailedMode = false
+  detailedMode = false // This now controls detail for ALL tools
 ): string {
   const toolContext = generateToolContext(tools, detailedMode);
   
   return `${basePrompt}\n\n${toolContext}`;
-}
-
-/**
- * Generates a brief summary of Clear Thought's reasoning capabilities
- * @returns String describing Clear Thought's capabilities
- */
-export function generateClearThoughtContext(): string {
-  return `
-You have access to Clear Thought's advanced reasoning capabilities through the following tools:
-
-## Sequential Thinking
-Use for breaking down complex problems into steps, revising thoughts as understanding deepens.
-
-## Mental Models
-Apply structured frameworks like First Principles, Opportunity Cost Analysis, and more.
-
-## Design Patterns
-Utilize software design patterns for architecture and implementation.
-
-## Debugging Approaches
-Employ systematic debugging methods like Binary Search or Divide and Conquer.
-
-## Collaborative Reasoning
-Simulate expert collaboration with diverse perspectives on complex problems.
-
-## Scientific Method
-Apply formal scientific reasoning with structured hypothesis testing.
-
-These tools can significantly enhance your reasoning abilities for complex tasks. Use them when appropriate to deliver higher quality solutions.
-`;
 }
 
 /**

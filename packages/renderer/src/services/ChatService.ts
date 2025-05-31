@@ -7,14 +7,7 @@ import { parseToolInvocation } from '../utils/parseToolInvocation';
 import { useMCPStore } from '../stores/mcp-store';
 import MCPService from './MCPService';
 
-// Add window.electronAPI interface
-declare global {
-  interface Window {
-    electronAPI?: {
-      invoke: (channel: string, data?: any) => Promise<any>;
-    };
-  }
-}
+// No need to redefine window.electronAPI as it's already defined in electron.d.ts
 
 interface ChatMessage {
   id: string;
@@ -29,6 +22,15 @@ interface ChatMessage {
     qualityScore?: number;
     toolsUsed?: string[];
   };
+  media?: MediaItem[];
+}
+
+export interface MediaItem {
+  id: string;
+  type: string;
+  name: string;
+  data: string;
+  previewUrl?: string;
 }
 
 interface Conversation {
@@ -44,6 +46,7 @@ interface ChatContext {
   selectedText?: string;
   currentFile?: string;
   workspaceRoot?: string;
+  media?: MediaItem[];
 }
 
 class ChatService {
@@ -58,8 +61,8 @@ class ChatService {
     this.initializeWelcomeConversation();
   }
 
-  async sendMessage(content: string, context?: ChatContext): Promise<ChatMessage> {
-    if (!content.trim()) {
+  async sendMessage(content: string, context?: ChatContext, isAgentMode: boolean = false): Promise<ChatMessage> {
+    if (!content.trim() && (!context?.media || context.media.length === 0)) {
       throw new Error('Message content cannot be empty');
     }
 
@@ -73,7 +76,8 @@ class ChatService {
       id: this.generateId(),
       content: content.trim(),
       role: 'user',
-      timestamp: new Date()
+      timestamp: new Date(),
+      media: context?.media || []
     };
 
     conversation.messages.push(userMessage);
@@ -113,8 +117,13 @@ class ChatService {
 
         return assistantMessage;
       } else {
-        // Regular message - generate AI response
-        const assistantMessage = await this.generateAIResponse(conversation, context);
+        // Regular message - choose Chat or Agent mode
+        let assistantMessage: ChatMessage;
+        if (isAgentMode) {
+          assistantMessage = await this.generateAgentResponse(content, context);
+        } else {
+          assistantMessage = await this.generateAIResponse(conversation, context);
+        }
         
         conversation.messages.push(assistantMessage);
         conversation.updatedAt = new Date();
@@ -463,9 +472,37 @@ class ChatService {
       return Promise.resolve([this.defaultModel]);
     }
     
-    return window.electronAPI.invoke('openrouter:getAvailableModels')
+    return window.electronAPI.invoke('openrouter:listModels')
       .then((models: any[]) => models.map(m => m.id))
       .catch(() => [this.defaultModel]);
+  }
+
+  /**
+   * Call Enhanced LLM service for Agent Mode
+   */
+  private async generateAgentResponse(query: string, context?: ChatContext): Promise<ChatMessage> {
+    const startTime = Date.now();
+    // Prepare request payload
+    const requestPayload = {
+      query,
+      userId: this.currentConversationId || 'default',
+      metadata: { workspaceRoot: context?.workspaceRoot }
+    };
+    if (!window.electronAPI?.invoke) {
+      throw new Error('Electron API not available - cannot call agent service');
+    }
+    const response: any = await window.electronAPI.invoke('enhancedLLM:processRequest', requestPayload);
+    return {
+      id: this.generateId(),
+      content: response.content,
+      role: 'assistant',
+      timestamp: new Date(),
+      metadata: {
+        tierUsed: response.metrics?.routingDecision || 'complex',
+        executionTime: Date.now() - startTime,
+        tokens: response.metrics?.tokensEstimate
+      }
+    };
   }
 }
 

@@ -48,6 +48,7 @@ export interface LLMState {
   availableModels: FreeModel[];
   currentModel: string | null;
   isLoadingModels: boolean;
+  linkedOpenRouterModels: string[];
   
   // Chat state
   currentSession: ChatSession | null;
@@ -59,6 +60,9 @@ export interface LLMState {
   checkHealth: () => Promise<void>;
   refreshModels: () => Promise<void>;
   setCurrentModel: (modelName: string) => void;
+  linkOpenRouterModel: (modelId: string) => void;
+  unlinkOpenRouterModel: (modelId: string) => void;
+  isModelLinked: (modelId: string) => boolean;
   
   // Chat actions
   createNewSession: (name?: string) => ChatSession;
@@ -86,6 +90,7 @@ export const useLLMStore = create<LLMState>()(
       availableModels: [],
       currentModel: null,
       isLoadingModels: false,
+      linkedOpenRouterModels: [],
       currentSession: null,
       chatSessions: [],
       isStreaming: false,
@@ -124,7 +129,7 @@ export const useLLMStore = create<LLMState>()(
         set({ isLoadingModels: true });
         
         try {
-          const availableModels = await window.electronAPI.invoke('openrouter:getAvailableModels');
+          const availableModels = await window.electronAPI.invoke('openrouter:listModels');
           console.log('LLM Store: Available models:', availableModels);
           
           set({ 
@@ -142,6 +147,22 @@ export const useLLMStore = create<LLMState>()(
 
       setCurrentModel: (modelName: string) => {
         set({ currentModel: modelName });
+      },
+
+      linkOpenRouterModel: (modelId: string) => {
+        set(state => ({
+          linkedOpenRouterModels: Array.from(new Set([...state.linkedOpenRouterModels, modelId]))
+        }));
+      },
+
+      unlinkOpenRouterModel: (modelId: string) => {
+        set(state => ({
+          linkedOpenRouterModels: state.linkedOpenRouterModels.filter(id => id !== modelId)
+        }));
+      },
+
+      isModelLinked: (modelId: string) => {
+        return get().linkedOpenRouterModels.includes(modelId);
       },
 
       // Chat actions

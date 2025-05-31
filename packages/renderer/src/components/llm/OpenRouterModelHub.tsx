@@ -27,7 +27,9 @@ interface ModelCategoryProps {
 interface ModelCardProps {
   model: FreeModel;
   isSelected: boolean;
+  isLinked: boolean;
   onSelect: () => void;
+  onToggleLink: () => void;
 }
 
 interface ModelStatisticsProps {
@@ -39,15 +41,14 @@ interface ModelSettingsProps {
   onClose: () => void;
 }
 
-const ModelCard: React.FC<ModelCardProps> = ({ model, isSelected, onSelect }) => {
+const ModelCard: React.FC<ModelCardProps> = ({ model, isSelected, isLinked, onSelect, onToggleLink }) => {
   return (
     <div 
-      className={`relative p-4 border rounded-lg cursor-pointer transition-all duration-200 
+      className={`relative p-4 border rounded-lg transition-all duration-200 group
         ${isSelected 
           ? 'border-primary bg-primary/5 shadow-sm' 
           : 'border-border bg-card hover:border-primary/30 hover:bg-accent/10'
         }`}
-      onClick={onSelect}
     >
       {isSelected && (
         <div className="absolute top-2 right-2 text-primary">
@@ -55,9 +56,19 @@ const ModelCard: React.FC<ModelCardProps> = ({ model, isSelected, onSelect }) =>
         </div>
       )}
       
-      <div className="mb-2 flex items-start justify-between">
-        <div>
-          <h3 className="font-medium">{model.displayName}</h3>
+      <button 
+        onClick={(e) => { e.stopPropagation(); onToggleLink(); }}
+        className={`absolute top-2 left-2 p-1 rounded hover:bg-opacity-20 
+          ${isLinked ? 'text-yellow-500 hover:bg-yellow-500' : 'text-gray-400 hover:bg-gray-500 hover:text-white'}
+          transition-colors`}
+        title={isLinked ? 'Unlink Model' : 'Link Model'}
+      >
+        <Star className={`w-4 h-4 ${isLinked ? 'fill-current' : ''}`} />
+      </button>
+      
+      <div className="mb-2 flex items-start justify-between cursor-pointer" onClick={onSelect}>
+        <div className="ml-6">
+          <h3 className="font-medium group-hover:text-primary transition-colors">{model.displayName}</h3>
           <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{model.description}</p>
         </div>
       </div>
@@ -83,6 +94,12 @@ const ModelCard: React.FC<ModelCardProps> = ({ model, isSelected, onSelect }) =>
           <span>{(model.rateLimits.tokensPerDay / 1000).toFixed(0)}K tokens/day</span>
         </div>
       </div>
+      
+      {isLinked && (
+        <div className="absolute bottom-2 right-2 text-xs text-yellow-600 flex items-center">
+          <Star className="w-3 h-3 mr-1 fill-current" /> Linked
+        </div>
+      )}
     </div>
   );
 };
@@ -108,6 +125,8 @@ const ModelCategory: React.FC<ModelCategoryProps> = ({
             model={model}
             isSelected={currentModelId === model.id}
             onSelect={() => onSelectModel(model.id)}
+            isLinked={false}
+            onToggleLink={() => {}}
           />
         ))}
       </div>
@@ -264,7 +283,10 @@ const OpenRouterModelHub: React.FC = () => {
     isLoadingModels,
     refreshModels,
     setCurrentModel,
-    checkHealth
+    linkedOpenRouterModels,
+    linkOpenRouterModel,
+    unlinkOpenRouterModel,
+    isModelLinked
   } = useLLMStore();
   
   const [activeTab, setActiveTab] = useState<'all' | 'recommended' | 'settings'>('all');
@@ -288,7 +310,6 @@ const OpenRouterModelHub: React.FC = () => {
   }, [currentModel, availableModels]);
 
   const handleRefresh = async () => {
-    await checkHealth();
     await refreshModels();
   };
   
@@ -321,6 +342,14 @@ const OpenRouterModelHub: React.FC = () => {
   
   const { codingModels, reasoningModels, creativeModels, generalModels } = getCategories();
   
+  const handleToggleLink = (modelId: string) => {
+    if (isModelLinked(modelId)) {
+      unlinkOpenRouterModel(modelId);
+    } else {
+      linkOpenRouterModel(modelId);
+    }
+  };
+
   return (
     <div className="w-full max-w-6xl mx-auto p-4">
       <div className="flex items-center justify-between mb-6">
@@ -565,6 +594,8 @@ const OpenRouterModelHub: React.FC = () => {
                   model={generalModels[0]}
                   isSelected={currentModel === generalModels[0].id}
                   onSelect={() => setCurrentModel(generalModels[0].id)}
+                  isLinked={isModelLinked(generalModels[0].id)}
+                  onToggleLink={() => handleToggleLink(generalModels[0].id)}
                 />
               )}
             </div>
@@ -585,6 +616,8 @@ const OpenRouterModelHub: React.FC = () => {
                   model={codingModels[0]}
                   isSelected={currentModel === codingModels[0].id}
                   onSelect={() => setCurrentModel(codingModels[0].id)}
+                  isLinked={isModelLinked(codingModels[0].id)}
+                  onToggleLink={() => handleToggleLink(codingModels[0].id)}
                 />
               )}
             </div>

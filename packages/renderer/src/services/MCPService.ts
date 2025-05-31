@@ -1,4 +1,4 @@
-import { MCPTool, Workflow, ProcessingTier } from '../types';
+import { MCPTool, Workflow, ProcessingTier } from '../types/index';
 
 interface MCPServer {
   name: string;
@@ -32,39 +32,153 @@ class MCPService {
   private initializeBuiltInTools(): void {
     const builtInTools: MCPTool[] = [
       {
-        name: 'File Operations',
+        name: 'file.system.operations',
         description: 'Read, write, and manage files in the workspace',
-        available: true
+        category: 'File System',
+        available: true,
+        icon: '📁',
+        operationalMode: 'agent'
       },
       {
-        name: 'Web Search',
+        name: 'web.search',
         description: 'Search the web for information and resources',
-        available: true
+        category: 'Web',
+        available: true,
+        icon: '🌐',
+        operationalMode: 'agent'
       },
       {
-        name: 'Code Analysis',
+        name: 'code.analysis',
         description: 'Analyze code structure, dependencies, and quality',
-        available: true
+        category: 'Development',
+        available: true,
+        icon: '💻',
+        operationalMode: 'agent'
       },
       {
-        name: 'Git Operations',
+        name: 'git.operations',
         description: 'Git version control operations and history',
-        available: true
+        category: 'Development',
+        available: true,
+        icon: '🔄',
+        operationalMode: 'agent'
       },
       {
-        name: 'Terminal Execution',
+        name: 'terminal.execute',
         description: 'Execute terminal commands and scripts',
-        available: true
+        category: 'System',
+        available: true,
+        icon: ' acompanha',
+        operationalMode: 'agent'
       },
       {
-        name: 'Package Management',
+        name: 'package.management',
         description: 'Manage npm/yarn packages and dependencies',
-        available: true
+        category: 'Development',
+        available: true,
+        icon: '📦',
+        operationalMode: 'agent'
+      },
+      {
+        name: 'clear.thought.sequentialThinking',
+        description: 'Structured thought processes with revision support',
+        category: 'Clear Thought',
+        available: true,
+        icon: '🧠',
+        operationalMode: 'agent',
+      },
+      {
+        name: 'clear.thought.mentalModels',
+        description: 'Apply frameworks like First Principles, Opportunity Cost, etc.',
+        category: 'Clear Thought',
+        available: true,
+        icon: '💡',
+        operationalMode: 'agent',
+      },
+      {
+        name: 'clear.thought.designPatterns',
+        description: 'Utilize software design patterns for architecture and implementation',
+        category: 'Clear Thought',
+        available: true,
+        icon: '🏗️',
+        operationalMode: 'agent',
+      },
+      {
+        name: 'clear.thought.programmingParadigms',
+        description: 'Apply OOP, functional, reactive, concurrent programming, etc.',
+        category: 'Clear Thought',
+        available: true,
+        icon: '⚙️',
+        operationalMode: 'agent',
+      },
+      {
+        name: 'clear.thought.debuggingApproaches',
+        description: 'Employ systematic debugging methods like Binary Search, Divide & Conquer',
+        category: 'Clear Thought',
+        available: true,
+        icon: '🐞',
+        operationalMode: 'agent',
+      },
+      {
+        name: 'clear.thought.collaborativeReasoning',
+        description: 'Multi-persona problem solving for complex issues',
+        category: 'Clear Thought',
+        available: true,
+        icon: '👥',
+        operationalMode: 'agent',
+      },
+      {
+        name: 'clear.thought.decisionFramework',
+        description: 'Structured decision analysis with criteria weighting',
+        category: 'Clear Thought',
+        available: true,
+        icon: '⚖️',
+        operationalMode: 'agent',
+      },
+      {
+        name: 'clear.thought.metacognitiveMonitoring',
+        description: 'Knowledge boundary assessment and bias detection',
+        category: 'Clear Thought',
+        available: true,
+        icon: '🧐',
+        operationalMode: 'agent',
+      },
+      {
+        name: 'clear.thought.scientificMethod',
+        description: 'Hypothesis testing and empirical investigation',
+        category: 'Clear Thought',
+        available: true,
+        icon: '🔬',
+        operationalMode: 'agent',
+      },
+      {
+        name: 'clear.thought.structuredArgumentation',
+        description: 'Formal dialectical reasoning and argument analysis',
+        category: 'Clear Thought',
+        available: true,
+        icon: '🗣️',
+        operationalMode: 'agent',
+      },
+      {
+        name: 'clear.thought.visualReasoning',
+        description: 'Diagrammatic representation and spatial analysis',
+        category: 'Clear Thought',
+        available: true,
+        icon: '👁️‍🗨️',
+        operationalMode: 'agent',
       }
     ];
 
     builtInTools.forEach(tool => {
-      this.tools.set(tool.name, tool);
+      const completeTool: MCPTool = {
+        ...tool,
+        category: tool.category || 'General',
+        icon: tool.icon || '❓',
+        operationalMode: tool.operationalMode || 'agent',
+        parameters: tool.parameters || [],
+        examples: tool.examples || []
+      };
+      this.tools.set(completeTool.name, completeTool);
     });
   }
 
@@ -261,23 +375,23 @@ class MCPService {
   }
 
   private isBuiltInTool(toolName: string): boolean {
-    const builtInTools = ['File Operations', 'Web Search', 'Code Analysis', 'Git Operations', 'Terminal Execution', 'Package Management'];
+    const builtInTools = ['file.system.operations', 'web.search', 'code.analysis', 'git.operations', 'terminal.execute', 'package.management'];
     return builtInTools.includes(toolName);
   }
 
   private async executeBuiltInTool(toolName: string, parameters: any): Promise<any> {
     switch (toolName) {
-      case 'File Operations':
+      case 'file.system.operations':
         return this.handleFileOperations(parameters);
-      case 'Web Search':
+      case 'web.search':
         return this.handleWebSearch(parameters);
-      case 'Code Analysis':
+      case 'code.analysis':
         return this.handleCodeAnalysis(parameters);
-      case 'Git Operations':
+      case 'git.operations':
         return this.handleGitOperations(parameters);
-      case 'Terminal Execution':
+      case 'terminal.execute':
         return this.handleTerminalExecution(parameters);
-      case 'Package Management':
+      case 'package.management':
         return this.handlePackageManagement(parameters);
       default:
         throw new Error(`Unknown built-in tool: ${toolName}`);
@@ -436,6 +550,10 @@ class MCPService {
 
   getAvailableTools(): MCPTool[] {
     return Array.from(this.tools.values());
+  }
+
+  getTool(toolName: string): MCPTool | undefined {
+    return this.tools.get(toolName);
   }
 
   getAvailableWorkflows(): Workflow[] {

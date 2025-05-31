@@ -1,20 +1,25 @@
 // Main enhanced LLM service
-export { EnhancedLLMService, enhancedLLMService } from './enhanced-llm-service';
-export type { EnhancedLLMConfig } from './enhanced-llm-service';
+import { EnhancedLLMService, enhancedLLMService } from './enhanced-llm-service';
+import type { EnhancedLLMConfig } from './enhanced-llm-service';
+export { EnhancedLLMService, enhancedLLMService };
+export type { EnhancedLLMConfig };
+
+// Domain types for helper constants
+import type { ProcessingRequirements, UserPreferences, Message } from './types/llm-types';
 
 // Router and types
-export { LLMRouter } from './router/router';
+import { LLMRouter } from './router/router';
 export { ComplexityAssessor } from './router/complexityAssessor';
 export type { 
+  RequestComplexity, 
   LLMRequest, 
   LLMResponse, 
-  RequestComplexity, 
   TierProcessor, 
   ComplexityAssessment 
 } from './router/types';
 
 // Services
-export { LLMService } from './services/llm-service';
+import { llmService } from './services/llm-service';
 export { MCPClientAdapter, mcpClientAdapter } from './services/mcp-client-adapter';
 export type { 
   MCPClientInterface, 
@@ -42,25 +47,17 @@ export { UserControls } from './intervention/user-controls';
 // Performance Tracking
 export { PerformanceTracker } from './analytics/performance-tracker';
 
-// Tournament Quality Assurance
-export { TournamentBracket } from './quality-assurance/tournament-bracket';
-
 // Type Definitions
 export type {
-  LLMRequest,
-  LLMResponse,
-  RequestComplexity,
   ProcessingTier,
   QualityMetrics,
   ProcessingRequest,
   ProcessingResponse,
   ProcessingStep,
-  ChatMessage
+  ProcessingRequirements,
+  UserPreferences,
+  Message
 } from './types/llm-types';
-
-export type {
-  OpenRouterServiceInterface
-} from './services/openrouter-adapter';
 
 // Re-export processor events for external listening
 export type { ProcessorEvents } from './processors/base-processor';
@@ -113,4 +110,108 @@ export const DEFAULT_PROCESSING_REQUIREMENTS: ProcessingRequirements = {
   requiresCodeGeneration: false,
   requiresMathematics: false,
   requiresMultiStep: false
-}; 
+};
+
+// Declare router variable
+let router: LLMRouter;
+
+/**
+ * Process a request through the LLM router
+ * This is the main entry point for the LLM enhanced service
+ */
+export async function processRequest(request: LLMRequest): Promise<LLMResponse> {
+  if (!router) {
+    throw new Error('LLMRouter not initialized. Call initialize() first.');
+  }
+  return router.routeRequest(request);
+}
+
+/**
+ * Set the OpenRouter service for the LLM service
+ * This should be called during initialization with the OpenRouter service instance
+ */
+export function setOpenRouterService(service: any): void {
+  llmService.setOpenRouterService(service);
+}
+
+/**
+ * Test the complexity assessment for a given query
+ * Useful for debugging and understanding how the router works
+ */
+export async function testComplexityAssessment(query: string): Promise<any> {
+  if (!router) {
+    throw new Error('LLMRouter not initialized. Call initialize() first.');
+  }
+  return router.testComplexityAssessment(query);
+}
+
+/**
+ * Initialize the LLM enhanced service
+ * This should be called during application startup
+ */
+export async function initialize(): Promise<void> {
+  await llmService.initialize();
+  router = new LLMRouter(llmService);
+}
+
+/**
+ * Sets whether complexity assessment should be LLM-driven.
+ */
+export function setLLMDrivenComplexity(enabled: boolean): void {
+  if (!router) {
+    throw new Error('LLMRouter not initialized. Call initialize() first.');
+  }
+  // Assuming ComplexityAssessor has a method to toggle this
+  // router.getComplexityAssessor().setLLMDriven(enabled);
+  // For now, let's log, this needs implementation in ComplexityAssessor and exposed via LLMRouter
+  console.log(`LLM-driven complexity assessment set to: ${enabled} (needs full implementation)`);
+}
+
+/**
+ * Gets the status of the Enhanced LLM service.
+ */
+export async function getStatus(): Promise<any> {
+  if (!router) {
+    return {
+      initialized: false,
+      routerStatus: null,
+      error: 'LLMRouter not initialized. Call initialize() first.'
+    };
+  }
+  try {
+    return {
+      initialized: true,
+      routerStatus: await router.getRouterStatus(),
+    };
+  } catch (error) {
+    console.error('Error getting LLM Router status:', error);
+    return {
+      initialized: true, // Router object exists but method failed
+      routerStatus: null,
+      error: error instanceof Error ? error.message : 'Unknown error getting status'
+    };
+  }
+}
+
+// Export the singleton instance of llmService and other necessary exports
+export { llmService };
+// Re-export LLMRouter if it's intended to be used externally as a class/type
+export { LLMRouter } from './router/router';
+// Re-export LLMService class if needed
+export { LLMService } from './services/llm-service';
+
+// Type re-exports for the module's public API.
+// These were already exported earlier using `export type { ... } from './types/llm-types'` 
+// and `export type { ... } from './router/types'` which also makes them available for internal use.
+// The duplicate identifier errors suggest the final re-export block was problematic.
+// We ensure that types used internally (like LLMRequest, LLMResponse for processRequest function signature)
+// are available from their initial `export type ... from ...` or direct `import type` statements.
+
+// The following block was causing duplicate identifier errors and is removed:
+/*
+export type { 
+  ProcessingRequirements, 
+  UserPreferences, 
+  Message 
+} from './types/llm-types'; 
+*/ 

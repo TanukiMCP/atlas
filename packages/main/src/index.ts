@@ -7,9 +7,18 @@ import { OpenRouterService } from './services/openrouter-service';
 import express from 'express';
 import http from 'http';
 import type { Request, Response } from 'express';
+import { 
+  initializeOpenRouterIntegration, 
+  setOpenRouterService,
+  processRequestWithComplexityAssessment,
+  testComplexityAssessment
+} from '../../llm-enhanced/src/openrouter-integration';
 
 // Import other required modules (existing imports)
 // ...
+
+// Import terminal service
+import './services/terminal-service';
 
 // Setup global variables for the application
 let mainWindow: BrowserWindow | null = null;

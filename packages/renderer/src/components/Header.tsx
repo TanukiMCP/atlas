@@ -1,14 +1,17 @@
-import React, { useState } from 'react';
-import { HeaderProps, TanukiModel, ViewType } from '../types/index';
+import React from 'react';
+import { ViewType, TanukiModel } from '../types';
 import { PrimaryMenuBar } from './toolbar/PrimaryMenuBar';
 import { ContextualToolbar } from './toolbar/ContextualToolbar';
 
-interface EnhancedHeaderProps extends HeaderProps {
+interface HeaderProps {
+  currentView: ViewType;
+  onViewChange: (view: ViewType) => void;
   currentModel?: TanukiModel;
   availableModels: TanukiModel[];
   isConnected: boolean;
-  onModelSwitch: (modelName: string) => void;
+  onModelSwitch: (model: TanukiModel | undefined) => void;
   onOpenModelHub: () => void;
+  onOpenLocalLLMHub: () => void;
   onFileExplorerToggle: () => void;
   isFileExplorerVisible: boolean;
   subjectMode: string;
@@ -19,16 +22,15 @@ interface EnhancedHeaderProps extends HeaderProps {
   onStopProcessing: () => void;
 }
 
-const Header: React.FC<EnhancedHeaderProps> = ({ 
+const Header: React.FC<HeaderProps> = ({ 
   currentView, 
-  theme, 
-  onViewChange, 
-  onThemeToggle,
+  onViewChange,
   currentModel,
   availableModels,
   isConnected,
   onModelSwitch,
   onOpenModelHub,
+  onOpenLocalLLMHub,
   onFileExplorerToggle,
   isFileExplorerVisible,
   subjectMode,
@@ -43,24 +45,16 @@ const Header: React.FC<EnhancedHeaderProps> = ({
     onViewChange(view as ViewType);
   };
 
-  // Keyboard navigation handler for accessibility
-  const handleKeyDown = (e: React.KeyboardEvent, action: () => void) => {
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault();
-      action();
-    }
-  };
-
   return (
     <>
       {/* Primary Menu Bar */}
       <PrimaryMenuBar
-        onThemeToggle={onThemeToggle}
-        theme={theme}
         onViewChange={handleViewChange}
         onFileExplorerToggle={onFileExplorerToggle}
         subjectMode={subjectMode}
         onSubjectModeChange={onSubjectModeChange}
+        onOpenModelHub={onOpenModelHub}
+        onOpenLocalLLMHub={onOpenLocalLLMHub}
       />
 
       {/* Contextual Toolbar */}
@@ -73,6 +67,7 @@ const Header: React.FC<EnhancedHeaderProps> = ({
         onToolSelect={() => console.log('Tool selection triggered')}
         onQuickSettings={() => onViewChange('settings')}
         onViewChange={handleViewChange}
+        onToggleMenu={onFileExplorerToggle}
       />
     </>
   );

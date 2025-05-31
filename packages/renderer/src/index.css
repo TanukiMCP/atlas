@@ -8,68 +8,72 @@
 
 @layer base {
   :root {
-    /* TanukiMCP Brand Colors (Light Mode) - Based on tanukimcp.com */
-    --background: 0 0% 100%; /* #ffffff - Pure white background */
-    --foreground: 248 84% 7%; /* #0e0c19 - Dark text from website */
-    --card: 36 100% 90%; /* #ffeccc - Light cream/tan from website */
-    --card-foreground: 248 84% 7%; /* #0e0c19 - Dark text */
-    --popover: 0 0% 100%; /* #ffffff - White popover */
-    --popover-foreground: 248 84% 7%; /* #0e0c19 - Dark text */
-    
-    /* TanukiMCP Primary Colors - Exact from website */
-    --primary: 19 100% 41%; /* #d35400 - Burnt orange from tanukimcp.com */
-    --primary-foreground: 0 0% 100%; /* #ffffff - White text on orange */
-    --secondary: 36 100% 90%; /* #ffeccc - Light cream/tan */
-    --secondary-foreground: 248 84% 7%; /* #0e0c19 - Dark text */
-    
-    /* Accent Colors */
-    --accent: 36 100% 90%; /* #ffeccc - Light cream for accents */
-    --accent-foreground: 248 84% 7%; /* #0e0c19 - Dark text */
-    --muted: 0 0% 96%; /* #f5f5f5 - Light gray */
-    --muted-foreground: 220 9% 46%; /* #6b7280 - Medium gray */
-    
-    /* States */
-    --destructive: 0 84% 60%; /* #ef4444 - Red */
-    --destructive-foreground: 0 0% 100%; /* #ffffff - White text */
-    
-    /* Borders and Inputs */
-    --border: 220 13% 91%; /* #e5e7eb - Light gray border */
-    --input: 210 20% 98%; /* #f9fafb - Very light gray */
-    --ring: 19 100% 41%; /* #d35400 - Orange focus ring */
-    
-    /* Border Radius */
+    --background: hsl(0 0% 100%); /* White */
+    --foreground: hsl(248 35% 7%); /* Dark Violet/Near Black */
+
+    --muted: hsl(0 0% 90%); /* Light Gray for borders/muted backgrounds */
+    --muted-foreground: hsl(0 0% 33%); /* Gray */
+
+    --popover: hsl(0 0% 100%);
+    --popover-foreground: hsl(248 35% 7%);
+
+    --card: hsl(0 0% 98%); /* Very Light Gray/Off-white */
+    --card-foreground: hsl(248 35% 7%);
+
+    --border: hsl(0 0% 90%);
+    --input: hsl(0 0% 85%);
+
+    --primary: hsl(25 100% 41%); /* Orange */
+    --primary-foreground: hsl(0 0% 100%); /* White text on primary */
+
+    --secondary: hsl(145 63% 42%); /* Green */
+    --secondary-foreground: hsl(0 0% 100%); /* White text on secondary */
+
+    --accent: hsl(38 100% 95%); /* Light Peach/Off-white for accents if needed, or another color */
+    --accent-foreground: hsl(25 100% 41%); /* Orange text on accent */
+
+    --destructive: hsl(0 84.2% 60.2%);
+    --destructive-foreground: hsl(0 0% 98%);
+
+    --ring: hsl(25 100% 41%); /* Orange for focus rings */
+
     --radius: 0.5rem;
+
+    /* Font variables */
+    --font-sans: 'Open Sans', sans-serif;
+    --font-heading: 'Syne', sans-serif;
+    --font-mono: 'Fira Code', monospace;
   }
 
   .dark {
-    /* TanukiMCP Brand Colors (Dark Mode) - Professional dark theme */
-    --background: 248 84% 7%; /* #0e0c19 - Dark background from website */
-    --foreground: 0 0% 100%; /* #ffffff - White text */
-    --card: 248 26% 14%; /* #1f1d2b - Slightly lighter dark */
-    --card-foreground: 0 0% 100%; /* #ffffff - White text */
-    --popover: 248 26% 14%; /* #1f1d2b - Dark popover */
-    --popover-foreground: 0 0% 100%; /* #ffffff - White text */
-    
-    /* TanukiMCP Primary Colors - Same orange, adjusted foreground */
-    --primary: 19 100% 41%; /* #d35400 - Same burnt orange */
-    --primary-foreground: 0 0% 100%; /* #ffffff - White text on orange */
-    --secondary: 248 15% 20%; /* #373044 - Dark secondary */
-    --secondary-foreground: 0 0% 100%; /* #ffffff - White text */
-    
-    /* Accent Colors */
-    --accent: 248 15% 20%; /* #373044 - Dark accent */
-    --accent-foreground: 0 0% 100%; /* #ffffff - White text */
-    --muted: 248 15% 20%; /* #373044 - Dark muted */
-    --muted-foreground: 220 9% 68%; /* #9ca3af - Light gray text */
-    
-    /* States */
-    --destructive: 0 84% 60%; /* #ef4444 - Red */
-    --destructive-foreground: 0 0% 100%; /* #ffffff - White text */
-    
-    /* Borders and Inputs */
-    --border: 248 15% 20%; /* #373044 - Dark border */
-    --input: 248 15% 20%; /* #373044 - Dark input */
-    --ring: 19 100% 41%; /* #d35400 - Orange focus ring */
+    --background: hsl(248 35% 7%); /* Dark Violet/Near Black */
+    --foreground: hsl(0 0% 100%); /* White */
+
+    --muted: hsl(248 35% 15%); /* Darker Gray for borders/muted backgrounds */
+    --muted-foreground: hsl(0 0% 60%); /* Medium Gray */
+
+    --popover: hsl(248 35% 7%);
+    --popover-foreground: hsl(0 0% 100%);
+
+    --card: hsl(247 15% 25%); /* Slightly lighter shade than main bg */
+    --card-foreground: hsl(0 0% 100%);
+
+    --border: hsl(248 35% 15%);
+    --input: hsl(248 35% 20%);
+
+    --primary: hsl(25 100% 41%); /* Orange */
+    --primary-foreground: hsl(0 0% 100%);
+
+    --secondary: hsl(145 63% 42%); /* Green */
+    --secondary-foreground: hsl(0 0% 100%);
+
+    --accent: hsl(247 15% 25%); /* Dark accent, can be same as card or a bit different */
+    --accent-foreground: hsl(25 100% 41%); /* Orange text on accent */
+
+    --destructive: hsl(0 62.8% 30.6%);
+    --destructive-foreground: hsl(0 0% 98%);
+
+    --ring: hsl(25 100% 41%); /* Orange for focus rings */
   }
 }
 

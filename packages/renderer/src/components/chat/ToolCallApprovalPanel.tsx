@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '../ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '../ui/card';
-import { Check, X, PlayCircle, AlertCircle, Code, Terminal, Database, PanelRight } from 'lucide-react';
+import { Check, X, PlayCircle, AlertCircle, Code, Terminal, Database, PanelRight, Loader2 } from 'lucide-react';
 import { Badge } from '../ui/badge';
 import { Separator } from '../ui/separator';
 import { ScrollArea } from '../ui/scroll-area';
@@ -74,23 +74,60 @@ const getStatusColor = (status: string) => {
   }
 };
 
+const getStatusBorderColor = (status: string) => {
+  switch (status) {
+    case 'pending':
+      return 'border-yellow-300';
+    case 'approved':
+      return 'border-green-300';
+    case 'rejected':
+      return 'border-red-300';
+    case 'executing':
+      return 'border-blue-300';
+    case 'completed':
+      return 'border-green-300';
+    case 'failed':
+      return 'border-red-300';
+    default:
+      return 'border-gray-300';
+  }
+};
+
 const ToolCallApprovalPanel: React.FC<ToolCallApprovalPanelProps> = ({
   toolCall,
   onApprove,
   onReject,
   onModify
 }) => {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [animateIn, setAnimateIn] = useState(false);
+
+  // Animate in on mount
+  useEffect(() => {
+    const timer = setTimeout(() => setAnimateIn(true), 100);
+    return () => clearTimeout(timer);
+  }, []);
+
   return (
-    <Card className="w-full border border-yellow-300 shadow-md animate-pulse-subtle">
-      <CardHeader className="pb-2">
+    <Card 
+      className={`w-full mb-3 ${getStatusBorderColor(toolCall.status)} shadow-md transition-all duration-300 ease-in-out
+        ${animateIn ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}
+        ${toolCall.status === 'executing' ? 'animate-pulse-subtle' : ''}
+        ${toolCall.status === 'pending' ? 'hover:shadow-lg' : ''}
+      `}
+    >
+      <CardHeader className="pb-2 cursor-pointer" onClick={() => setIsExpanded(!isExpanded)}>
         <div className="flex justify-between items-center">
           <CardTitle className="text-lg flex items-center gap-2">
-            <div className={`w-2 h-2 rounded-full ${getCategoryColor(toolCall.category)}`} />
-            {toolCall.toolName}
+            {getCategoryIcon(toolCall.category)}
+            <span>{toolCall.toolName}</span>
+            {toolCall.status === 'executing' && (
+              <Loader2 className="h-4 w-4 animate-spin ml-2" />
+            )}
           </CardTitle>
           <div className="flex gap-2">
             <Badge variant="outline" className={`${getStatusColor(toolCall.status)} text-white`}>
-              {toolCall.status}
+              {toolCall.status === 'executing' ? 'Running...' : toolCall.status}
             </Badge>
             <Badge variant="outline" className="bg-muted">
               {new Date(toolCall.timestamp).toLocaleTimeString()}
@@ -101,41 +138,44 @@ const ToolCallApprovalPanel: React.FC<ToolCallApprovalPanelProps> = ({
           <p className="text-sm text-muted-foreground">{toolCall.description}</p>
         )}
       </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
-          <div>
-            <h3 className="text-sm font-medium mb-1">Parameters</h3>
-            <ScrollArea className="h-24 rounded-md border p-2">
-              <pre className="text-xs whitespace-pre-wrap">
-                {JSON.stringify(toolCall.parameters, null, 2)}
-              </pre>
-            </ScrollArea>
-          </div>
-          
-          {toolCall.status === 'failed' && toolCall.error && (
-            <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded text-red-700 text-sm flex items-start gap-2">
-              <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
-              <div>
-                <p className="font-medium">Error</p>
-                <p className="text-xs">{toolCall.error}</p>
-              </div>
-            </div>
-          )}
-          
-          {(toolCall.status === 'completed' || toolCall.status === 'failed') && toolCall.result && (
+      
+      <div className={`overflow-hidden transition-all duration-300 ${isExpanded ? 'max-h-96' : 'max-h-0'}`}>
+        <CardContent>
+          <div className="space-y-4">
             <div>
-              <h3 className="text-sm font-medium mb-1">Result</h3>
+              <h3 className="text-sm font-medium mb-1">Parameters</h3>
               <ScrollArea className="h-24 rounded-md border p-2">
                 <pre className="text-xs whitespace-pre-wrap">
-                  {typeof toolCall.result === 'object'
-                    ? JSON.stringify(toolCall.result, null, 2)
-                    : String(toolCall.result)}
+                  {JSON.stringify(toolCall.parameters, null, 2)}
                 </pre>
               </ScrollArea>
             </div>
-          )}
-        </div>
-      </CardContent>
+            
+            {toolCall.status === 'failed' && toolCall.error && (
+              <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded text-red-700 text-sm flex items-start gap-2">
+                <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                <div>
+                  <p className="font-medium">Error</p>
+                  <p className="text-xs">{toolCall.error}</p>
+                </div>
+              </div>
+            )}
+            
+            {(toolCall.status === 'completed' || toolCall.status === 'failed') && toolCall.result && (
+              <div>
+                <h3 className="text-sm font-medium mb-1">Result</h3>
+                <ScrollArea className="h-24 rounded-md border p-2">
+                  <pre className="text-xs whitespace-pre-wrap">
+                    {typeof toolCall.result === 'object'
+                      ? JSON.stringify(toolCall.result, null, 2)
+                      : String(toolCall.result)}
+                  </pre>
+                </ScrollArea>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </div>
       
       {toolCall.status === 'pending' && (
         <CardFooter className="pt-0">
@@ -145,7 +185,7 @@ const ToolCallApprovalPanel: React.FC<ToolCallApprovalPanelProps> = ({
               variant="outline" 
               size="sm" 
               onClick={onReject}
-              className="border-red-300 hover:bg-red-50 hover:text-red-600"
+              className="border-red-300 hover:bg-red-50 hover:text-red-600 transition-colors"
             >
               <X className="h-4 w-4 mr-1" />
               Reject
@@ -154,7 +194,7 @@ const ToolCallApprovalPanel: React.FC<ToolCallApprovalPanelProps> = ({
               variant="outline" 
               size="sm" 
               onClick={onApprove}
-              className="border-green-300 hover:bg-green-50 hover:text-green-600"
+              className="border-green-300 hover:bg-green-50 hover:text-green-600 transition-colors"
             >
               <Check className="h-4 w-4 mr-1" />
               Approve

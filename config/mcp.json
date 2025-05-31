@@ -1,0 +1,85 @@
+{
+  "version": "1.0.0",
+  "servers": [
+    {
+      "id": "desktop-commander",
+      "name": "Desktop Commander",
+      "description": "File system operations and command execution",
+      "url": "ws://localhost:8765",
+      "protocol": "websocket",
+      "autoConnect": true,
+      "enabled": true,
+      "capabilities": ["file_operations", "command_execution", "search"]
+    },
+    {
+      "id": "clear-thought",
+      "name": "Clear Thought",
+      "description": "Advanced reasoning and thinking tools",
+      "url": "ws://localhost:8766",
+      "protocol": "websocket",
+      "autoConnect": true,
+      "enabled": true,
+      "capabilities": ["thinking", "reasoning", "analysis"]
+    },
+    {
+      "id": "puppeteer",
+      "name": "Puppeteer",
+      "description": "Web automation and browser control",
+      "url": "ws://localhost:8767",
+      "protocol": "websocket",
+      "autoConnect": true,
+      "enabled": true,
+      "capabilities": ["web_automation", "screenshots", "navigation"]
+    },
+    {
+      "id": "file-system",
+      "name": "File System Operations",
+      "description": "Core file system operations",
+      "url": "ws://localhost:8768",
+      "protocol": "websocket",
+      "autoConnect": true,
+      "enabled": true,
+      "capabilities": ["file_operations"]
+    }
+  ],
+  "settings": {
+    "autoDiscovery": true,
+    "discoveryPorts": [8765, 8766, 8767, 8768, 8769, 8770],
+    "discoveryTimeout": 5000,
+    "healthCheckInterval": 30000,
+    "autoReconnect": true,
+    "maxReconnectAttempts": 5
+  },
+  "toolCategories": [
+    {
+      "id": "file",
+      "name": "File Operations",
+      "icon": "📁",
+      "color": "#4CAF50"
+    },
+    {
+      "id": "thinking",
+      "name": "Thinking Tools",
+      "icon": "🧠",
+      "color": "#2196F3"
+    },
+    {
+      "id": "web",
+      "name": "Web Tools",
+      "icon": "🌐",
+      "color": "#9C27B0"
+    },
+    {
+      "id": "task",
+      "name": "Task Execution",
+      "icon": "⚡",
+      "color": "#FF9800"
+    },
+    {
+      "id": "project",
+      "name": "Project Analysis",
+      "icon": "📊",
+      "color": "#795548"
+    }
+  ]
+} 

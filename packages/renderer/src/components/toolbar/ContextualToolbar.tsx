@@ -4,9 +4,6 @@ import { Badge } from '../ui/badge';
 import { 
   Play, 
   Square, 
-  Bot, 
-  MessageSquare, 
-  Settings, 
   Brain, 
   Wrench,
   BarChart3,
@@ -54,28 +51,6 @@ export const ContextualToolbar: React.FC<ContextualToolbarProps> = ({
   const renderChatToolbar = () => (
     <div className="flex items-center justify-between flex-1">
       <div className="flex items-center gap-2">
-        {/* Mode Toggle */}
-        <div className="flex items-center gap-1 p-1 bg-muted rounded-md">
-          <Button
-            variant={agentMode ? "default" : "ghost"}
-            size="sm"
-            onClick={onAgentModeToggle}
-            className="gap-1"
-          >
-            <Bot className="w-4 h-4" />
-            Agent
-          </Button>
-          <Button
-            variant={!agentMode ? "default" : "ghost"}
-            size="sm"
-            onClick={onAgentModeToggle}
-            className="gap-1"
-          >
-            <MessageSquare className="w-4 h-4" />
-            Chat
-          </Button>
-        </div>
-
         {/* Processing Status */}
         {isProcessing && (
           <Badge variant="outline" className="gap-1 bg-amber-500/10 text-amber-500 border-amber-500/20">
@@ -83,12 +58,6 @@ export const ContextualToolbar: React.FC<ContextualToolbarProps> = ({
             Processing... (Press Enter to cancel)
           </Badge>
         )}
-
-        {/* Current Mode Display */}
-        <Badge variant="secondary" className="gap-1">
-          {agentMode ? <Bot className="w-3 h-3" /> : <MessageSquare className="w-3 h-3" />}
-          {agentMode ? 'Agent Mode' : 'Chat Mode'}
-        </Badge>
       </div>
 
       <div className="flex items-center gap-1">
@@ -198,29 +167,12 @@ export const ContextualToolbar: React.FC<ContextualToolbarProps> = ({
 
   return (
     <div className="h-10 bg-background border-b border-border px-4 flex items-center">
-      <div className="flex items-center gap-2 shrink-0">
-        <Button 
-          variant="ghost"
-          size="sm"
-          onClick={onToggleMenu}
-          className="menu-button"
-        >
-          <Menu className="w-4 h-4" />
-        </Button>
-        <div className="h-4 mx-1 border-r border-border"></div>
-        <Button variant="ghost" size="sm">
-          <ChevronLeft className="w-4 h-4" />
-        </Button>
-        <Button variant="ghost" size="sm">
-          <ChevronRight className="w-4 h-4" />
-        </Button>
-      </div>
-      <div className="flex items-center gap-2 shrink-0 ml-4">
-        <MobileProxyToggle />
-      </div>
-      <div className="flex items-center justify-between flex-1 ml-4">
+      {/* Hamburger menu button */}
+      <Button variant="ghost" size="sm" onClick={onToggleMenu} className="mr-2">
+        <Menu className="h-4 w-4" />
+      </Button>
+      
       {renderToolbar()}
-      </div>
     </div>
   );
 };

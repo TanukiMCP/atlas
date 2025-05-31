@@ -33,7 +33,17 @@ export type AppView =
   | 'settings'
   | 'llm-prompt-management'
   | 'mcp-servers'
-  | 'editor'; // Added for file editing
+  | 'editor' // Added for file editing
+  | 'agent-training-hub' // Coming soon
+  | 'agent-marketplace' // Coming soon
+  | 'image-generation' // Coming soon
+  | 'video-generation' // Coming soon
+  | 'audio-generation' // Coming soon
+  | 'mcp-server-generator' // Coming soon
+  | 'server-templates' // Coming soon
+  | 'llm-game-engine' // Coming soon
+  | 'game-asset-generator' // Coming soon
+  | 'game-templates'; // Coming soon
 
 type ProcessingTier = 'basic' | 'advanced' | 'premium' | 'enterprise';
 
@@ -225,12 +235,139 @@ export const IDELayout: React.FC = () => {
                     }}
                   />
                 )}
-                {activeMainView === 'editor' && !selectedFile && (
-                  <div style={{padding: '20px', textAlign: 'center', color: 'var(--color-text-muted)'}}>
-                    Select a file from the explorer to view its content.
+                
+                {/* Coming Soon Placeholders */}
+                {activeMainView === 'agent-training-hub' && (
+                  <div className="flex flex-col items-center justify-center h-full">
+                    <div className="text-6xl mb-4">🧠</div>
+                    <h1 className="text-3xl font-bold mb-2">Agent Training Hub</h1>
+                    <p className="text-muted-foreground mb-6">Coming Soon</p>
+                    <div className="max-w-md text-center">
+                      <p>Train and customize AI agents for specific tasks and domains.</p>
+                      <p className="mt-2">Create, test, and deploy specialized agents with custom knowledge and capabilities.</p>
+                    </div>
                   </div>
                 )}
-                {/* Add other views here */}
+                
+                {activeMainView === 'agent-templates' && (
+                  <div className="flex flex-col items-center justify-center h-full">
+                    <div className="text-6xl mb-4">📋</div>
+                    <h1 className="text-3xl font-bold mb-2">Agent Templates</h1>
+                    <p className="text-muted-foreground mb-6">Coming Soon</p>
+                    <div className="max-w-md text-center">
+                      <p>Browse and use pre-built agent templates for common tasks.</p>
+                      <p className="mt-2">Customize templates to suit your specific needs and workflows.</p>
+                    </div>
+                  </div>
+                )}
+                
+                {activeMainView === 'agent-marketplace' && (
+                  <div className="flex flex-col items-center justify-center h-full">
+                    <div className="text-6xl mb-4">🛒</div>
+                    <h1 className="text-3xl font-bold mb-2">Agent Marketplace</h1>
+                    <p className="text-muted-foreground mb-6">Coming Soon</p>
+                    <div className="max-w-md text-center">
+                      <p>Discover, share, and acquire specialized agents from the community.</p>
+                      <p className="mt-2">Publish your own agents and earn recognition or rewards.</p>
+                    </div>
+                  </div>
+                )}
+                
+                {activeMainView === 'image-generation' && (
+                  <div className="flex flex-col items-center justify-center h-full">
+                    <div className="text-6xl mb-4">🖼️</div>
+                    <h1 className="text-3xl font-bold mb-2">AI Image Generation</h1>
+                    <p className="text-muted-foreground mb-6">Coming Soon</p>
+                    <div className="max-w-md text-center">
+                      <p>Generate high-quality images from text descriptions using advanced AI models.</p>
+                      <p className="mt-2">Edit, refine, and customize generated images for your projects.</p>
+                    </div>
+                  </div>
+                )}
+                
+                {activeMainView === 'video-generation' && (
+                  <div className="flex flex-col items-center justify-center h-full">
+                    <div className="text-6xl mb-4">🎬</div>
+                    <h1 className="text-3xl font-bold mb-2">AI Video Generation</h1>
+                    <p className="text-muted-foreground mb-6">Coming Soon</p>
+                    <div className="max-w-md text-center">
+                      <p>Create videos from text prompts or image sequences using AI.</p>
+                      <p className="mt-2">Apply styles, effects, and animations to generated videos.</p>
+                    </div>
+                  </div>
+                )}
+                
+                {activeMainView === 'audio-generation' && (
+                  <div className="flex flex-col items-center justify-center h-full">
+                    <div className="text-6xl mb-4">🎵</div>
+                    <h1 className="text-3xl font-bold mb-2">AI Audio Generation</h1>
+                    <p className="text-muted-foreground mb-6">Coming Soon</p>
+                    <div className="max-w-md text-center">
+                      <p>Generate music, sound effects, and voice content with AI.</p>
+                      <p className="mt-2">Create custom audio for your projects with simple text prompts.</p>
+                    </div>
+                  </div>
+                )}
+                
+                {activeMainView === 'mcp-server-generator' && (
+                  <div className="flex flex-col items-center justify-center h-full">
+                    <div className="text-6xl mb-4">🔌</div>
+                    <h1 className="text-3xl font-bold mb-2">MCP Server Generator</h1>
+                    <p className="text-muted-foreground mb-6">Coming Soon</p>
+                    <div className="max-w-md text-center">
+                      <p>Create custom MCP servers with AI assistance for any purpose.</p>
+                      <p className="mt-2">Generate server code, APIs, and tools from natural language descriptions.</p>
+                    </div>
+                  </div>
+                )}
+                
+                {activeMainView === 'server-templates' && (
+                  <div className="flex flex-col items-center justify-center h-full">
+                    <div className="text-6xl mb-4">📑</div>
+                    <h1 className="text-3xl font-bold mb-2">Server Templates</h1>
+                    <p className="text-muted-foreground mb-6">Coming Soon</p>
+                    <div className="max-w-md text-center">
+                      <p>Browse and use pre-built MCP server templates for common use cases.</p>
+                      <p className="mt-2">Clone and customize templates to create your own specialized servers.</p>
+                    </div>
+                  </div>
+                )}
+                
+                {activeMainView === 'llm-game-engine' && (
+                  <div className="flex flex-col items-center justify-center h-full">
+                    <div className="text-6xl mb-4">🎮</div>
+                    <h1 className="text-3xl font-bold mb-2">LLM Game Engine</h1>
+                    <p className="text-muted-foreground mb-6">Coming Soon</p>
+                    <div className="max-w-md text-center">
+                      <p>Create 2D games powered by large language models with built-in asset generation.</p>
+                      <p className="mt-2">Design intelligent NPCs, dynamic narratives, and responsive game worlds.</p>
+                    </div>
+                  </div>
+                )}
+                
+                {activeMainView === 'game-asset-generator' && (
+                  <div className="flex flex-col items-center justify-center h-full">
+                    <div className="text-6xl mb-4">🎨</div>
+                    <h1 className="text-3xl font-bold mb-2">Game Asset Generator</h1>
+                    <p className="text-muted-foreground mb-6">Coming Soon</p>
+                    <div className="max-w-md text-center">
+                      <p>Generate game assets including sprites, backgrounds, and UI elements using Stable Diffusion.</p>
+                      <p className="mt-2">Create consistent asset sets with custom styles for your game projects.</p>
+                    </div>
+                  </div>
+                )}
+                
+                {activeMainView === 'game-templates' && (
+                  <div className="flex flex-col items-center justify-center h-full">
+                    <div className="text-6xl mb-4">📝</div>
+                    <h1 className="text-3xl font-bold mb-2">Game Templates</h1>
+                    <p className="text-muted-foreground mb-6">Coming Soon</p>
+                    <div className="max-w-md text-center">
+                      <p>Start with pre-built game templates for various genres and game types.</p>
+                      <p className="mt-2">Customize gameplay, visuals, and mechanics to create your unique game.</p>
+                    </div>
+                  </div>
+                )}
               </>
             ),
             rightPanel: (

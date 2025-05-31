@@ -11,7 +11,9 @@ export type ViewType =
   | 'mcp-servers'
   | 'performance-monitor'
   | 'about'
-  | 'workflow-builder';
+  | 'workflow-builder'
+  | 'mcp-tool-hub'
+  | 'local-llm-hub';
 
 export type Theme = 'light' | 'dark';
 export type ConnectionStatus = 'connected' | 'disconnected' | 'connecting' | 'error';
@@ -40,12 +42,13 @@ export interface ToolItem {
 export interface MCPTool {
   name: string;
   description: string;
-  category?: string;
-  available: boolean;
+  category: string;
   icon: string;
   operationalMode: 'agent' | 'chat' | 'both';
-  parameters?: MCPToolParameter[];
-  examples?: string[];
+  available: boolean;
+  parameters: any[];
+  serverId: string;
+  serverName: string;
 }
 
 export interface MCPToolParameter {
@@ -139,39 +142,55 @@ export interface TanukiModel {
   requirements: ModelRequirements;
 }
 
-export interface ModelPerformance {
-  tokensPerSecond: number;
-  memoryUsage: number;
-  contextLength: number;
-  averageLatency: number;
-  benchmarkScore?: number;
-}
-
 export interface ModelRequirements {
-  minRam: number;
-  recommendedRam: number;
-  minVram?: number;
-  recommendedVram?: number;
-  diskSpace: number;
+  minRam: number; // in MB
+  recommendedRam: number; // in MB
+  diskSpace: number; // in MB
+  minVram?: number; // in MB
+  recommendedVram?: number; // in MB
+  cpuCores?: number;
+  cpuSpeed?: number; // in GHz
 }
 
 export type ModelCapability = 
+  | 'conversation' 
   | 'reasoning' 
   | 'coding' 
   | 'mathematics' 
-  | 'analysis' 
-  | 'creative-writing' 
-  | 'conversation' 
   | 'problem-solving'
-  | 'multilingual';
+  | 'creative-writing'
+  | 'multilingual'
+  | 'vision';
 
 export type ModelCategory = 
-  | 'tanukimcp-apollo' // Knowledge & reasoning models
-  | 'tanukimcp-athena' // Strategy & coding models  
-  | 'tanukimcp-hermes' // Communication & chat models
-  | 'tanukimcp-artemis' // Specialized & hunting models
-  | 'tanukimcp-hephaestus' // Tool & creation models
-  | 'tanukimcp-dionysus'; // Creative & experimental models
+  | 'tanukimcp-apollo' 
+  | 'tanukimcp-hermes' 
+  | 'tanukimcp-athena' 
+  | 'tanukimcp-artemis'
+  | 'tanukimcp-hephaestus'
+  | 'tanukimcp-dionysus';
+
+export interface ModelPerformance {
+  tokensPerSecond?: number;
+  responseTime?: number;
+  memoryUsage?: number;
+  qualityScore?: number;
+}
+
+export interface SystemCapabilities {
+  totalRam: number;
+  availableRam: number;
+  totalVram?: number;
+  availableVram?: number;
+  cpuCores: number;
+  gpuInfo?: {
+    name: string;
+    memory: number;
+    computeCapability?: string;
+  };
+  diskSpace: number;
+  recommendedModels: string[];
+}
 
 export interface ModelInstallation {
   modelName: string;
@@ -218,68 +237,6 @@ export interface ModelManagementHubProps {
   onClose: () => void;
 }
 
-export interface SystemCapabilities {
-  totalRam: number;
-  availableRam: number;
-  totalVram?: number;
-  availableVram?: number;
-  cpuCores: number;
-  gpuInfo?: {
-    name: string;
-    memory: number;
-    computeCapability?: string;
-  };
-  diskSpace: number;
-  recommendedModels: string[];
-}
-
 export interface OpenRouterResponse {
   // Add the OpenRouter response types here
-}
-
-// Define the ElectronAPI interface for window object
-export interface ElectronAPI {
-  // System
-  platform: string;
-  
-  // Window management
-  minimize: () => void;
-  maximize: () => void;
-  close: () => void;
-  
-  // Generic IPC invoke method
-  invoke: (channel: string, ...args: any[]) => Promise<any>;
-  
-  // OpenRouter integration
-  storeOpenRouterKey: (key: string) => Promise<any>;
-  getOpenRouterKey: () => Promise<string>;
-  
-  // Mobile proxy management
-  startProxyServer: () => Promise<{ success: boolean; active: boolean; port: number; clients: number; error?: string }>;
-  stopProxyServer: () => Promise<{ success: boolean; error?: string }>;
-  getProxyStatus: () => Promise<{ active: boolean; port: number | null; clients: number; clientDetails?: any[] }>;
-  generatePairingQRCode: () => Promise<{ success: boolean; qrCode: string; token: string; connectionUrl: string; error?: string }>;
-  showProxyStatusWindow: () => Promise<{ success: boolean; error?: string }>;
-  sendProxyChatResponse: (clientId: string, message: string, messageId: string) => Promise<{ success: boolean }>;
-  
-  // Proxy event listeners
-  onProxyStatusChanged: (callback: (status: any) => void) => void;
-  onProxyClientConnected: (callback: (data: any) => void) => void;
-  onProxyClientDisconnected: (callback: (data: any) => void) => void;
-  onProxyChatMessage: (callback: (data: any) => void) => void;
-  onProxyMediaProcessed: (callback: (data: any) => void) => void;
-  
-  // Remove event listeners
-  removeProxyStatusListener: () => void;
-  removeProxyClientConnectedListener: () => void;
-  removeProxyClientDisconnectedListener: () => void;
-  removeProxyChatMessageListener: () => void;
-  removeProxyMediaProcessedListener: () => void;
-}
-
-// Add ElectronAPI to Window interface
-declare global {
-  interface Window {
-    electronAPI?: ElectronAPI;
-  }
 } 

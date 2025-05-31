@@ -16,7 +16,7 @@ export class LLMRouter {
 
   constructor(llmService: LLMService) {
     this.llmService = llmService;
-    this.complexityAssessor = new ComplexityAssessor();
+    this.complexityAssessor = new ComplexityAssessor(llmService);
     this.tier1Processor = new Tier1Processor();
     this.tier2Processor = new Tier2Processor(llmService);
     this.tier3Processor = new Tier3Processor(llmService);
@@ -25,8 +25,8 @@ export class LLMRouter {
 
   async routeRequest(request: LLMRequest): Promise<LLMResponse> {
     try {
-      // Assess complexity
-      const assessment = this.complexityAssessor.assess(request);
+      // Assess complexity using LLM-driven assessment
+      const assessment = await this.complexityAssessor.assess(request);
       
       // Route to appropriate tier
       const processor = this.getProcessor(assessment.complexity);
@@ -74,22 +74,19 @@ export class LLMRouter {
     }
   }
 
-  async getRouterStatus() {
-    const isHealthy = await this.llmService.isHealthy();
-    const isMCPConnected = this.llmService.isMCPConnected();
+  async getRouterStatus(): Promise<{
+    llmServiceStatus: { isHealthy: boolean; currentModel: string; availableModels: string[] };
+    mcpConnected: boolean;
+    availableTools: string[];
+  }> {
+    const llmServiceStatus = await this.llmService.getStatus();
+    const mcpConnected = this.llmService.isMCPConnected();
+    const availableTools = mcpConnected ? await this.llmService.getAvailableMCPTools() : [];
     
     return {
-      healthy: isHealthy,
-      mcpConnected: isMCPConnected,
-      currentModel: this.llmService.getCurrentModel(),
-      availableModels: await this.llmService.getAvailableModels(),
-      availableMCPTools: await this.llmService.getAvailableMCPTools(),
-      tiers: {
-        tier1: 'Direct Response',
-        tier2: 'Atomic (Basic LLM)',
-        tier3: 'Moderate (LLM + Clear-Thought)',
-        tier4: 'Complex/Expert (Full Analysis)'
-      }
+      llmServiceStatus,
+      mcpConnected,
+      availableTools
     };
   }
 
@@ -101,7 +98,7 @@ export class LLMRouter {
       timestamp: Date.now()
     };
 
-    const assessment = this.complexityAssessor.assess(request);
+    const assessment = await this.complexityAssessor.assess(request);
     return {
       query,
       assessment,

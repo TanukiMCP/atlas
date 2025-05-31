@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client';
 import App from './App';
 import './index.css';
 import './styles/ide-theme.css';
+import './styles/globals.css';
 
 // Error boundary component for better error handling
 class ErrorBoundary extends React.Component<

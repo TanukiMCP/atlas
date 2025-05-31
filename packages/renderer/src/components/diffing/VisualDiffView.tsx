@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Badge } from '../ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { Button } from '../ui/button';
-import { File, Check, X, Play, ChevronRight, ChevronDown } from 'lucide-react';
+import { File, Check, X, Play, ChevronRight, ChevronDown, Loader2 } from 'lucide-react';
 import { ScrollArea } from '../ui/scroll-area';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useToolSettings } from '../../hooks/use-tool-settings';
@@ -37,15 +37,17 @@ const VisualDiffView: React.FC<VisualDiffViewProps> = ({
   const [showAll, setShowAll] = useState(true);
   const [expandedSections, setExpandedSections] = useState<number[]>([]);
   const [animatedLines, setAnimatedLines] = useState<number[]>([]);
+  const [isAnimating, setIsAnimating] = useState(true);
+  const [isExpanded, setIsExpanded] = useState(false);
   const { settings } = useToolSettings();
   
   // Animation timing based on settings
   const getAnimationDelay = (index: number) => {
     const baseDelay = settings.diffingAnimationSpeed === 'fast' 
-      ? 50 
+      ? 30 
       : settings.diffingAnimationSpeed === 'slow' 
-        ? 200 
-        : 100;
+        ? 120 
+        : 70;
     return index * baseDelay;
   };
   
@@ -53,11 +55,13 @@ const VisualDiffView: React.FC<VisualDiffViewProps> = ({
   useEffect(() => {
     if (!diff.changes || !settings.visualDiffing) return;
     
+    setIsAnimating(true);
     const changeLines = diff.changes
       .filter(change => change.type !== 'unchanged')
       .map((_, index) => index);
     
     let timer: NodeJS.Timeout;
+    let animationEndTimer: NodeJS.Timeout;
     
     // Animate lines sequentially
     changeLines.forEach((lineIndex, i) => {
@@ -66,7 +70,16 @@ const VisualDiffView: React.FC<VisualDiffViewProps> = ({
       }, getAnimationDelay(i));
     });
     
-    return () => clearTimeout(timer);
+    // Mark animation as complete
+    animationEndTimer = setTimeout(() => {
+      setIsAnimating(false);
+      setIsExpanded(true); // Auto-expand after animation
+    }, getAnimationDelay(changeLines.length) + 500);
+    
+    return () => {
+      clearTimeout(timer);
+      clearTimeout(animationEndTimer);
+    };
   }, [diff.changes, settings.visualDiffing, settings.diffingAnimationSpeed]);
   
   const toggleSection = (sectionIndex: number) => {
@@ -155,20 +168,20 @@ const VisualDiffView: React.FC<VisualDiffViewProps> = ({
                 <motion.div
                   key={`${change.lineNumber}-${index}`}
                   initial={change.type !== 'unchanged' ? { opacity: 0, x: change.type === 'add' ? 20 : -20 } : { opacity: 1 }}
-                  animate={isAnimated ? { opacity: 1, x: 0 } : {}}
-                  transition={{ duration: 0.3 }}
+                  animate={isAnimated || !settings.visualDiffing ? { opacity: 1, x: 0 } : {}}
+                  transition={{ duration: 0.3, type: 'spring', stiffness: 120 }}
                   className={`flex ${
                     change.type === 'add' 
-                      ? 'bg-green-50 text-green-800' 
+                      ? 'bg-green-50 dark:bg-green-900/20 text-green-800 dark:text-green-300' 
                       : change.type === 'remove' 
-                        ? 'bg-red-50 text-red-800' 
+                        ? 'bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-300' 
                         : ''
                   }`}
                 >
                   {renderLineNumber(change.lineNumber)}
                   <pre className="flex-1 whitespace-pre-wrap pl-2 border-l">
-                    {change.type === 'add' && <span className="text-green-600">+</span>}
-                    {change.type === 'remove' && <span className="text-red-600">-</span>}
+                    {change.type === 'add' && <span className="text-green-600 dark:text-green-400">+</span>}
+                    {change.type === 'remove' && <span className="text-red-600 dark:text-red-400">-</span>}
                     {change.type === 'unchanged' && <span className="text-gray-400">&nbsp;</span>}
                     {change.content}
                   </pre>
@@ -197,7 +210,7 @@ const VisualDiffView: React.FC<VisualDiffViewProps> = ({
                     variant="ghost" 
                     size="sm" 
                     onClick={() => toggleSection(sectionIndex)}
-                    className="w-full justify-start text-xs text-gray-500 hover:bg-gray-100"
+                    className="w-full justify-start text-xs text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800"
                   >
                     {isExpanded ? <ChevronDown className="h-3 w-3 mr-1" /> : <ChevronRight className="h-3 w-3 mr-1" />}
                     {section.lines.length} unchanged lines
@@ -214,7 +227,7 @@ const VisualDiffView: React.FC<VisualDiffViewProps> = ({
                     variant="ghost" 
                     size="sm" 
                     onClick={() => toggleSection(sectionIndex)}
-                    className="w-full justify-start text-xs text-gray-500 hover:bg-gray-100 mb-1"
+                    className="w-full justify-start text-xs text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 mb-1"
                   >
                     {isExpanded ? <ChevronDown className="h-3 w-3 mr-1" /> : <ChevronRight className="h-3 w-3 mr-1" />}
                     Hide {section.lines.length} unchanged lines
@@ -229,20 +242,20 @@ const VisualDiffView: React.FC<VisualDiffViewProps> = ({
                     <motion.div
                       key={`${change.lineNumber}-${globalIndex}`}
                       initial={change.type !== 'unchanged' ? { opacity: 0, x: change.type === 'add' ? 20 : -20 } : { opacity: 1 }}
-                      animate={isAnimated ? { opacity: 1, x: 0 } : {}}
-                      transition={{ duration: 0.3 }}
+                      animate={isAnimated || !settings.visualDiffing ? { opacity: 1, x: 0 } : {}}
+                      transition={{ duration: 0.3, type: 'spring', stiffness: 120 }}
                       className={`flex ${
                         change.type === 'add' 
-                          ? 'bg-green-50 text-green-800' 
+                          ? 'bg-green-50 dark:bg-green-900/20 text-green-800 dark:text-green-300' 
                           : change.type === 'remove' 
-                            ? 'bg-red-50 text-red-800' 
+                            ? 'bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-300' 
                             : ''
                       }`}
                     >
                       {renderLineNumber(change.lineNumber)}
                       <pre className="flex-1 whitespace-pre-wrap pl-2 border-l">
-                        {change.type === 'add' && <span className="text-green-600">+</span>}
-                        {change.type === 'remove' && <span className="text-red-600">-</span>}
+                        {change.type === 'add' && <span className="text-green-600 dark:text-green-400">+</span>}
+                        {change.type === 'remove' && <span className="text-red-600 dark:text-red-400">-</span>}
                         {change.type === 'unchanged' && <span className="text-gray-400">&nbsp;</span>}
                         {change.content}
                       </pre>
@@ -285,79 +298,91 @@ const VisualDiffView: React.FC<VisualDiffViewProps> = ({
       </div>
     );
   };
-
+  
   return (
-    <Card className="w-full border shadow-md">
-      <CardHeader className="pb-2">
+    <Card className={`w-full mb-4 border-blue-300 dark:border-blue-600 overflow-hidden transition-all duration-300
+      ${isAnimating ? 'animate-pulse-subtle' : ''}
+      ${isExpanded ? 'shadow-md' : 'shadow-sm'}
+    `}>
+      <CardHeader className="pb-2 cursor-pointer" onClick={() => setIsExpanded(!isExpanded)}>
         <div className="flex justify-between items-center">
           <CardTitle className="text-lg flex items-center gap-2">
-            <File className="h-5 w-5" />
-            <span className="text-sm font-mono truncate max-w-md">{diff.filePath}</span>
-          </CardTitle>
-          <div className="flex items-center gap-2">
+            <File className="h-5 w-5 text-blue-500" />
+            <span className="truncate max-w-[200px]">{diff.filePath.split('/').pop()}</span>
             {getOperationBadge()}
+            {isAnimating && <Loader2 className="h-4 w-4 animate-spin ml-2" />}
+          </CardTitle>
+          <div className="flex gap-2">
+            <Badge variant="outline" className="bg-muted">
+              {diff.operation === 'create' 
+                ? `+${diff.changes?.filter(c => c.type === 'add').length || 0} lines` 
+                : diff.operation === 'delete'
+                  ? `-${diff.changes?.filter(c => c.type === 'remove').length || 0} lines`
+                  : `+${diff.changes?.filter(c => c.type === 'add').length || 0} / -${diff.changes?.filter(c => c.type === 'remove').length || 0}`
+              }
+            </Badge>
+            <Badge variant="outline" className="text-muted-foreground">
+              {diff.filePath}
+            </Badge>
           </div>
         </div>
       </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
-          <div className="flex justify-between items-center">
-            <Tabs defaultValue="unified" className="w-[200px]" onValueChange={(v) => setView(v as 'unified' | 'split')}>
-              <TabsList>
-                <TabsTrigger value="unified">Unified</TabsTrigger>
-                <TabsTrigger value="split">Split</TabsTrigger>
-              </TabsList>
-            </Tabs>
-            
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowAll(!showAll)}
-                className="text-xs"
-              >
-                {showAll ? 'Collapse Unchanged' : 'Show All'}
-              </Button>
+      
+      <motion.div 
+        initial={{ height: 0 }}
+        animate={{ height: isExpanded ? 'auto' : 0 }}
+        transition={{ duration: 0.3 }}
+        className="overflow-hidden"
+      >
+        <CardContent className="pt-4">
+          <div className="space-y-4">
+            <div className="flex justify-between items-center">
+              <Tabs defaultValue="unified" onValueChange={(v) => setView(v as 'unified' | 'split')}>
+                <TabsList>
+                  <TabsTrigger value="unified">Unified</TabsTrigger>
+                  <TabsTrigger value="split">Split</TabsTrigger>
+                </TabsList>
+              </Tabs>
               
-              {onViewOriginal && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={onViewOriginal}
+              <div className="flex items-center gap-2">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => setShowAll(!showAll)}
                   className="text-xs"
                 >
-                  Open File
+                  {showAll ? 'Collapse Unchanged' : 'Show All'}
                 </Button>
-              )}
+              </div>
+            </div>
+            
+            <div className="border rounded-md overflow-hidden">
+              {view === 'unified' ? renderUnifiedView() : renderSplitView()}
+            </div>
+            
+            <div className="flex justify-end gap-2">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={onReject}
+                className="border-red-300 hover:bg-red-50 hover:text-red-600 transition-colors"
+              >
+                <X className="h-4 w-4 mr-1" />
+                Reject
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={onApprove}
+                className="border-green-300 hover:bg-green-50 hover:text-green-600 transition-colors"
+              >
+                <Check className="h-4 w-4 mr-1" />
+                Approve
+              </Button>
             </div>
           </div>
-          
-          <div>
-            {view === 'unified' ? renderUnifiedView() : renderSplitView()}
-          </div>
-          
-          <div className="flex justify-end gap-2 pt-2 border-t">
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={onReject}
-              className="border-red-300 hover:bg-red-50 hover:text-red-600"
-            >
-              <X className="h-4 w-4 mr-1" />
-              Reject
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={onApprove}
-              className="border-green-300 hover:bg-green-50 hover:text-green-600"
-            >
-              <Check className="h-4 w-4 mr-1" />
-              Approve
-            </Button>
-          </div>
-        </div>
-      </CardContent>
+        </CardContent>
+      </motion.div>
     </Card>
   );
 };

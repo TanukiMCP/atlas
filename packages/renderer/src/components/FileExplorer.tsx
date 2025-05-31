@@ -206,7 +206,15 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
     }
   };
 
-  const toggleFolder = (folderPath: string) => {
+  const toggleFolder = async (folderPath: string) => {
+    // Check if we need to load the children first
+    const folderItem = findItemByPath(state.files, folderPath);
+    
+    if (!folderItem || folderItem.type !== 'folder') {
+      return;
+    }
+
+    // Toggle expanded state first for immediate UI feedback
     setState(prev => {
       const newExpanded = new Set(prev.expandedFolders);
       if (newExpanded.has(folderPath)) {
@@ -215,6 +223,66 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
         newExpanded.add(folderPath);
       }
       return { ...prev, expandedFolders: newExpanded };
+    });
+
+    // If expanding and no children loaded yet, fetch them
+    if (!state.expandedFolders.has(folderPath) && (!folderItem.children || folderItem.children.length === 0)) {
+      setState(prev => ({ ...prev, loading: true }));
+      
+      try {
+        // Load the folder's children
+        const folderContents = await fileSystemService.getWorkspaceFiles(folderPath);
+        
+        // Update the file tree with the new children
+        const updatedFiles = updateFileTreeWithChildren(state.files, folderPath, folderContents);
+        
+        setState(prev => ({ 
+          ...prev, 
+          files: updatedFiles,
+          loading: false
+        }));
+      } catch (error) {
+        console.error(`Failed to load contents of folder: ${folderPath}`, error);
+        setState(prev => ({ 
+          ...prev, 
+          loading: false,
+          error: error instanceof Error ? error.message : 'Failed to load folder contents'
+        }));
+      }
+    }
+  };
+
+  // Helper function to find an item by path in the file tree
+  const findItemByPath = (items: FileSystemItem[], path: string): FileSystemItem | null => {
+    for (const item of items) {
+      if (item.path === path) {
+        return item;
+      }
+      if (item.type === 'folder' && item.children) {
+        const found = findItemByPath(item.children, path);
+        if (found) return found;
+      }
+    }
+    return null;
+  };
+
+  // Helper function to update the file tree with new children for a specific folder
+  const updateFileTreeWithChildren = (
+    items: FileSystemItem[], 
+    folderPath: string, 
+    children: FileSystemItem[]
+  ): FileSystemItem[] => {
+    return items.map(item => {
+      if (item.path === folderPath) {
+        return { ...item, children };
+      }
+      if (item.type === 'folder' && item.children) {
+        return {
+          ...item,
+          children: updateFileTreeWithChildren(item.children, folderPath, children)
+        };
+      }
+      return item;
     });
   };
 
@@ -229,29 +297,84 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
     switch (extension) {
       case 'js':
       case 'jsx':
+        return <File className={`${iconClass} text-yellow-400`} />;
       case 'ts':
       case 'tsx':
-        return <File className={`${iconClass} text-yellow-500`} />;
+        return <File className={`${iconClass} text-blue-400`} />;
       case 'json':
-        return <File className={`${iconClass} text-green-500`} />;
+        return <File className={`${iconClass} text-green-400`} />;
       case 'css':
       case 'scss':
-        return <File className={`${iconClass} text-blue-500`} />;
+      case 'sass':
+      case 'less':
+        return <File className={`${iconClass} text-pink-400`} />;
       case 'html':
-        return <File className={`${iconClass} text-orange-500`} />;
+      case 'htm':
+        return <File className={`${iconClass} text-orange-400`} />;
       case 'md':
-        return <File className={`${iconClass} text-blue-400`} />;
+      case 'markdown':
+        return <File className={`${iconClass} text-blue-300`} />;
       case 'py':
-        return <File className={`${iconClass} text-green-600`} />;
+        return <File className={`${iconClass} text-green-500`} />;
       case 'java':
-        return <File className={`${iconClass} text-red-500`} />;
+        return <File className={`${iconClass} text-red-400`} />;
       case 'cpp':
       case 'c':
-        return <File className={`${iconClass} text-blue-600`} />;
+      case 'h':
+      case 'hpp':
+        return <File className={`${iconClass} text-blue-500`} />;
       case 'rs':
-        return <File className={`${iconClass} text-orange-600`} />;
+        return <File className={`${iconClass} text-orange-500`} />;
       case 'go':
-        return <File className={`${iconClass} text-cyan-500`} />;
+        return <File className={`${iconClass} text-cyan-400`} />;
+      case 'php':
+        return <File className={`${iconClass} text-purple-400`} />;
+      case 'rb':
+        return <File className={`${iconClass} text-red-500`} />;
+      case 'swift':
+        return <File className={`${iconClass} text-orange-400`} />;
+      case 'kt':
+      case 'kts':
+        return <File className={`${iconClass} text-purple-500`} />;
+      case 'vue':
+        return <File className={`${iconClass} text-green-400`} />;
+      case 'svelte':
+        return <File className={`${iconClass} text-red-500`} />;
+      case 'dart':
+        return <File className={`${iconClass} text-blue-400`} />;
+      case 'sol':
+        return <File className={`${iconClass} text-purple-400`} />;
+      case 'yml':
+      case 'yaml':
+        return <File className={`${iconClass} text-red-300`} />;
+      case 'toml':
+        return <File className={`${iconClass} text-blue-300`} />;
+      case 'ini':
+        return <File className={`${iconClass} text-gray-400`} />;
+      case 'sh':
+      case 'bash':
+      case 'zsh':
+        return <File className={`${iconClass} text-green-300`} />;
+      case 'bat':
+      case 'cmd':
+        return <File className={`${iconClass} text-blue-300`} />;
+      case 'ps1':
+        return <File className={`${iconClass} text-blue-400`} />;
+      case 'sql':
+        return <File className={`${iconClass} text-orange-300`} />;
+      case 'prisma':
+        return <File className={`${iconClass} text-teal-400`} />;
+      case 'graphql':
+      case 'gql':
+        return <File className={`${iconClass} text-pink-500`} />;
+      case 'env':
+      case 'env.local':
+      case 'env.development':
+      case 'env.production':
+        return <File className={`${iconClass} text-yellow-300`} />;
+      case 'lock':
+      case 'lock.json':
+        return <File className={`${iconClass} text-red-300`} />;
       default:
         return <File className={`${iconClass} text-muted-foreground`} />;
     }
@@ -773,202 +896,101 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
   };
 
   const renderFileItem = (item: FileSystemItem, depth: number = 0) => {
-    const isExpanded = searchTerm
-      ? true
-      : state.expandedFolders.has(item.path);
+    const isExpanded = state.expandedFolders.has(item.path);
     const isSelected = selectedFile === item.path;
     const isRenaming = state.isRenamingFile && state.renamingFilePath === item.path;
-    const indentWidth = depth * 16;
-    
-    // Check if new item form should be shown under this folder
-    const showNewItemInput = (state.isCreatingFile || state.isCreatingFolder) && 
-                           state.newItemParentPath === item.path;
-    
+    const isCreatingInside = (state.isCreatingFile || state.isCreatingFolder) && state.newItemParentPath === item.path;
+    const isVisible = !searchTerm || item.name.toLowerCase().includes(searchTerm.toLowerCase());
+
+    if (!isVisible) return null;
+
     return (
-      <div key={item.path} className="select-none">
-        {isRenaming ? (
-          <div
-            className="flex items-center py-1.5 px-2 bg-accent/30"
-            style={{ paddingLeft: `${indentWidth + 8}px` }}
-          >
-            <div className="mr-2 flex-shrink-0">
-              {item.type === 'folder' ? (
-                <Folder className="w-4 h-4 text-blue-600" />
-              ) : (
-                getFileIcon(item.name)
-              )}
-            </div>
-            <input
-              ref={renameInputRef}
-              type="text"
-              value={state.newFileName}
-              onChange={handleRenameChange}
-              onKeyDown={submitRename}
-              onBlur={cancelRename}
-              className="flex-1 bg-transparent text-sm border-none focus:outline-none"
-            />
-          </div>
-        ) : (
-          <div
-            ref={(el) => { rowRefs.current[item.path] = el; }}
-            tabIndex={0}
-            className={`group flex items-center py-1.5 px-2 cursor-pointer transition-all duration-150 ease-in-out hover:bg-accent/50 focus:outline-none focus:bg-accent/70 focus:ring-1 focus:ring-primary focus:ring-offset-1 relative ${isSelected ? 'bg-primary/10 border-r-2 border-primary' : ''} ${item.type === 'folder' ? 'font-medium' : ''}`}
-            style={{ paddingLeft: `${indentWidth + 8}px` }}
-            draggable
-            onDragStart={(e) => handleDragStart(e, item.path)}
-            onDragOver={item.type === 'folder' ? handleDragOver : undefined}
-            onDrop={item.type === 'folder' ? (e) => handleDrop(e, item.path) : undefined}
-            onClick={() => {
-              if (item.type === 'folder') toggleFolder(item.path);
-              else onFileSelect(item.path);
-            }}
-            onContextMenu={(e) => showContextMenu(e, item)}
-            onKeyDown={(e) => {
-              const idx = flatPaths.indexOf(item.path);
-              if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
-                if (item.type === 'folder') toggleFolder(item.path);
-                else onFileSelect(item.path);
-              } else if (e.key === 'ArrowDown') {
-                e.preventDefault();
-                const next = flatPaths[idx + 1];
-                if (next) rowRefs.current[next]?.focus();
-              } else if (e.key === 'ArrowUp') {
-                e.preventDefault();
-                const prev = flatPaths[idx - 1];
-                if (prev) rowRefs.current[prev]?.focus();
-              } else if (e.key === 'ArrowRight') {
-                e.preventDefault();
-                if (item.type === 'folder') {
-                  if (!isExpanded) toggleFolder(item.path);
-                  else if (item.children && item.children.length > 0) {
-                    const firstChild = item.children[0].path;
-                    rowRefs.current[firstChild]?.focus();
-                  }
-                }
-              } else if (e.key === 'ArrowLeft') {
-                e.preventDefault();
-                if (item.type === 'folder' && isExpanded) toggleFolder(item.path);
-                else {
-                  const parent = parentMap[item.path];
-                  if (parent) rowRefs.current[parent]?.focus();
-                }
-              }
-            }}
-          >
-            {/* Folder expand/collapse indicator */}
+      <div key={item.path} ref={el => rowRefs.current[item.path] = el}>
+        <div
+          className={`
+            group flex items-center py-1 px-2 cursor-pointer select-none
+            ${isSelected ? 'bg-primary/10 text-primary' : 'hover:bg-muted/50'}
+            transition-colors duration-150 ease-in-out relative
+          `}
+          style={{ paddingLeft: `${depth * 16 + 8}px` }}
+          onClick={() => item.type === 'file' ? onFileSelect(item.path) : toggleFolder(item.path)}
+          onContextMenu={(e) => showContextMenu(e, item)}
+          draggable
+          onDragStart={(e) => handleDragStart(e, item.path)}
+          onDragOver={handleDragOver}
+          onDrop={(e) => handleDrop(e, item.path)}
+        >
+          <div className="flex items-center gap-2 min-w-0 flex-1">
             {item.type === 'folder' && (
-              <div className="w-4 h-4 flex items-center justify-center mr-1 flex-shrink-0">
-                {item.children && item.children.length > 0 ? (
-                  isExpanded ? (
-                    <ChevronDown className="w-3 h-3 text-muted-foreground" />
-                  ) : (
-                    <ChevronRight className="w-3 h-3 text-muted-foreground" />
-                  )
-                ) : null}
-              </div>
-            )}
-            
-            {/* File/Folder icon */}
-            <div className="mr-2 flex-shrink-0">
-              {item.type === 'folder' ? (
-                isExpanded ? (
-                  <FolderOpen className="w-4 h-4 text-blue-500" />
+              <button 
+                className="w-4 h-4 flex items-center justify-center flex-shrink-0 hover:bg-muted/50 rounded transition-colors"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  toggleFolder(item.path);
+                }}
+              >
+                {isExpanded ? (
+                  <ChevronDown className="w-3 h-3 text-muted-foreground" />
                 ) : (
-                  <Folder className="w-4 h-4 text-blue-600" />
-                )
+                  <ChevronRight className="w-3 h-3 text-muted-foreground" />
+                )}
+              </button>
+            )}
+            {item.type === 'folder' ? (
+              isExpanded ? (
+                <FolderOpen className="w-4 h-4 text-yellow-400" />
               ) : (
-                getFileIcon(item.name)
+                <Folder className="w-4 h-4 text-yellow-400" />
+              )
+            ) : (
+              getFileIcon(item.name)
+            )}
+            <span className="truncate flex-1">
+              {isRenaming ? (
+                <input
+                  ref={renameInputRef}
+                  type="text"
+                  value={state.newFileName}
+                  onChange={handleRenameChange}
+                  onKeyDown={submitRename}
+                  onBlur={() => cancelRename()}
+                  className="w-full bg-transparent border-none outline-none focus:ring-1 focus:ring-primary rounded px-1"
+                  onClick={(e) => e.stopPropagation()}
+                />
+              ) : (
+                item.name
               )}
-            </div>
-            
-            {/* File/Folder name */}
-            <span className={`
-              text-sm truncate flex-1 
-              ${isSelected ? 'text-primary font-medium' : 'text-foreground'}
-              ${item.type === 'folder' ? 'font-medium' : 'font-normal'}
-            `}>
-              {item.name}
             </span>
-            
-            {/* Action buttons on hover */}
-            <div className="opacity-0 group-hover:opacity-100 flex gap-1 transition-opacity">
-              {item.type === 'folder' && (
-                <button 
-                  className="p-1 text-muted-foreground hover:text-foreground hover:bg-accent rounded"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    startCreatingFile(item.path);
-                  }}
-                  title="New File"
-                >
-                  <FilePlus className="w-3 h-3" />
-                </button>
-              )}
-              <button 
-                className="p-1 text-muted-foreground hover:text-foreground hover:bg-accent rounded"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  startRenaming(item);
-                }}
-                title="Rename"
-              >
-                <Edit2 className="w-3 h-3" />
-              </button>
-              <button 
-                className="p-1 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  showContextMenu(e, item);
-                }}
-                title="More options"
-              >
-                <MoreVertical className="w-3 h-3" />
-              </button>
-            </div>
           </div>
-        )}
+        </div>
         
-        {/* New item input field */}
-        {item.type === 'folder' && isExpanded && showNewItemInput && (
-          <div 
-            className="flex items-center py-1.5 px-2 bg-accent/30"
-            style={{ paddingLeft: `${indentWidth + 32}px` }}
-          >
-            <div className="mr-2 flex-shrink-0">
-              {state.isCreatingFile ? (
-                <File className="w-4 h-4 text-blue-500" />
-              ) : (
-                <Folder className="w-4 h-4 text-yellow-500" />
-              )}
-            </div>
-            <input
-              ref={newItemInputRef}
-              type="text"
-              value={state.newItemName}
-              onChange={handleNewItemNameChange}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  createNewItem(e); // Pass event if needed, or just call directly
-                } else if (e.key === 'Escape') {
-                  cancelNewItem();
-                }
-              }}
-              onBlur={cancelNewItem} // Keep onBlur as a fallback
-              className="flex-1 bg-transparent text-sm border-none focus:outline-none"
-              placeholder={state.isCreatingFile ? "New file name..." : "New folder name..."}
-            />
-          </div>
-        )}
-        
-        {/* Children */}
         {item.type === 'folder' && isExpanded && item.children && (
           <div className="relative">
-            <div 
-              className="absolute left-0 top-0 bottom-0 w-px bg-border/50"
-              style={{ left: `${indentWidth + 16}px` }}
-            />
-            {item.children.map(child => renderFileItem(child, depth + 1))}
+            <div className="absolute left-[19px] top-0 bottom-0 w-px bg-border/50" />
+            {item.children.map((child) => renderFileItem(child, depth + 1))}
+            {isCreatingInside && (
+              <div 
+                className="flex items-center py-1 px-2"
+                style={{ paddingLeft: `${(depth + 1) * 16 + 8}px` }}
+              >
+                <div className="w-4" />
+                {state.isCreatingFile ? (
+                  <File className="w-4 h-4 text-muted-foreground mr-2" />
+                ) : (
+                  <Folder className="w-4 h-4 text-yellow-400 mr-2" />
+                )}
+                <input
+                  ref={newItemInputRef}
+                  type="text"
+                  value={state.newItemName}
+                  onChange={handleNewItemNameChange}
+                  onKeyDown={createNewItem}
+                  onBlur={() => cancelNewItem()}
+                  className="flex-1 bg-transparent border-none outline-none focus:ring-1 focus:ring-primary rounded px-1"
+                  placeholder={state.isCreatingFile ? 'New file name...' : 'New folder name...'}
+                />
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -1013,12 +1035,33 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
     }
   };
 
-  const handleWorkspaceChange = (newWorkspace: string) => {
+  const handleWorkspaceChange = async (newWorkspace: string) => {
     if (newWorkspace === '__browse__') {
-      handleBrowse();
+      await handleBrowse();
     } else {
       setCurrentWorkspace(newWorkspace);
       updateRecents(newWorkspace);
+      
+      // Set the working directory in the file system service
+      try {
+        const success = await fileSystemService.setWorkingDirectory(newWorkspace);
+        if (success) {
+          console.log(`Successfully changed working directory to: ${newWorkspace}`);
+          await loadFiles(newWorkspace);
+        } else {
+          console.error(`Failed to change working directory to: ${newWorkspace}`);
+          setState(prev => ({ 
+            ...prev, 
+            error: `Failed to change to directory: ${newWorkspace}` 
+          }));
+        }
+      } catch (error) {
+        console.error('Error changing working directory:', error);
+        setState(prev => ({ 
+          ...prev, 
+          error: `Error accessing directory: ${error instanceof Error ? error.message : String(error)}` 
+        }));
+      }
     }
     setIsWorkspaceDropdownOpen(false);
   };

@@ -62,6 +62,19 @@ contextBridge.exposeInMainWorld('electronAPI', {
     return ipcRenderer.invoke('window:isMaximized');
   },
   
+  // File system and workspace management
+  setWorkingDirectory: (dirPath: string) => {
+    return ipcRenderer.invoke('app:setWorkingDirectory', dirPath);
+  },
+  
+  getWorkingDirectory: () => {
+    return ipcRenderer.invoke('app:getWorkingDirectory');
+  },
+  
+  onWorkingDirectoryChanged: (callback: (dirPath: string) => void) => {
+    ipcRenderer.on('app:workingDirectoryChanged', (_, dirPath) => callback(dirPath));
+  },
+  
   // Mobile proxy management
   startProxyServer: () => ipcRenderer.invoke('start-proxy-server'),
   stopProxyServer: () => ipcRenderer.invoke('stop-proxy-server'),

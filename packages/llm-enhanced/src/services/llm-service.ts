@@ -21,14 +21,15 @@ export class LLMService {
   private defaultModel: string;
   private mcpClient: MCPClientInterface | null = null;
   private isInitialized = false;
+  private openRouterService: any;
 
   constructor(config: LLMServiceConfig = {}) {
     this.defaultModel = config.defaultModel || 'meta-llama/llama-3.1-8b-instruct:free';
   }
 
   setOpenRouterService(service: any): void {
-    // OpenRouter service integration placeholder
-    console.log('OpenRouter service set');
+    this.openRouterService = service;
+    console.log('OpenRouter service configured in LLMService');
   }
 
   async initialize(): Promise<void> {
@@ -38,13 +39,36 @@ export class LLMService {
   }
 
   async chat(messages: ChatMessage[], options: GenerationOptions = {}): Promise<string> {
-    // OpenRouter chat implementation placeholder
-    return 'OpenRouter response placeholder';
+    if (!this.openRouterService) {
+      throw new Error('OpenRouterService not configured');
+    }
+    // Use OpenRouter chat-like interface
+    const request = {
+      model: this.defaultModel,
+      messages,
+      temperature: options.temperature,
+      max_tokens: options.max_tokens,
+      stream: false
+    };
+    const response = await this.openRouterService.generate(request);
+    return response.content;
   }
 
   async generate(prompt: string, options: GenerationOptions = {}): Promise<string> {
-    // OpenRouter generation implementation placeholder
-    return 'OpenRouter generation placeholder';
+    if (!this.openRouterService) {
+      throw new Error('OpenRouterService not configured');
+    }
+    // Transform prompt to user message
+    const messages: ChatMessage[] = [{ role: 'user', content: prompt }];
+    const request = {
+      model: this.defaultModel,
+      messages,
+      temperature: options.temperature,
+      max_tokens: options.max_tokens,
+      stream: false
+    };
+    const response = await this.openRouterService.generate(request);
+    return response.content;
   }
 
   setMCPClient(client: MCPClientInterface): void {
@@ -53,10 +77,14 @@ export class LLMService {
 
   async getStatus(): Promise<{ isHealthy: boolean; currentModel: string; availableModels: string[] }> {
     return {
-      isHealthy: true,
+      isHealthy: this.openRouterService !== null,
       currentModel: this.defaultModel,
-      availableModels: [this.defaultModel]
+      availableModels: await this.getAvailableModels()
     };
+  }
+
+  isHealthy(): boolean {
+    return this.openRouterService !== null;
   }
 
   getCurrentModel(): string {
@@ -64,7 +92,17 @@ export class LLMService {
   }
 
   async getAvailableModels(): Promise<string[]> {
-    return [this.defaultModel];
+    if (!this.openRouterService) {
+      return [this.defaultModel];
+    }
+    
+    try {
+      const models = await this.openRouterService.getAvailableModels();
+      return models.map((m: any) => m.id || m);
+    } catch (error) {
+      console.error('Failed to get available models:', error);
+      return [this.defaultModel];
+    }
   }
 
   setModel(modelName: string): void {

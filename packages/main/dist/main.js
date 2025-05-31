@@ -864,6 +864,1343 @@ var init_connection = __esm({
   }
 });
 
+// ../llm-enhanced/src/router/types.ts
+var RequestComplexity;
+var init_types = __esm({
+  "../llm-enhanced/src/router/types.ts"() {
+    "use strict";
+    RequestComplexity = /* @__PURE__ */ ((RequestComplexity2) => {
+      RequestComplexity2["DIRECT_RESPONSE"] = "DIRECT_RESPONSE";
+      RequestComplexity2["ATOMIC"] = "ATOMIC";
+      RequestComplexity2["MODERATE"] = "MODERATE";
+      RequestComplexity2["COMPLEX"] = "COMPLEX";
+      RequestComplexity2["EXPERT"] = "EXPERT";
+      return RequestComplexity2;
+    })(RequestComplexity || {});
+  }
+});
+
+// ../llm-enhanced/src/router/complexityAssessor.ts
+var ComplexityAssessor;
+var init_complexityAssessor = __esm({
+  "../llm-enhanced/src/router/complexityAssessor.ts"() {
+    "use strict";
+    init_types();
+    ComplexityAssessor = class {
+      llmService = null;
+      constructor(llmService2) {
+        this.llmService = llmService2 || null;
+      }
+      setLLMService(llmService2) {
+        this.llmService = llmService2;
+      }
+      async assess(request) {
+        if (!this.llmService) {
+          return this.fallbackAssessment(request);
+        }
+        try {
+          return await this.llmDrivenAssessment(request);
+        } catch (error) {
+          console.error("LLM-driven complexity assessment failed:", error);
+          return this.fallbackAssessment(request);
+        }
+      }
+      async llmDrivenAssessment(request) {
+        const prompt = this.buildComplexityAssessmentPrompt(request);
+        const response = await this.llmService.generate(prompt, {
+          temperature: 0.1,
+          // Low temperature for more deterministic results
+          max_tokens: 500
+        });
+        return this.parseComplexityResponse(response);
+      }
+      buildComplexityAssessmentPrompt(request) {
+        return `
+You are an AI task complexity analyzer. Your job is to analyze user queries and determine their complexity level.
+Please assess the complexity of the following query:
+
+"${request.query}"
+
+Analyze the query and determine its complexity level based on these categories:
+1. DIRECT_RESPONSE: Simple acknowledgments, yes/no questions, or very basic informational queries.
+2. ATOMIC: Simple, straightforward tasks that can be completed in a single step or response.
+3. MODERATE: Tasks requiring multiple steps, basic reasoning, or integration of a few concepts.
+4. COMPLEX: Tasks requiring sophisticated reasoning, planning, or coordination between multiple components.
+5. EXPERT: Tasks demanding specialized knowledge, extensive planning, or complex problem-solving approaches.
+
+Please respond in JSON format with the following structure:
+{
+  "complexity": "COMPLEXITY_LEVEL",
+  "estimatedTimeMs": ESTIMATED_TIME_IN_MS,
+  "reasoning": "Brief explanation of your assessment"
+}
+
+Where:
+- COMPLEXITY_LEVEL is one of: DIRECT_RESPONSE, ATOMIC, MODERATE, COMPLEX, EXPERT
+- ESTIMATED_TIME_IN_MS is your estimate of processing time in milliseconds
+- reasoning explains your assessment rationale
+
+Respond with ONLY the JSON object, no other text.
+`;
+      }
+      parseComplexityResponse(response) {
+        try {
+          const jsonMatch = response.match(/\{[\s\S]*\}/);
+          const jsonString = jsonMatch ? jsonMatch[0] : response;
+          const result = JSON.parse(jsonString);
+          if (!Object.values(RequestComplexity).includes(result.complexity)) {
+            throw new Error(`Invalid complexity level: ${result.complexity}`);
+          }
+          const estimatedTimeMs = typeof result.estimatedTimeMs === "number" ? result.estimatedTimeMs : parseInt(result.estimatedTimeMs);
+          if (isNaN(estimatedTimeMs)) {
+            throw new Error("Invalid estimatedTimeMs value");
+          }
+          return {
+            complexity: result.complexity,
+            estimatedTimeMs,
+            reasoning: result.reasoning || "No reasoning provided"
+          };
+        } catch (error) {
+          console.error("Failed to parse complexity assessment response:", error);
+          console.log("Raw response:", response);
+          return {
+            complexity: "MODERATE" /* MODERATE */,
+            estimatedTimeMs: 3e4,
+            reasoning: "Default assessment due to response parsing failure."
+          };
+        }
+      }
+      // Fallback rule-based assessment when LLM is not available
+      fallbackAssessment(request) {
+        const query = request.query.toLowerCase();
+        if (query.includes("thank you") || query.includes("yes") || query.includes("no")) {
+          return {
+            complexity: "DIRECT_RESPONSE" /* DIRECT_RESPONSE */,
+            estimatedTimeMs: 2e3,
+            reasoning: "Simple acknowledgement or affirmative/negative."
+          };
+        }
+        if (query.split(" ").length < 10 && !query.includes("clear-thought")) {
+          return {
+            complexity: "ATOMIC" /* ATOMIC */,
+            estimatedTimeMs: 1e4,
+            reasoning: "Short query, likely a single step."
+          };
+        }
+        if (query.includes("clear-thought") || query.includes("analyze") || query.includes("plan")) {
+          return {
+            complexity: "COMPLEX" /* COMPLEX */,
+            estimatedTimeMs: 18e4,
+            // 3 minutes
+            reasoning: "Query indicates need for advanced reasoning or clear-thought tools."
+          };
+        }
+        return {
+          complexity: "MODERATE" /* MODERATE */,
+          estimatedTimeMs: 3e4,
+          reasoning: "Defaulting to moderate complexity."
+        };
+      }
+    };
+  }
+});
+
+// ../llm-enhanced/src/router/tier1Processor.ts
+var Tier1Processor;
+var init_tier1Processor = __esm({
+  "../llm-enhanced/src/router/tier1Processor.ts"() {
+    "use strict";
+    init_types();
+    Tier1Processor = class {
+      async process(request) {
+        let content = "Acknowledged.";
+        if (request.query.toLowerCase().includes("thank you")) {
+          content = "You are welcome!";
+        }
+        return {
+          requestId: request.id,
+          tierUsed: "DIRECT_RESPONSE" /* DIRECT_RESPONSE */,
+          content,
+          metrics: { processingTimeMs: 50 + Math.random() * 100 }
+          // Simulate fast processing
+        };
+      }
+    };
+  }
+});
+
+// ../llm-enhanced/src/router/tier2Processor.ts
+var Tier2Processor;
+var init_tier2Processor = __esm({
+  "../llm-enhanced/src/router/tier2Processor.ts"() {
+    "use strict";
+    init_types();
+    Tier2Processor = class {
+      llmService;
+      constructor(llmService2) {
+        this.llmService = llmService2;
+      }
+      async process(request) {
+        const startTime = Date.now();
+        try {
+          const prompt = `You are a helpful AI assistant. Please provide a clear, concise response to the following query:
+
+${request.query}
+
+Keep your response focused and direct.`;
+          const content = await this.llmService.generate(prompt, {
+            temperature: 0.3,
+            // Lower temperature for more focused responses
+            top_p: 0.8,
+            top_k: 30
+          });
+          const processingTime = Date.now() - startTime;
+          return {
+            requestId: request.id,
+            tierUsed: "ATOMIC" /* ATOMIC */,
+            content,
+            qualityScore: 0.8,
+            // Good quality for atomic responses
+            metrics: {
+              processingTimeMs: processingTime,
+              modelUsed: this.llmService.getCurrentModel(),
+              tokensEstimate: Math.ceil(content.length / 4)
+              // Rough token estimate
+            }
+          };
+        } catch (error) {
+          const processingTime = Date.now() - startTime;
+          return {
+            requestId: request.id,
+            tierUsed: "ATOMIC" /* ATOMIC */,
+            content: "I apologize, but I encountered an error processing your request. Please try again.",
+            error: error instanceof Error ? error.message : "Unknown error",
+            metrics: {
+              processingTimeMs: processingTime,
+              failed: true
+            }
+          };
+        }
+      }
+    };
+  }
+});
+
+// ../llm-enhanced/src/router/tier3Processor.ts
+var Tier3Processor;
+var init_tier3Processor = __esm({
+  "../llm-enhanced/src/router/tier3Processor.ts"() {
+    "use strict";
+    init_types();
+    Tier3Processor = class {
+      llmService;
+      constructor(llmService2) {
+        this.llmService = llmService2;
+      }
+      async process(request) {
+        const startTime = Date.now();
+        try {
+          const shouldUseSequentialThinking = this.shouldUseSequentialThinking(request.query);
+          const shouldUseMentalModel = this.shouldUseMentalModel(request.query);
+          let content = "";
+          let toolsUsed = [];
+          if (shouldUseSequentialThinking) {
+            const thinkingResult = await this.useSequentialThinking(request.query);
+            if (thinkingResult.success) {
+              content += `**Structured Analysis:**
+${thinkingResult.content}
+
+`;
+              toolsUsed.push("sequential-thinking");
+            }
+          }
+          if (shouldUseMentalModel) {
+            const mentalModelResult = await this.useMentalModel(request.query);
+            if (mentalModelResult.success) {
+              content += `**Mental Model Analysis:**
+${mentalModelResult.content}
+
+`;
+              toolsUsed.push("mental-model");
+            }
+          }
+          const finalPrompt = `You are an expert assistant. Based on the following analysis and the original query, provide a comprehensive response.
+
+${content ? `Previous Analysis:
+${content}` : ""}
+
+Original Query: ${request.query}
+
+Please provide a well-structured, thoughtful response that builds upon any analysis provided above.`;
+          const llmResponse = await this.llmService.generate(finalPrompt, {
+            temperature: 0.6,
+            top_p: 0.9,
+            top_k: 40
+          });
+          content += `**Final Response:**
+${llmResponse}`;
+          const processingTime = Date.now() - startTime;
+          return {
+            requestId: request.id,
+            tierUsed: "MODERATE" /* MODERATE */,
+            content,
+            qualityScore: 0.85,
+            metrics: {
+              processingTimeMs: processingTime,
+              modelUsed: this.llmService.getCurrentModel(),
+              toolsUsed,
+              tokensEstimate: Math.ceil(content.length / 4)
+            }
+          };
+        } catch (error) {
+          const processingTime = Date.now() - startTime;
+          return {
+            requestId: request.id,
+            tierUsed: "MODERATE" /* MODERATE */,
+            content: "I encountered an error while processing your request with enhanced reasoning tools. Let me provide a direct response instead.",
+            error: error instanceof Error ? error.message : "Unknown error",
+            metrics: {
+              processingTimeMs: processingTime,
+              failed: true
+            }
+          };
+        }
+      }
+      shouldUseSequentialThinking(query) {
+        const indicators = [
+          "step by step",
+          "analyze",
+          "break down",
+          "process",
+          "methodology",
+          "approach",
+          "strategy",
+          "plan",
+          "solve",
+          "problem"
+        ];
+        const lowerQuery = query.toLowerCase();
+        return indicators.some((indicator) => lowerQuery.includes(indicator));
+      }
+      shouldUseMentalModel(query) {
+        const indicators = [
+          "first principles",
+          "fundamental",
+          "root cause",
+          "why",
+          "principle",
+          "framework",
+          "model",
+          "theory",
+          "concept",
+          "understand"
+        ];
+        const lowerQuery = query.toLowerCase();
+        return indicators.some((indicator) => lowerQuery.includes(indicator));
+      }
+      async useSequentialThinking(query) {
+        const toolCall = {
+          name: "sequentialthinking",
+          arguments: {
+            thought: `I need to analyze this query systematically: ${query}`,
+            thoughtNumber: 1,
+            totalThoughts: 3,
+            nextThoughtNeeded: true
+          }
+        };
+        return await this.llmService.executeMCPTool(toolCall);
+      }
+      async useMentalModel(query) {
+        let modelName = "first_principles";
+        if (query.toLowerCase().includes("decision") || query.toLowerCase().includes("choose")) {
+          modelName = "opportunity_cost";
+        } else if (query.toLowerCase().includes("simple") || query.toLowerCase().includes("complex")) {
+          modelName = "occams_razor";
+        }
+        const toolCall = {
+          name: "mentalmodel",
+          arguments: {
+            modelName,
+            problem: query
+          }
+        };
+        return await this.llmService.executeMCPTool(toolCall);
+      }
+    };
+  }
+});
+
+// ../llm-enhanced/src/router/tier4Processor.ts
+var Tier4Processor;
+var init_tier4Processor = __esm({
+  "../llm-enhanced/src/router/tier4Processor.ts"() {
+    "use strict";
+    init_types();
+    Tier4Processor = class {
+      llmService;
+      constructor(llmService2) {
+        this.llmService = llmService2;
+      }
+      async process(request) {
+        const startTime = Date.now();
+        try {
+          const analysisResults = await this.performComprehensiveAnalysis(request.query);
+          const finalPrompt = this.buildExpertPrompt(request.query, analysisResults);
+          const expertResponse = await this.llmService.generate(finalPrompt, {
+            temperature: 0.7,
+            top_p: 0.95,
+            top_k: 50
+          });
+          const content = this.formatExpertResponse(analysisResults, expertResponse);
+          const processingTime = Date.now() - startTime;
+          return {
+            requestId: request.id,
+            tierUsed: request.query.toLowerCase().includes("expert") ? "EXPERT" /* EXPERT */ : "COMPLEX" /* COMPLEX */,
+            content,
+            qualityScore: 0.95,
+            metrics: {
+              processingTimeMs: processingTime,
+              modelUsed: this.llmService.getCurrentModel(),
+              toolsUsed: analysisResults.toolsUsed,
+              analysisDepth: "comprehensive",
+              tokensEstimate: Math.ceil(content.length / 4)
+            }
+          };
+        } catch (error) {
+          const processingTime = Date.now() - startTime;
+          return {
+            requestId: request.id,
+            tierUsed: "COMPLEX" /* COMPLEX */,
+            content: "I encountered an error during comprehensive analysis. Let me provide a detailed response based on available information.",
+            error: error instanceof Error ? error.message : "Unknown error",
+            metrics: {
+              processingTimeMs: processingTime,
+              failed: true
+            }
+          };
+        }
+      }
+      async performComprehensiveAnalysis(query) {
+        const results = {
+          sequentialThinking: null,
+          mentalModel: null,
+          designPattern: null,
+          scientificMethod: null,
+          collaborativeReasoning: null,
+          toolsUsed: []
+        };
+        try {
+          const thinkingResult = await this.useSequentialThinking(query);
+          if (thinkingResult.success) {
+            results.sequentialThinking = thinkingResult;
+            results.toolsUsed.push("sequential-thinking");
+          }
+        } catch (error) {
+          console.warn("Sequential thinking failed:", error);
+        }
+        try {
+          const mentalModelResult = await this.useMentalModel(query);
+          if (mentalModelResult.success) {
+            results.mentalModel = mentalModelResult;
+            results.toolsUsed.push("mental-model");
+          }
+        } catch (error) {
+          console.warn("Mental model analysis failed:", error);
+        }
+        if (this.isDesignRelated(query)) {
+          try {
+            const designResult = await this.useDesignPattern(query);
+            if (designResult.success) {
+              results.designPattern = designResult;
+              results.toolsUsed.push("design-pattern");
+            }
+          } catch (error) {
+            console.warn("Design pattern analysis failed:", error);
+          }
+        }
+        if (this.isScientificInquiry(query)) {
+          try {
+            const scientificResult = await this.useScientificMethod(query);
+            if (scientificResult.success) {
+              results.scientificMethod = scientificResult;
+              results.toolsUsed.push("scientific-method");
+            }
+          } catch (error) {
+            console.warn("Scientific method analysis failed:", error);
+          }
+        }
+        if (this.requiresMultiplePerspectives(query)) {
+          try {
+            const collaborativeResult = await this.useCollaborativeReasoning(query);
+            if (collaborativeResult.success) {
+              results.collaborativeReasoning = collaborativeResult;
+              results.toolsUsed.push("collaborative-reasoning");
+            }
+          } catch (error) {
+            console.warn("Collaborative reasoning failed:", error);
+          }
+        }
+        return results;
+      }
+      buildExpertPrompt(query, analysisResults) {
+        let prompt = `You are an expert AI assistant with access to comprehensive analytical tools. Based on the following multi-faceted analysis, provide an authoritative, well-structured response.
+
+Original Query: ${query}
+
+`;
+        if (analysisResults.sequentialThinking) {
+          prompt += `**Structured Analysis:**
+${analysisResults.sequentialThinking.content}
+
+`;
+        }
+        if (analysisResults.mentalModel) {
+          prompt += `**Mental Model Framework:**
+${analysisResults.mentalModel.content}
+
+`;
+        }
+        if (analysisResults.designPattern) {
+          prompt += `**Design Pattern Analysis:**
+${analysisResults.designPattern.content}
+
+`;
+        }
+        if (analysisResults.scientificMethod) {
+          prompt += `**Scientific Method Application:**
+${analysisResults.scientificMethod.content}
+
+`;
+        }
+        if (analysisResults.collaborativeReasoning) {
+          prompt += `**Multi-Perspective Analysis:**
+${analysisResults.collaborativeReasoning.content}
+
+`;
+        }
+        prompt += `Please synthesize all the above analyses into a comprehensive, expert-level response that addresses the original query with depth, nuance, and practical insights.`;
+        return prompt;
+      }
+      formatExpertResponse(analysisResults, expertResponse) {
+        let content = "# Expert Analysis\n\n";
+        if (analysisResults.toolsUsed.length > 0) {
+          content += `*Analysis conducted using: ${analysisResults.toolsUsed.join(", ")}*
+
+`;
+        }
+        content += expertResponse;
+        if (analysisResults.toolsUsed.length > 1) {
+          content += "\n\n---\n\n## Analytical Framework Summary\n\n";
+          if (analysisResults.sequentialThinking) {
+            content += "**Structured Thinking:** Applied systematic reasoning process\n";
+          }
+          if (analysisResults.mentalModel) {
+            content += "**Mental Models:** Leveraged cognitive frameworks for deeper understanding\n";
+          }
+          if (analysisResults.designPattern) {
+            content += "**Design Patterns:** Applied proven architectural solutions\n";
+          }
+          if (analysisResults.scientificMethod) {
+            content += "**Scientific Method:** Used hypothesis-driven analysis\n";
+          }
+          if (analysisResults.collaborativeReasoning) {
+            content += "**Multi-Perspective Analysis:** Considered diverse viewpoints\n";
+          }
+        }
+        return content;
+      }
+      async useSequentialThinking(query) {
+        const toolCall = {
+          name: "sequentialthinking",
+          arguments: {
+            thought: `I need to perform a comprehensive analysis of this complex query: ${query}`,
+            thoughtNumber: 1,
+            totalThoughts: 5,
+            nextThoughtNeeded: true
+          }
+        };
+        return await this.llmService.executeMCPTool(toolCall);
+      }
+      async useMentalModel(query) {
+        let modelName = "first_principles";
+        if (query.toLowerCase().includes("decision") || query.toLowerCase().includes("choose")) {
+          modelName = "opportunity_cost";
+        } else if (query.toLowerCase().includes("error") || query.toLowerCase().includes("debug")) {
+          modelName = "error_propagation";
+        } else if (query.toLowerCase().includes("priority") || query.toLowerCase().includes("important")) {
+          modelName = "pareto_principle";
+        }
+        const toolCall = {
+          name: "mentalmodel",
+          arguments: {
+            modelName,
+            problem: query
+          }
+        };
+        return await this.llmService.executeMCPTool(toolCall);
+      }
+      async useDesignPattern(query) {
+        let patternName = "modular_architecture";
+        if (query.toLowerCase().includes("api") || query.toLowerCase().includes("integration")) {
+          patternName = "api_integration";
+        } else if (query.toLowerCase().includes("state") || query.toLowerCase().includes("data")) {
+          patternName = "state_management";
+        } else if (query.toLowerCase().includes("async") || query.toLowerCase().includes("concurrent")) {
+          patternName = "async_processing";
+        } else if (query.toLowerCase().includes("scale") || query.toLowerCase().includes("performance")) {
+          patternName = "scalability";
+        } else if (query.toLowerCase().includes("security") || query.toLowerCase().includes("auth")) {
+          patternName = "security";
+        }
+        const toolCall = {
+          name: "designpattern",
+          arguments: {
+            patternName,
+            context: query
+          }
+        };
+        return await this.llmService.executeMCPTool(toolCall);
+      }
+      async useScientificMethod(query) {
+        const toolCall = {
+          name: "scientificmethod",
+          arguments: {
+            stage: "observation",
+            observation: query,
+            inquiryId: `inquiry_${Date.now()}`,
+            iteration: 0,
+            nextStageNeeded: true
+          }
+        };
+        return await this.llmService.executeMCPTool(toolCall);
+      }
+      async useCollaborativeReasoning(query) {
+        const toolCall = {
+          name: "collaborativereasoning",
+          arguments: {
+            topic: query,
+            personas: [
+              {
+                id: "analyst",
+                name: "Systems Analyst",
+                expertise: ["systems thinking", "analysis", "problem solving"],
+                background: "Expert in breaking down complex problems",
+                perspective: "Analytical and methodical",
+                biases: ["over-analysis"],
+                communication: { style: "structured", tone: "professional" }
+              },
+              {
+                id: "creative",
+                name: "Creative Strategist",
+                expertise: ["innovation", "creative thinking", "ideation"],
+                background: "Specialist in novel approaches and solutions",
+                perspective: "Creative and unconventional",
+                biases: ["novelty bias"],
+                communication: { style: "inspirational", tone: "enthusiastic" }
+              }
+            ],
+            contributions: [],
+            stage: "problem-definition",
+            activePersonaId: "analyst",
+            sessionId: `session_${Date.now()}`,
+            iteration: 0,
+            nextContributionNeeded: true
+          }
+        };
+        return await this.llmService.executeMCPTool(toolCall);
+      }
+      isDesignRelated(query) {
+        const designKeywords = [
+          "architecture",
+          "design",
+          "pattern",
+          "structure",
+          "system",
+          "api",
+          "interface",
+          "module",
+          "component",
+          "framework"
+        ];
+        const lowerQuery = query.toLowerCase();
+        return designKeywords.some((keyword) => lowerQuery.includes(keyword));
+      }
+      isScientificInquiry(query) {
+        const scientificKeywords = [
+          "hypothesis",
+          "test",
+          "experiment",
+          "research",
+          "study",
+          "evidence",
+          "prove",
+          "validate",
+          "investigate",
+          "analyze"
+        ];
+        const lowerQuery = query.toLowerCase();
+        return scientificKeywords.some((keyword) => lowerQuery.includes(keyword));
+      }
+      requiresMultiplePerspectives(query) {
+        const complexityIndicators = [
+          "complex",
+          "complicated",
+          "multifaceted",
+          "various",
+          "different",
+          "perspective",
+          "viewpoint",
+          "opinion",
+          "debate",
+          "controversial"
+        ];
+        const lowerQuery = query.toLowerCase();
+        return complexityIndicators.some((indicator) => lowerQuery.includes(indicator)) || query.length > 200;
+      }
+    };
+  }
+});
+
+// ../llm-enhanced/src/router/router.ts
+var LLMRouter;
+var init_router = __esm({
+  "../llm-enhanced/src/router/router.ts"() {
+    "use strict";
+    init_types();
+    init_complexityAssessor();
+    init_tier1Processor();
+    init_tier2Processor();
+    init_tier3Processor();
+    init_tier4Processor();
+    LLMRouter = class {
+      complexityAssessor;
+      tier1Processor;
+      tier2Processor;
+      tier3Processor;
+      tier4Processor;
+      llmService;
+      constructor(llmService2) {
+        this.llmService = llmService2;
+        this.complexityAssessor = new ComplexityAssessor(llmService2);
+        this.tier1Processor = new Tier1Processor();
+        this.tier2Processor = new Tier2Processor(llmService2);
+        this.tier3Processor = new Tier3Processor(llmService2);
+        this.tier4Processor = new Tier4Processor(llmService2);
+      }
+      async routeRequest(request) {
+        try {
+          const assessment = await this.complexityAssessor.assess(request);
+          const processor = this.getProcessor(assessment.complexity);
+          const response = await processor.process(request);
+          response.metrics = {
+            ...response.metrics,
+            complexityAssessment: assessment,
+            routingDecision: assessment.complexity,
+            estimatedTimeMs: assessment.estimatedTimeMs
+          };
+          return response;
+        } catch (error) {
+          return {
+            requestId: request.id,
+            tierUsed: "ATOMIC" /* ATOMIC */,
+            content: "I apologize, but I encountered an error processing your request. Please try again.",
+            error: error instanceof Error ? error.message : "Unknown routing error",
+            metrics: {
+              failed: true,
+              routingError: true
+            }
+          };
+        }
+      }
+      getProcessor(complexity) {
+        switch (complexity) {
+          case "DIRECT_RESPONSE" /* DIRECT_RESPONSE */:
+            return this.tier1Processor;
+          case "ATOMIC" /* ATOMIC */:
+            return this.tier2Processor;
+          case "MODERATE" /* MODERATE */:
+            return this.tier3Processor;
+          case "COMPLEX" /* COMPLEX */:
+          case "EXPERT" /* EXPERT */:
+            return this.tier4Processor;
+          default:
+            return this.tier2Processor;
+        }
+      }
+      async getRouterStatus() {
+        const llmServiceStatus = await this.llmService.getStatus();
+        const mcpConnected = this.llmService.isMCPConnected();
+        const availableTools = mcpConnected ? await this.llmService.getAvailableMCPTools() : [];
+        return {
+          llmServiceStatus,
+          mcpConnected,
+          availableTools
+        };
+      }
+      async testComplexityAssessment(query) {
+        const request = {
+          id: `test_${Date.now()}`,
+          query,
+          userId: "test_user",
+          timestamp: Date.now()
+        };
+        const assessment = await this.complexityAssessor.assess(request);
+        return {
+          query,
+          assessment,
+          selectedTier: assessment.complexity,
+          processor: this.getProcessor(assessment.complexity).constructor.name
+        };
+      }
+    };
+  }
+});
+
+// ../llm-enhanced/src/services/llm-service.ts
+var LLMService, llmService;
+var init_llm_service = __esm({
+  "../llm-enhanced/src/services/llm-service.ts"() {
+    "use strict";
+    LLMService = class {
+      defaultModel;
+      mcpClient = null;
+      isInitialized = false;
+      openRouterService;
+      constructor(config = {}) {
+        this.defaultModel = config.defaultModel || "meta-llama/llama-3.1-8b-instruct:free";
+      }
+      setOpenRouterService(service) {
+        this.openRouterService = service;
+        console.log("OpenRouter service configured in LLMService");
+      }
+      async initialize() {
+        this.isInitialized = true;
+        console.log("LLM Service initialized with OpenRouter");
+      }
+      async chat(messages, options = {}) {
+        if (!this.openRouterService) {
+          throw new Error("OpenRouterService not configured");
+        }
+        const request = {
+          model: this.defaultModel,
+          messages,
+          temperature: options.temperature,
+          max_tokens: options.max_tokens,
+          stream: false
+        };
+        const response = await this.openRouterService.generate(request);
+        return response.content;
+      }
+      async generate(prompt, options = {}) {
+        if (!this.openRouterService) {
+          throw new Error("OpenRouterService not configured");
+        }
+        const messages = [{ role: "user", content: prompt }];
+        const request = {
+          model: this.defaultModel,
+          messages,
+          temperature: options.temperature,
+          max_tokens: options.max_tokens,
+          stream: false
+        };
+        const response = await this.openRouterService.generate(request);
+        return response.content;
+      }
+      setMCPClient(client) {
+        this.mcpClient = client;
+      }
+      async getStatus() {
+        return {
+          isHealthy: this.openRouterService !== null,
+          currentModel: this.defaultModel,
+          availableModels: await this.getAvailableModels()
+        };
+      }
+      isHealthy() {
+        return this.openRouterService !== null;
+      }
+      getCurrentModel() {
+        return this.defaultModel;
+      }
+      async getAvailableModels() {
+        if (!this.openRouterService) {
+          return [this.defaultModel];
+        }
+        try {
+          const models = await this.openRouterService.getAvailableModels();
+          return models.map((m) => m.id || m);
+        } catch (error) {
+          console.error("Failed to get available models:", error);
+          return [this.defaultModel];
+        }
+      }
+      setModel(modelName) {
+        this.defaultModel = modelName;
+      }
+      async executeMCPTool(toolCall) {
+        if (!this.mcpClient) {
+          return {
+            success: false,
+            error: "MCP client not configured"
+          };
+        }
+        return await this.mcpClient.executeToolCall(toolCall);
+      }
+      isMCPConnected() {
+        return this.mcpClient?.isConnected() || false;
+      }
+      async getAvailableMCPTools() {
+        if (!this.mcpClient) {
+          return [];
+        }
+        return await this.mcpClient.getAvailableTools();
+      }
+    };
+    llmService = new LLMService();
+  }
+});
+
+// ../llm-enhanced/src/services/mcp-client-adapter.ts
+var MCPClientAdapter, mcpClientAdapter;
+var init_mcp_client_adapter = __esm({
+  "../llm-enhanced/src/services/mcp-client-adapter.ts"() {
+    "use strict";
+    MCPClientAdapter = class {
+      mcpHubService = null;
+      setMCPHubService(service) {
+        this.mcpHubService = service;
+      }
+      async executeToolCall(toolCall) {
+        if (!this.mcpHubService) {
+          return {
+            success: false,
+            error: "MCP hub service not configured"
+          };
+        }
+        try {
+          const result = await this.mcpHubService.executeTool(toolCall.name, toolCall.arguments);
+          return {
+            success: true,
+            content: typeof result === "string" ? result : JSON.stringify(result),
+            metadata: { toolName: toolCall.name }
+          };
+        } catch (error) {
+          return {
+            success: false,
+            error: error instanceof Error ? error.message : "Unknown error",
+            metadata: { toolName: toolCall.name }
+          };
+        }
+      }
+      isConnected() {
+        return this.mcpHubService !== null;
+      }
+      async getAvailableTools() {
+        if (!this.mcpHubService) {
+          return [];
+        }
+        try {
+          const tools = await this.mcpHubService.getAvailableTools();
+          return tools.map((tool) => tool.name || tool.id);
+        } catch (error) {
+          console.error("Failed to get available MCP tools:", error);
+          return [];
+        }
+      }
+    };
+    mcpClientAdapter = new MCPClientAdapter();
+  }
+});
+
+// ../llm-enhanced/src/enhanced-llm-service.ts
+var EnhancedLLMService, enhancedLLMService;
+var init_enhanced_llm_service = __esm({
+  "../llm-enhanced/src/enhanced-llm-service.ts"() {
+    "use strict";
+    init_router();
+    init_llm_service();
+    init_mcp_client_adapter();
+    init_complexityAssessor();
+    EnhancedLLMService = class {
+      router;
+      llmService;
+      complexityAssessor;
+      isInitialized = false;
+      useLLMDrivenComplexity;
+      constructor(config = {}) {
+        this.llmService = new LLMService(config);
+        this.complexityAssessor = new ComplexityAssessor(this.llmService);
+        this.router = new LLMRouter(this.llmService);
+        this.useLLMDrivenComplexity = config.useLLMDrivenComplexity !== false;
+      }
+      async initialize(openRouterService, mcpHubService) {
+        console.log("Enhanced LLM Service initializing...");
+        if (openRouterService) {
+          this.llmService.setOpenRouterService(openRouterService);
+          console.log("Enhanced LLM Service: OpenRouterService wired into LLMService");
+          if (this.useLLMDrivenComplexity) {
+            console.log("Enhanced LLM Service: LLM-driven complexity assessment enabled");
+          } else {
+            console.log("Enhanced LLM Service: Using rule-based complexity assessment");
+          }
+        } else {
+          this.useLLMDrivenComplexity = false;
+          console.log("Enhanced LLM Service: No OpenRouter service, using rule-based complexity assessment");
+        }
+        if (mcpHubService) {
+          mcpClientAdapter.setMCPHubService(mcpHubService);
+          this.llmService.setMCPClient(mcpClientAdapter);
+          console.log("Enhanced LLM Service: MCP Hub wired into LLMService");
+        }
+        await this.llmService.initialize();
+        this.isInitialized = true;
+        console.log("Enhanced LLM Service initialized and ready");
+      }
+      async generateResponse(query, userId = "default", metadata) {
+        if (!this.isInitialized) {
+          throw new Error("Enhanced LLM Service not initialized. Call initialize() first.");
+        }
+        const request = {
+          id: `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          query,
+          userId,
+          timestamp: Date.now(),
+          metadata
+        };
+        return await this.router.routeRequest(request);
+      }
+      async getStatus() {
+        if (!this.isInitialized) {
+          return {
+            initialized: false,
+            error: "Service not initialized"
+          };
+        }
+        const routerStatus = await this.router.getRouterStatus();
+        return {
+          initialized: true,
+          useLLMDrivenComplexity: this.useLLMDrivenComplexity,
+          ...routerStatus
+        };
+      }
+      async testComplexityAssessment(query) {
+        if (!this.isInitialized) {
+          throw new Error("Enhanced LLM Service not initialized");
+        }
+        return await this.router.testComplexityAssessment(query);
+      }
+      // Enable or disable LLM-driven complexity assessment
+      setLLMDrivenComplexity(enabled) {
+        this.useLLMDrivenComplexity = enabled;
+        console.log(`Enhanced LLM Service: LLM-driven complexity assessment ${enabled ? "enabled" : "disabled"}`);
+      }
+      // Direct access to basic LLM functionality for backward compatibility
+      async generateBasic(prompt, options) {
+        if (!this.isInitialized) {
+          throw new Error("Enhanced LLM Service not initialized");
+        }
+        return await this.llmService.generate(prompt, options);
+      }
+      isReady() {
+        return this.isInitialized;
+      }
+      getCurrentModel() {
+        return this.llmService.getCurrentModel();
+      }
+      async setModel(modelName) {
+        this.llmService.setModel(modelName);
+      }
+    };
+    enhancedLLMService = new EnhancedLLMService({ useLLMDrivenComplexity: true });
+  }
+});
+
+// ../../node_modules/eventemitter3/index.js
+var require_eventemitter3 = __commonJS({
+  "../../node_modules/eventemitter3/index.js"(exports2, module2) {
+    "use strict";
+    var has = Object.prototype.hasOwnProperty;
+    var prefix = "~";
+    function Events() {
+    }
+    if (Object.create) {
+      Events.prototype = /* @__PURE__ */ Object.create(null);
+      if (!new Events().__proto__)
+        prefix = false;
+    }
+    function EE(fn, context, once) {
+      this.fn = fn;
+      this.context = context;
+      this.once = once || false;
+    }
+    function addListener(emitter, event, fn, context, once) {
+      if (typeof fn !== "function") {
+        throw new TypeError("The listener must be a function");
+      }
+      var listener = new EE(fn, context || emitter, once), evt = prefix ? prefix + event : event;
+      if (!emitter._events[evt])
+        emitter._events[evt] = listener, emitter._eventsCount++;
+      else if (!emitter._events[evt].fn)
+        emitter._events[evt].push(listener);
+      else
+        emitter._events[evt] = [emitter._events[evt], listener];
+      return emitter;
+    }
+    function clearEvent(emitter, evt) {
+      if (--emitter._eventsCount === 0)
+        emitter._events = new Events();
+      else
+        delete emitter._events[evt];
+    }
+    function EventEmitter6() {
+      this._events = new Events();
+      this._eventsCount = 0;
+    }
+    EventEmitter6.prototype.eventNames = function eventNames() {
+      var names = [], events, name;
+      if (this._eventsCount === 0)
+        return names;
+      for (name in events = this._events) {
+        if (has.call(events, name))
+          names.push(prefix ? name.slice(1) : name);
+      }
+      if (Object.getOwnPropertySymbols) {
+        return names.concat(Object.getOwnPropertySymbols(events));
+      }
+      return names;
+    };
+    EventEmitter6.prototype.listeners = function listeners(event) {
+      var evt = prefix ? prefix + event : event, handlers = this._events[evt];
+      if (!handlers)
+        return [];
+      if (handlers.fn)
+        return [handlers.fn];
+      for (var i = 0, l = handlers.length, ee = new Array(l); i < l; i++) {
+        ee[i] = handlers[i].fn;
+      }
+      return ee;
+    };
+    EventEmitter6.prototype.listenerCount = function listenerCount(event) {
+      var evt = prefix ? prefix + event : event, listeners = this._events[evt];
+      if (!listeners)
+        return 0;
+      if (listeners.fn)
+        return 1;
+      return listeners.length;
+    };
+    EventEmitter6.prototype.emit = function emit(event, a1, a2, a3, a4, a5) {
+      var evt = prefix ? prefix + event : event;
+      if (!this._events[evt])
+        return false;
+      var listeners = this._events[evt], len = arguments.length, args, i;
+      if (listeners.fn) {
+        if (listeners.once)
+          this.removeListener(event, listeners.fn, void 0, true);
+        switch (len) {
+          case 1:
+            return listeners.fn.call(listeners.context), true;
+          case 2:
+            return listeners.fn.call(listeners.context, a1), true;
+          case 3:
+            return listeners.fn.call(listeners.context, a1, a2), true;
+          case 4:
+            return listeners.fn.call(listeners.context, a1, a2, a3), true;
+          case 5:
+            return listeners.fn.call(listeners.context, a1, a2, a3, a4), true;
+          case 6:
+            return listeners.fn.call(listeners.context, a1, a2, a3, a4, a5), true;
+        }
+        for (i = 1, args = new Array(len - 1); i < len; i++) {
+          args[i - 1] = arguments[i];
+        }
+        listeners.fn.apply(listeners.context, args);
+      } else {
+        var length = listeners.length, j;
+        for (i = 0; i < length; i++) {
+          if (listeners[i].once)
+            this.removeListener(event, listeners[i].fn, void 0, true);
+          switch (len) {
+            case 1:
+              listeners[i].fn.call(listeners[i].context);
+              break;
+            case 2:
+              listeners[i].fn.call(listeners[i].context, a1);
+              break;
+            case 3:
+              listeners[i].fn.call(listeners[i].context, a1, a2);
+              break;
+            case 4:
+              listeners[i].fn.call(listeners[i].context, a1, a2, a3);
+              break;
+            default:
+              if (!args)
+                for (j = 1, args = new Array(len - 1); j < len; j++) {
+                  args[j - 1] = arguments[j];
+                }
+              listeners[i].fn.apply(listeners[i].context, args);
+          }
+        }
+      }
+      return true;
+    };
+    EventEmitter6.prototype.on = function on(event, fn, context) {
+      return addListener(this, event, fn, context, false);
+    };
+    EventEmitter6.prototype.once = function once(event, fn, context) {
+      return addListener(this, event, fn, context, true);
+    };
+    EventEmitter6.prototype.removeListener = function removeListener(event, fn, context, once) {
+      var evt = prefix ? prefix + event : event;
+      if (!this._events[evt])
+        return this;
+      if (!fn) {
+        clearEvent(this, evt);
+        return this;
+      }
+      var listeners = this._events[evt];
+      if (listeners.fn) {
+        if (listeners.fn === fn && (!once || listeners.once) && (!context || listeners.context === context)) {
+          clearEvent(this, evt);
+        }
+      } else {
+        for (var i = 0, events = [], length = listeners.length; i < length; i++) {
+          if (listeners[i].fn !== fn || once && !listeners[i].once || context && listeners[i].context !== context) {
+            events.push(listeners[i]);
+          }
+        }
+        if (events.length)
+          this._events[evt] = events.length === 1 ? events[0] : events;
+        else
+          clearEvent(this, evt);
+      }
+      return this;
+    };
+    EventEmitter6.prototype.removeAllListeners = function removeAllListeners(event) {
+      var evt;
+      if (event) {
+        evt = prefix ? prefix + event : event;
+        if (this._events[evt])
+          clearEvent(this, evt);
+      } else {
+        this._events = new Events();
+        this._eventsCount = 0;
+      }
+      return this;
+    };
+    EventEmitter6.prototype.off = EventEmitter6.prototype.removeListener;
+    EventEmitter6.prototype.addListener = EventEmitter6.prototype.on;
+    EventEmitter6.prefixed = prefix;
+    EventEmitter6.EventEmitter = EventEmitter6;
+    if ("undefined" !== typeof module2) {
+      module2.exports = EventEmitter6;
+    }
+  }
+});
+
+// ../../node_modules/eventemitter3/index.mjs
+var import_index;
+var init_eventemitter3 = __esm({
+  "../../node_modules/eventemitter3/index.mjs"() {
+    import_index = __toESM(require_eventemitter3(), 1);
+  }
+});
+
+// ../llm-enhanced/src/processors/base-processor.ts
+var init_base_processor = __esm({
+  "../llm-enhanced/src/processors/base-processor.ts"() {
+    "use strict";
+    init_eventemitter3();
+  }
+});
+
+// ../llm-enhanced/src/processors/atomic-processor.ts
+var init_atomic_processor = __esm({
+  "../llm-enhanced/src/processors/atomic-processor.ts"() {
+    "use strict";
+    init_base_processor();
+  }
+});
+
+// ../llm-enhanced/src/intervention/user-controls.ts
+var init_user_controls = __esm({
+  "../llm-enhanced/src/intervention/user-controls.ts"() {
+    "use strict";
+    init_eventemitter3();
+  }
+});
+
+// ../llm-enhanced/src/analytics/performance-tracker.ts
+var init_performance_tracker = __esm({
+  "../llm-enhanced/src/analytics/performance-tracker.ts"() {
+    "use strict";
+    init_eventemitter3();
+  }
+});
+
+// ../llm-enhanced/src/index.ts
+async function processRequest(request) {
+  if (!router) {
+    throw new Error("LLMRouter not initialized. Call initialize() first.");
+  }
+  return router.routeRequest(request);
+}
+async function testComplexityAssessment(query) {
+  if (!router) {
+    throw new Error("LLMRouter not initialized. Call initialize() first.");
+  }
+  return router.testComplexityAssessment(query);
+}
+function setLLMDrivenComplexity(enabled) {
+  if (!router) {
+    throw new Error("LLMRouter not initialized. Call initialize() first.");
+  }
+  console.log(`LLM-driven complexity assessment set to: ${enabled} (needs full implementation)`);
+}
+async function getStatus() {
+  if (!router) {
+    return {
+      initialized: false,
+      routerStatus: null,
+      error: "LLMRouter not initialized. Call initialize() first."
+    };
+  }
+  try {
+    return {
+      initialized: true,
+      routerStatus: await router.getRouterStatus()
+    };
+  } catch (error) {
+    console.error("Error getting LLM Router status:", error);
+    return {
+      initialized: true,
+      // Router object exists but method failed
+      routerStatus: null,
+      error: error instanceof Error ? error.message : "Unknown error getting status"
+    };
+  }
+}
+var router;
+var init_src = __esm({
+  "../llm-enhanced/src/index.ts"() {
+    "use strict";
+    init_enhanced_llm_service();
+    init_router();
+    init_complexityAssessor();
+    init_llm_service();
+    init_mcp_client_adapter();
+    init_tier1Processor();
+    init_tier2Processor();
+    init_tier3Processor();
+    init_tier4Processor();
+    init_base_processor();
+    init_atomic_processor();
+    init_user_controls();
+    init_performance_tracker();
+    init_router();
+    init_llm_service();
+  }
+});
+
 // ../../node_modules/ws/lib/constants.js
 var require_constants = __commonJS({
   "../../node_modules/ws/lib/constants.js"(exports2, module2) {
@@ -3105,7 +4442,7 @@ var require_extension = __commonJS({
 var require_websocket = __commonJS({
   "../../node_modules/ws/lib/websocket.js"(exports2, module2) {
     "use strict";
-    var EventEmitter2 = require("events");
+    var EventEmitter6 = require("events");
     var https = require("https");
     var http = require("http");
     var net = require("net");
@@ -3137,7 +4474,7 @@ var require_websocket = __commonJS({
     var protocolVersions = [8, 13];
     var readyStates = ["CONNECTING", "OPEN", "CLOSING", "CLOSED"];
     var subprotocolRegex = /^[!#$%&'*+\-.0-9A-Z^_`|a-z~]+$/;
-    var WebSocket2 = class _WebSocket extends EventEmitter2 {
+    var WebSocket3 = class _WebSocket extends EventEmitter6 {
       /**
        * Create a new `WebSocket`.
        *
@@ -3521,35 +4858,35 @@ var require_websocket = __commonJS({
         }
       }
     };
-    Object.defineProperty(WebSocket2, "CONNECTING", {
+    Object.defineProperty(WebSocket3, "CONNECTING", {
       enumerable: true,
       value: readyStates.indexOf("CONNECTING")
     });
-    Object.defineProperty(WebSocket2.prototype, "CONNECTING", {
+    Object.defineProperty(WebSocket3.prototype, "CONNECTING", {
       enumerable: true,
       value: readyStates.indexOf("CONNECTING")
     });
-    Object.defineProperty(WebSocket2, "OPEN", {
+    Object.defineProperty(WebSocket3, "OPEN", {
       enumerable: true,
       value: readyStates.indexOf("OPEN")
     });
-    Object.defineProperty(WebSocket2.prototype, "OPEN", {
+    Object.defineProperty(WebSocket3.prototype, "OPEN", {
       enumerable: true,
       value: readyStates.indexOf("OPEN")
     });
-    Object.defineProperty(WebSocket2, "CLOSING", {
+    Object.defineProperty(WebSocket3, "CLOSING", {
       enumerable: true,
       value: readyStates.indexOf("CLOSING")
     });
-    Object.defineProperty(WebSocket2.prototype, "CLOSING", {
+    Object.defineProperty(WebSocket3.prototype, "CLOSING", {
       enumerable: true,
       value: readyStates.indexOf("CLOSING")
     });
-    Object.defineProperty(WebSocket2, "CLOSED", {
+    Object.defineProperty(WebSocket3, "CLOSED", {
       enumerable: true,
       value: readyStates.indexOf("CLOSED")
     });
-    Object.defineProperty(WebSocket2.prototype, "CLOSED", {
+    Object.defineProperty(WebSocket3.prototype, "CLOSED", {
       enumerable: true,
       value: readyStates.indexOf("CLOSED")
     });
@@ -3562,10 +4899,10 @@ var require_websocket = __commonJS({
       "readyState",
       "url"
     ].forEach((property) => {
-      Object.defineProperty(WebSocket2.prototype, property, { enumerable: true });
+      Object.defineProperty(WebSocket3.prototype, property, { enumerable: true });
     });
     ["open", "error", "close", "message"].forEach((method) => {
-      Object.defineProperty(WebSocket2.prototype, `on${method}`, {
+      Object.defineProperty(WebSocket3.prototype, `on${method}`, {
         enumerable: true,
         get() {
           for (const listener of this.listeners(method)) {
@@ -3589,9 +4926,9 @@ var require_websocket = __commonJS({
         }
       });
     });
-    WebSocket2.prototype.addEventListener = addEventListener;
-    WebSocket2.prototype.removeEventListener = removeEventListener;
-    module2.exports = WebSocket2;
+    WebSocket3.prototype.addEventListener = addEventListener;
+    WebSocket3.prototype.removeEventListener = removeEventListener;
+    module2.exports = WebSocket3;
     function initAsClient(websocket, address, protocols, options) {
       const opts = {
         allowSynchronousEvents: true,
@@ -3779,7 +5116,7 @@ var require_websocket = __commonJS({
       });
       req.on("upgrade", (res, socket, head) => {
         websocket.emit("upgrade", res);
-        if (websocket.readyState !== WebSocket2.CONNECTING)
+        if (websocket.readyState !== WebSocket3.CONNECTING)
           return;
         req = websocket._req = null;
         const upgrade = res.headers.upgrade;
@@ -3853,7 +5190,7 @@ var require_websocket = __commonJS({
       }
     }
     function emitErrorAndClose(websocket, err) {
-      websocket._readyState = WebSocket2.CLOSING;
+      websocket._readyState = WebSocket3.CLOSING;
       websocket._errorEmitted = true;
       websocket.emit("error", err);
       websocket.emitClose();
@@ -3870,7 +5207,7 @@ var require_websocket = __commonJS({
       return tls.connect(options);
     }
     function abortHandshake(websocket, stream, message) {
-      websocket._readyState = WebSocket2.CLOSING;
+      websocket._readyState = WebSocket3.CLOSING;
       const err = new Error(message);
       Error.captureStackTrace(err, abortHandshake);
       if (stream.setHeader) {
@@ -3952,10 +5289,10 @@ var require_websocket = __commonJS({
     }
     function senderOnError(err) {
       const websocket = this[kWebSocket];
-      if (websocket.readyState === WebSocket2.CLOSED)
+      if (websocket.readyState === WebSocket3.CLOSED)
         return;
-      if (websocket.readyState === WebSocket2.OPEN) {
-        websocket._readyState = WebSocket2.CLOSING;
+      if (websocket.readyState === WebSocket3.OPEN) {
+        websocket._readyState = WebSocket3.CLOSING;
         setCloseTimer(websocket);
       }
       this._socket.end();
@@ -3975,7 +5312,7 @@ var require_websocket = __commonJS({
       this.removeListener("close", socketOnClose);
       this.removeListener("data", socketOnData);
       this.removeListener("end", socketOnEnd);
-      websocket._readyState = WebSocket2.CLOSING;
+      websocket._readyState = WebSocket3.CLOSING;
       let chunk;
       if (!this._readableState.endEmitted && !websocket._closeFrameReceived && !websocket._receiver._writableState.errorEmitted && (chunk = websocket._socket.read()) !== null) {
         websocket._receiver.write(chunk);
@@ -3997,7 +5334,7 @@ var require_websocket = __commonJS({
     }
     function socketOnEnd() {
       const websocket = this[kWebSocket];
-      websocket._readyState = WebSocket2.CLOSING;
+      websocket._readyState = WebSocket3.CLOSING;
       websocket._receiver.end();
       this.end();
     }
@@ -4006,7 +5343,7 @@ var require_websocket = __commonJS({
       this.removeListener("error", socketOnError);
       this.on("error", NOOP);
       if (websocket) {
-        websocket._readyState = WebSocket2.CLOSING;
+        websocket._readyState = WebSocket3.CLOSING;
         this.destroy();
       }
     }
@@ -4017,7 +5354,7 @@ var require_websocket = __commonJS({
 var require_stream = __commonJS({
   "../../node_modules/ws/lib/stream.js"(exports2, module2) {
     "use strict";
-    var WebSocket2 = require_websocket();
+    var WebSocket3 = require_websocket();
     var { Duplex } = require("stream");
     function emitClose(stream) {
       stream.emit("close");
@@ -4171,20 +5508,20 @@ var require_subprotocol = __commonJS({
 var require_websocket_server = __commonJS({
   "../../node_modules/ws/lib/websocket-server.js"(exports2, module2) {
     "use strict";
-    var EventEmitter2 = require("events");
+    var EventEmitter6 = require("events");
     var http = require("http");
     var { Duplex } = require("stream");
     var { createHash } = require("crypto");
     var extension = require_extension();
     var PerMessageDeflate = require_permessage_deflate();
     var subprotocol = require_subprotocol();
-    var WebSocket2 = require_websocket();
+    var WebSocket3 = require_websocket();
     var { GUID, kWebSocket } = require_constants();
     var keyRegex = /^[+/0-9A-Za-z]{22}==$/;
     var RUNNING = 0;
     var CLOSING = 1;
     var CLOSED = 2;
-    var WebSocketServer2 = class extends EventEmitter2 {
+    var WebSocketServer2 = class extends EventEmitter6 {
       /**
        * Create a `WebSocketServer` instance.
        *
@@ -4234,7 +5571,7 @@ var require_websocket_server = __commonJS({
           host: null,
           path: null,
           port: null,
-          WebSocket: WebSocket2,
+          WebSocket: WebSocket3,
           ...options
         };
         if (options.port == null && !options.server && !options.noServer || options.port != null && (options.server || options.noServer) || options.server && options.noServer) {
@@ -9881,11 +11218,51 @@ function setupAppHandlers() {
     return process.env.npm_package_version || "1.0.0";
   });
   import_electron4.ipcMain.handle("app:getPath", async (event, name) => {
-    const { app: app9 } = require("electron");
+    const { app: app10 } = require("electron");
     try {
-      return app9.getPath(name);
+      return app10.getPath(name);
     } catch (error) {
       console.error(`Failed to get path for ${name}:`, error);
+      throw error;
+    }
+  });
+  import_electron4.ipcMain.handle("dialog:showOpenDialog", async (event, options) => {
+    const win = import_electron4.BrowserWindow.fromWebContents(event.sender);
+    try {
+      let result;
+      if (win) {
+        result = await import_electron4.dialog.showOpenDialog(win, options);
+      } else {
+        result = await import_electron4.dialog.showOpenDialog(options);
+      }
+      return result;
+    } catch (error) {
+      console.error("Failed to show open dialog:", error);
+      throw error;
+    }
+  });
+  import_electron4.ipcMain.handle("app:setWorkingDirectory", async (event, dirPath) => {
+    try {
+      const fs2 = require("fs").promises;
+      const path7 = require("path");
+      await fs2.access(dirPath);
+      process.chdir(dirPath);
+      console.log(`Changed working directory to: ${dirPath}`);
+      const sender = event.sender;
+      if (sender) {
+        sender.send("app:workingDirectoryChanged", dirPath);
+      }
+      return { success: true, path: dirPath };
+    } catch (error) {
+      console.error(`Failed to set working directory to ${dirPath}:`, error);
+      throw error;
+    }
+  });
+  import_electron4.ipcMain.handle("app:getWorkingDirectory", async () => {
+    try {
+      return process.cwd();
+    } catch (error) {
+      console.error("Failed to get working directory:", error);
       throw error;
     }
   });
@@ -9914,6 +11291,16 @@ function setupSettingsHandlers() {
       stmt.run(key, JSON.stringify(value), Date.now());
     } catch (error) {
       console.error(`Failed to set setting ${key}:`, error);
+      throw error;
+    }
+  });
+  import_electron4.ipcMain.handle("storage:remove", async (event, key) => {
+    try {
+      const db2 = getRawDatabase();
+      db2.prepare("DELETE FROM settings WHERE key = ?").run(key);
+      return true;
+    } catch (error) {
+      console.error(`Failed to remove setting ${key}:`, error);
       throw error;
     }
   });
@@ -10171,6 +11558,25 @@ function setupFileSystemHandlers() {
       throw error;
     }
   });
+  import_electron4.ipcMain.handle("fs:moveFile", async (event, sourcePath, destPath) => {
+    try {
+      const fs2 = require("fs").promises;
+      const path7 = require("path");
+      const workspace = process.cwd();
+      const fullSource = path7.resolve(workspace, sourcePath);
+      const fullDest = path7.resolve(workspace, destPath);
+      if (!fullSource.startsWith(workspace) || !fullDest.startsWith(workspace)) {
+        throw new Error("Access denied: cannot move items outside workspace");
+      }
+      await fs2.mkdir(path7.dirname(fullDest), { recursive: true });
+      await fs2.rename(fullSource, fullDest);
+      console.log(`\u{1F4C1} Moved item from ${sourcePath} to ${destPath}`);
+      return true;
+    } catch (error) {
+      console.error(`Failed to move item from ${sourcePath} to ${destPath}:`, error);
+      throw error;
+    }
+  });
   import_electron4.ipcMain.handle("fs:readFile", async (event, filePath) => {
     console.log(`\u{1F4C1} [Placeholder] Read file: ${filePath}`);
     return null;
@@ -10185,114 +11591,135 @@ function setupFileSystemHandlers() {
   });
 }
 function setupLLMHandlers() {
+  const services = tanukiApp.getServices();
+  const openrouterService = services.openrouter;
   import_electron4.ipcMain.handle("openrouter:checkHealth", async () => {
-    const services = tanukiApp.getServices();
-    return await services.openrouter.checkHealth();
-  });
-  import_electron4.ipcMain.handle("openrouter:getAvailableModels", async () => {
-    const services = tanukiApp.getServices();
-    return await services.openrouter.getAvailableFreeModels();
-  });
-  import_electron4.ipcMain.handle("openrouter:generate", async (event, request) => {
-    const services = tanukiApp.getServices();
-    return await services.openrouter.generate(request);
-  });
-  import_electron4.ipcMain.handle("openrouter:getRecommendations", async (event, taskType) => {
-    const services = tanukiApp.getServices();
-    return await services.openrouter.getModelRecommendations(taskType);
-  });
-  import_electron4.ipcMain.handle("openrouter:getBestModel", async (event, taskType) => {
-    const services = tanukiApp.getServices();
-    return await services.openrouter.getBestFreeModelForTask(taskType);
-  });
-  import_electron4.ipcMain.handle("openrouter:getModelInfo", async (event, modelId) => {
-    const services = tanukiApp.getServices();
-    return services.openrouter.getModelInfo(modelId);
-  });
-  import_electron4.ipcMain.handle("openrouter:updateApiKey", async (event, apiKey) => {
-    const services = tanukiApp.getServices();
-    services.openrouter.setApiKey(apiKey);
-    return { success: true };
-  });
-  import_electron4.ipcMain.handle("storage:get", async (event, key) => {
+    if (!openrouterService)
+      throw new Error("OpenRouterService not available via getServices().openrouter");
     try {
-      const { app: app9 } = require("electron");
-      const path7 = require("path");
-      const fs2 = require("fs").promises;
-      const userDataPath = app9.getPath("userData");
-      const storageFile = path7.join(userDataPath, "secure-storage.json");
-      try {
-        const data = await fs2.readFile(storageFile, "utf8");
-        const storage = JSON.parse(data);
-        return storage[key] || null;
-      } catch (error) {
-        return null;
-      }
+      const health = await openrouterService.checkHealth();
+      return health;
     } catch (error) {
-      console.error("Storage get error:", error);
-      return null;
-    }
-  });
-  import_electron4.ipcMain.handle("storage:set", async (event, key, value) => {
-    try {
-      const { app: app9 } = require("electron");
-      const path7 = require("path");
-      const fs2 = require("fs").promises;
-      const userDataPath = app9.getPath("userData");
-      const storageFile = path7.join(userDataPath, "secure-storage.json");
-      let storage = {};
-      try {
-        const data = await fs2.readFile(storageFile, "utf8");
-        storage = JSON.parse(data);
-      } catch (error) {
-      }
-      storage[key] = value;
-      await fs2.writeFile(storageFile, JSON.stringify(storage, null, 2));
-      return { success: true };
-    } catch (error) {
-      console.error("Storage set error:", error);
-      throw error;
-    }
-  });
-  import_electron4.ipcMain.handle("storage:remove", async (event, key) => {
-    try {
-      const { app: app9 } = require("electron");
-      const path7 = require("path");
-      const fs2 = require("fs").promises;
-      const userDataPath = app9.getPath("userData");
-      const storageFile = path7.join(userDataPath, "secure-storage.json");
-      try {
-        const data = await fs2.readFile(storageFile, "utf8");
-        const storage = JSON.parse(data);
-        delete storage[key];
-        await fs2.writeFile(storageFile, JSON.stringify(storage, null, 2));
-      } catch (error) {
-      }
-      return { success: true };
-    } catch (error) {
-      console.error("Storage remove error:", error);
-      throw error;
+      console.error("Error checking OpenRouter health:", error);
+      return {
+        isConnected: false,
+        availableModels: [],
+        lastChecked: /* @__PURE__ */ new Date(),
+        error: error instanceof Error ? error.message : "Unknown error"
+      };
     }
   });
   import_electron4.ipcMain.handle("openrouter:listModels", async () => {
+    if (!openrouterService)
+      throw new Error("OpenRouterService not available via getServices().openrouter");
     try {
-      return [];
+      return await openrouterService.getAvailableFreeModels();
     } catch (error) {
-      console.error("OpenRouter list models error:", error);
+      console.error("Error listing OpenRouter models:", error);
+      return [];
+    }
+  });
+  import_electron4.ipcMain.handle("openrouter:generate", async (event, params) => {
+    if (!openrouterService)
+      throw new Error("OpenRouterService not available via getServices().openrouter");
+    try {
+      return await openrouterService.generate(params);
+    } catch (error) {
+      console.error("Error generating with OpenRouter:", error);
       throw error;
     }
   });
+  import_electron4.ipcMain.handle("openrouter:updateApiKey", async (event, apiKey) => {
+    if (!openrouterService)
+      throw new Error("OpenRouterService not available via getServices().openrouter");
+    try {
+      openrouterService.setApiKey(apiKey);
+      return true;
+    } catch (error) {
+      console.error("Error updating OpenRouter API key:", error);
+      throw error;
+    }
+  });
+  import_electron4.ipcMain.handle("openrouter:getRecommendations", async (event, taskType) => {
+    if (!openrouterService)
+      throw new Error("OpenRouterService not available via getServices().openrouter");
+    try {
+      return await openrouterService.getModelRecommendations(taskType);
+    } catch (error) {
+      console.error("Error getting model recommendations:", error);
+      return [];
+    }
+  });
+  import_electron4.ipcMain.handle("openrouter:getBestModel", async (event, taskType) => {
+    if (!openrouterService)
+      throw new Error("OpenRouterService not available via getServices().openrouter");
+    try {
+      return await openrouterService.getBestFreeModelForTask(taskType);
+    } catch (error) {
+      console.error("Error getting best model for task:", error);
+      return null;
+    }
+  });
+  import_electron4.ipcMain.handle("enhancedLLM:processRequest", async (event, request) => {
+    try {
+      return await processRequest(request);
+    } catch (error) {
+      console.error("Error processing enhancedLLM request:", error);
+      throw error;
+    }
+  });
+  import_electron4.ipcMain.handle("enhancedLLM:getStatus", async () => {
+    try {
+      return await getStatus();
+    } catch (error) {
+      console.error("Error getting enhancedLLM status:", error);
+      throw error;
+    }
+  });
+  import_electron4.ipcMain.handle("enhancedLLM:testComplexity", async (event, query) => {
+    try {
+      return await testComplexityAssessment(query);
+    } catch (error) {
+      console.error("Error testing complexity with enhancedLLM:", error);
+      throw error;
+    }
+  });
+  import_electron4.ipcMain.handle("enhancedLLM:setLLMDrivenComplexity", async (event, enabled) => {
+    try {
+      await setLLMDrivenComplexity(enabled);
+      return { success: true };
+    } catch (error) {
+      console.error("Error setting LLM-driven complexity:", error);
+      throw new Error(`Failed to set LLM-driven complexity: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  });
+  import_electron4.ipcMain.handle("system:getCapabilities", async () => {
+    return {
+      /* placeholder */
+    };
+  });
+  import_electron4.ipcMain.handle("system:getCurrentMetrics", async () => {
+    return {
+      /* placeholder */
+    };
+  });
+  import_electron4.ipcMain.handle("models:getRecommendations", async () => {
+    return [];
+  });
+  import_electron4.ipcMain.handle("models:getInstallationStatus", async (event, modelName) => {
+    return { modelName, installed: false };
+  });
 }
 function setupWindowControlHandlers() {
-  const { BrowserWindow: BrowserWindow10, ipcMain: ipcMain2 } = require("electron");
+  const { BrowserWindow: BrowserWindow11, ipcMain: ipcMain2 } = require("electron");
   ipcMain2.on("minimize-window", (event) => {
-    const win = BrowserWindow10.fromWebContents(event.sender);
+    const win = BrowserWindow11.fromWebContents(event.sender);
     if (win) {
       win.minimize();
     }
   });
   ipcMain2.on("maximize-window", (event) => {
-    const win = BrowserWindow10.fromWebContents(event.sender);
+    const win = BrowserWindow11.fromWebContents(event.sender);
     if (win) {
       if (win.isMaximized()) {
         win.unmaximize();
@@ -10303,26 +11730,26 @@ function setupWindowControlHandlers() {
     }
   });
   ipcMain2.on("close-window", (event) => {
-    const win = BrowserWindow10.fromWebContents(event.sender);
+    const win = BrowserWindow11.fromWebContents(event.sender);
     if (win) {
       win.close();
     }
   });
   ipcMain2.on("toggle-fullscreen", (event) => {
-    const win = BrowserWindow10.fromWebContents(event.sender);
+    const win = BrowserWindow11.fromWebContents(event.sender);
     if (win) {
       win.setFullScreen(!win.isFullScreen());
     }
   });
   ipcMain2.handle("window:isMaximized", (event) => {
-    const win = BrowserWindow10.fromWebContents(event.sender);
+    const win = BrowserWindow11.fromWebContents(event.sender);
     return win ? win.isMaximized() : false;
   });
   ipcMain2.handle("window:isFullScreen", (event) => {
-    const win = BrowserWindow10.fromWebContents(event.sender);
+    const win = BrowserWindow11.fromWebContents(event.sender);
     return win ? win.isFullScreen() : false;
   });
-  const allWindows = BrowserWindow10.getAllWindows();
+  const allWindows = BrowserWindow11.getAllWindows();
   allWindows.forEach((win) => {
     win.on("maximize", () => {
       win.webContents.send("window-maximized-change", true);
@@ -10464,6 +11891,7 @@ var init_handlers = __esm({
     init_connection();
     init_esm_node();
     init_main();
+    init_src();
   }
 });
 
@@ -10529,6 +11957,21 @@ var init_openrouter_service = __esm({
       }
       async checkHealth() {
         try {
+          const headers = {
+            "Content-Type": "application/json",
+            "HTTP-Referer": "https://tanukimcp.com",
+            "X-Title": "TanukiMCP Atlas"
+          };
+          if (this.apiKey) {
+            headers["Authorization"] = `Bearer ${this.apiKey}`;
+          }
+          const response = await fetch(`${this.baseUrl}/models`, {
+            method: "GET",
+            headers
+          });
+          if (!response.ok) {
+            throw new Error(`OpenRouter API error: ${response.status}`);
+          }
           const availableModels = await this.getAvailableFreeModels();
           return {
             isConnected: true,
@@ -10536,6 +11979,7 @@ var init_openrouter_service = __esm({
             lastChecked: /* @__PURE__ */ new Date()
           };
         } catch (error) {
+          console.error("OpenRouter health check failed:", error);
           return {
             isConnected: false,
             availableModels: [],
@@ -10769,6 +12213,1295 @@ var init_system_monitor = __esm({
         };
       }
     };
+  }
+});
+
+// ../mcp-hub/src/transports/base-transport.ts
+var import_events2, BaseTransport;
+var init_base_transport = __esm({
+  "../mcp-hub/src/transports/base-transport.ts"() {
+    "use strict";
+    import_events2 = require("events");
+    BaseTransport = class extends import_events2.EventEmitter {
+      config;
+      connected = false;
+      reconnectTimer;
+      connectionId;
+      constructor(config) {
+        super();
+        this.config = config;
+      }
+      isConnected() {
+        return this.connected;
+      }
+      getConfig() {
+        return this.config;
+      }
+      handleConnect() {
+        this.connected = true;
+        this.emit("connect");
+      }
+      handleDisconnect() {
+        this.connected = false;
+        this.emit("disconnect");
+      }
+      handleMessage(message) {
+        this.emit("message", message);
+      }
+      handleError(error) {
+        this.emit("error", error);
+      }
+      scheduleReconnect(delay = 5e3) {
+        if (this.reconnectTimer) {
+          clearTimeout(this.reconnectTimer);
+        }
+        this.reconnectTimer = setTimeout(async () => {
+          try {
+            await this.connect();
+          } catch (error) {
+            this.handleError(error);
+            this.scheduleReconnect(delay * 2);
+          }
+        }, delay);
+      }
+      destroy() {
+        if (this.reconnectTimer) {
+          clearTimeout(this.reconnectTimer);
+        }
+        this.removeAllListeners();
+      }
+    };
+  }
+});
+
+// ../mcp-hub/src/transports/stdio-transport.ts
+var import_child_process, StdioTransport;
+var init_stdio_transport = __esm({
+  "../mcp-hub/src/transports/stdio-transport.ts"() {
+    "use strict";
+    import_child_process = require("child_process");
+    init_base_transport();
+    StdioTransport = class extends BaseTransport {
+      childProcess;
+      messageBuffer = "";
+      constructor(config) {
+        super(config);
+      }
+      async connect() {
+        if (this.connected || this.childProcess) {
+          await this.disconnect();
+        }
+        const config = this.config;
+        try {
+          this.childProcess = (0, import_child_process.spawn)(config.command, config.args || [], {
+            stdio: ["pipe", "pipe", "pipe"],
+            env: { ...process.env, ...config.env },
+            cwd: config.cwd || process.cwd()
+          });
+          this.setupChildProcessHandlers();
+          await new Promise((resolve, reject) => {
+            const timeout = setTimeout(() => {
+              reject(new Error("Connection timeout"));
+            }, 1e4);
+            this.childProcess.on("spawn", () => {
+              clearTimeout(timeout);
+              this.handleConnect();
+              resolve();
+            });
+            this.childProcess.on("error", (error) => {
+              clearTimeout(timeout);
+              reject(error);
+            });
+          });
+        } catch (error) {
+          throw new Error(`Failed to start MCP server: ${error}`);
+        }
+      }
+      async disconnect() {
+        if (this.childProcess) {
+          this.childProcess.kill("SIGTERM");
+          setTimeout(() => {
+            if (this.childProcess && !this.childProcess.killed) {
+              this.childProcess.kill("SIGKILL");
+            }
+          }, 5e3);
+          this.childProcess = void 0;
+        }
+        this.handleDisconnect();
+      }
+      async send(message) {
+        if (!this.childProcess || !this.connected) {
+          throw new Error("Transport not connected");
+        }
+        const jsonMessage = JSON.stringify(message) + "\n";
+        return new Promise((resolve, reject) => {
+          this.childProcess.stdin.write(jsonMessage, "utf8", (error) => {
+            if (error) {
+              reject(error);
+            } else {
+              resolve();
+            }
+          });
+        });
+      }
+      setupChildProcessHandlers() {
+        if (!this.childProcess)
+          return;
+        this.childProcess.stdout.on("data", (data) => {
+          this.messageBuffer += data.toString("utf8");
+          this.processMessages();
+        });
+        this.childProcess.stderr.on("data", (data) => {
+          console.warn(`MCP Server stderr: ${data.toString("utf8")}`);
+        });
+        this.childProcess.on("exit", (code, signal) => {
+          console.log(`MCP Server exited with code ${code}, signal ${signal}`);
+          this.handleDisconnect();
+          const config = this.config;
+          if (code !== 0 && !signal) {
+            this.scheduleReconnect();
+          }
+        });
+        this.childProcess.on("error", (error) => {
+          console.error("MCP Server process error:", error);
+          this.handleError(error);
+        });
+      }
+      processMessages() {
+        const lines = this.messageBuffer.split("\n");
+        this.messageBuffer = lines.pop() || "";
+        for (const line of lines) {
+          if (line.trim()) {
+            try {
+              const message = JSON.parse(line);
+              this.handleMessage(message);
+            } catch (error) {
+              console.warn("Failed to parse JSON message:", line, error);
+            }
+          }
+        }
+      }
+      destroy() {
+        this.disconnect();
+        super.destroy();
+      }
+    };
+  }
+});
+
+// ../mcp-hub/src/transports/sse-transport.ts
+var SSETransport;
+var init_sse_transport = __esm({
+  "../mcp-hub/src/transports/sse-transport.ts"() {
+    "use strict";
+    init_base_transport();
+    SSETransport = class extends BaseTransport {
+      eventSource;
+      sessionId;
+      baseUrl;
+      headers;
+      constructor(config) {
+        super(config);
+        this.baseUrl = config.url;
+        this.headers = config.headers || {};
+      }
+      async connect() {
+        if (this.connected || this.eventSource) {
+          await this.disconnect();
+        }
+        const config = this.config;
+        try {
+          const response = await fetch(`${this.baseUrl}/sse`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              ...this.headers
+            },
+            body: JSON.stringify({
+              method: "initialize",
+              params: {
+                protocolVersion: "2024-11-05",
+                capabilities: {
+                  tools: true,
+                  resources: true,
+                  prompts: true
+                },
+                clientInfo: {
+                  name: "TanukiMCP Atlas",
+                  version: "1.0.0"
+                }
+              }
+            })
+          });
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+          }
+          const initResult = await response.json();
+          this.sessionId = initResult.sessionId;
+          const sseUrl = `${this.baseUrl}/sse/${this.sessionId}`;
+          this.eventSource = new EventSource(sseUrl);
+          this.setupEventSourceHandlers();
+          await new Promise((resolve, reject) => {
+            const timeout = setTimeout(() => {
+              reject(new Error("SSE connection timeout"));
+            }, config.timeout || 1e4);
+            this.eventSource.addEventListener("open", () => {
+              clearTimeout(timeout);
+              this.handleConnect();
+              resolve();
+            });
+            this.eventSource.addEventListener("error", (event) => {
+              clearTimeout(timeout);
+              reject(new Error("SSE connection failed"));
+            });
+          });
+        } catch (error) {
+          throw new Error(`Failed to connect to MCP server via SSE: ${error}`);
+        }
+      }
+      async disconnect() {
+        if (this.eventSource) {
+          this.eventSource.close();
+          this.eventSource = void 0;
+        }
+        if (this.sessionId) {
+          try {
+            await fetch(`${this.baseUrl}/sse/${this.sessionId}`, {
+              method: "DELETE",
+              headers: this.headers
+            });
+          } catch (error) {
+            console.warn("Failed to notify server of disconnection:", error);
+          }
+          this.sessionId = void 0;
+        }
+        this.handleDisconnect();
+      }
+      async send(message) {
+        if (!this.sessionId || !this.connected) {
+          throw new Error("Transport not connected");
+        }
+        const response = await fetch(`${this.baseUrl}/sse/${this.sessionId}`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...this.headers
+          },
+          body: JSON.stringify(message)
+        });
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+      }
+      setupEventSourceHandlers() {
+        if (!this.eventSource)
+          return;
+        this.eventSource.addEventListener("message", (event) => {
+          try {
+            const message = JSON.parse(event.data);
+            this.handleMessage(message);
+          } catch (error) {
+            console.warn("Failed to parse SSE message:", event.data, error);
+          }
+        });
+        this.eventSource.addEventListener("error", (event) => {
+          console.error("SSE connection error:", event);
+          this.handleError(new Error("SSE connection error"));
+          this.scheduleReconnect();
+        });
+        this.eventSource.addEventListener("notification", (event) => {
+          try {
+            const notification = JSON.parse(event.data);
+            this.handleMessage(notification);
+          } catch (error) {
+            console.warn("Failed to parse SSE notification:", event.data, error);
+          }
+        });
+        this.eventSource.addEventListener("progress", (event) => {
+          try {
+            const progress = JSON.parse(event.data);
+            this.handleMessage(progress);
+          } catch (error) {
+            console.warn("Failed to parse SSE progress:", event.data, error);
+          }
+        });
+      }
+      destroy() {
+        this.disconnect();
+        super.destroy();
+      }
+    };
+  }
+});
+
+// ../mcp-hub/src/transports/websocket-transport.ts
+var WebSocketTransport;
+var init_websocket_transport = __esm({
+  "../mcp-hub/src/transports/websocket-transport.ts"() {
+    "use strict";
+    init_base_transport();
+    WebSocketTransport = class extends BaseTransport {
+      webSocket;
+      pingInterval;
+      pongTimeout;
+      constructor(config) {
+        super(config);
+      }
+      async connect() {
+        if (this.connected || this.webSocket) {
+          await this.disconnect();
+        }
+        const config = this.config;
+        try {
+          this.webSocket = new WebSocket(config.url, config.protocols);
+          this.setupWebSocketHandlers();
+          await new Promise((resolve, reject) => {
+            const timeout = setTimeout(() => {
+              reject(new Error("WebSocket connection timeout"));
+            }, 1e4);
+            this.webSocket.addEventListener("open", () => {
+              clearTimeout(timeout);
+              this.handleConnect();
+              this.startHeartbeat();
+              resolve();
+            });
+            this.webSocket.addEventListener("error", (event) => {
+              clearTimeout(timeout);
+              reject(new Error(`WebSocket connection failed: ${event.message || "Unknown error"}`));
+            });
+          });
+        } catch (error) {
+          throw new Error(`Failed to connect to MCP server via WebSocket: ${error}`);
+        }
+      }
+      async disconnect() {
+        this.stopHeartbeat();
+        if (this.webSocket) {
+          if (this.webSocket.readyState === WebSocket.OPEN) {
+            this.webSocket.close(1e3, "Normal closure");
+          }
+          this.webSocket = void 0;
+        }
+        this.handleDisconnect();
+      }
+      async send(message) {
+        if (!this.webSocket || this.webSocket.readyState !== WebSocket.OPEN) {
+          throw new Error("WebSocket not connected");
+        }
+        const jsonMessage = JSON.stringify(message);
+        this.webSocket.send(jsonMessage);
+      }
+      setupWebSocketHandlers() {
+        if (!this.webSocket)
+          return;
+        this.webSocket.addEventListener("message", (event) => {
+          try {
+            const message = JSON.parse(event.data);
+            if (message.method === "pong") {
+              this.handlePong();
+              return;
+            }
+            this.handleMessage(message);
+          } catch (error) {
+            console.warn("Failed to parse WebSocket message:", event.data, error);
+          }
+        });
+        this.webSocket.addEventListener("close", (event) => {
+          console.log(`WebSocket closed: ${event.code} ${event.reason}`);
+          this.handleDisconnect();
+          if (event.code !== 1e3 && event.code !== 1001) {
+            this.scheduleReconnect();
+          }
+        });
+        this.webSocket.addEventListener("error", (event) => {
+          console.error("WebSocket error:", event);
+          this.handleError(new Error(`WebSocket error: ${event.message || "Unknown error"}`));
+        });
+      }
+      startHeartbeat() {
+        this.stopHeartbeat();
+        this.pingInterval = setInterval(() => {
+          if (this.webSocket?.readyState === WebSocket.OPEN) {
+            this.send({ method: "ping", id: Date.now() });
+            this.pongTimeout = setTimeout(() => {
+              console.warn("WebSocket ping timeout - reconnecting");
+              this.scheduleReconnect();
+            }, 1e4);
+          }
+        }, 3e4);
+      }
+      stopHeartbeat() {
+        if (this.pingInterval) {
+          clearInterval(this.pingInterval);
+          this.pingInterval = void 0;
+        }
+        if (this.pongTimeout) {
+          clearTimeout(this.pongTimeout);
+          this.pongTimeout = void 0;
+        }
+      }
+      handlePong() {
+        if (this.pongTimeout) {
+          clearTimeout(this.pongTimeout);
+          this.pongTimeout = void 0;
+        }
+      }
+      destroy() {
+        this.stopHeartbeat();
+        this.disconnect();
+        super.destroy();
+      }
+    };
+  }
+});
+
+// ../mcp-hub/src/transports/transport-factory.ts
+var TransportFactory;
+var init_transport_factory = __esm({
+  "../mcp-hub/src/transports/transport-factory.ts"() {
+    "use strict";
+    init_stdio_transport();
+    init_sse_transport();
+    init_websocket_transport();
+    TransportFactory = class {
+      static create(config) {
+        switch (config.type) {
+          case "stdio":
+            return new StdioTransport(config);
+          case "sse":
+            return new SSETransport(config);
+          case "websocket":
+            return new WebSocketTransport(config);
+          default:
+            throw new Error(`Unsupported transport type: ${config.type}`);
+        }
+      }
+      static validateConfig(config) {
+        if (!config.type) {
+          throw new Error("Transport type is required");
+        }
+        switch (config.type) {
+          case "stdio":
+            this.validateStdioConfig(config);
+            break;
+          case "sse":
+            this.validateSSEConfig(config);
+            break;
+          case "websocket":
+            this.validateWebSocketConfig(config);
+            break;
+          default:
+            throw new Error(`Unsupported transport type: ${config.type}`);
+        }
+      }
+      static validateStdioConfig(config) {
+        if (!config.command) {
+          throw new Error("Stdio transport requires a command");
+        }
+        if (typeof config.command !== "string") {
+          throw new Error("Stdio transport command must be a string");
+        }
+        if (config.args && !Array.isArray(config.args)) {
+          throw new Error("Stdio transport args must be an array");
+        }
+        if (config.env && typeof config.env !== "object") {
+          throw new Error("Stdio transport env must be an object");
+        }
+      }
+      static validateSSEConfig(config) {
+        if (!config.url) {
+          throw new Error("SSE transport requires a URL");
+        }
+        if (typeof config.url !== "string") {
+          throw new Error("SSE transport URL must be a string");
+        }
+        try {
+          new URL(config.url);
+        } catch (error) {
+          throw new Error(`SSE transport URL is invalid: ${config.url}`);
+        }
+        if (config.headers && typeof config.headers !== "object") {
+          throw new Error("SSE transport headers must be an object");
+        }
+        if (config.timeout && typeof config.timeout !== "number") {
+          throw new Error("SSE transport timeout must be a number");
+        }
+      }
+      static validateWebSocketConfig(config) {
+        if (!config.url) {
+          throw new Error("WebSocket transport requires a URL");
+        }
+        if (typeof config.url !== "string") {
+          throw new Error("WebSocket transport URL must be a string");
+        }
+        try {
+          const url = new URL(config.url);
+          if (!["ws:", "wss:"].includes(url.protocol)) {
+            throw new Error("WebSocket URL must use ws:// or wss:// protocol");
+          }
+        } catch (error) {
+          throw new Error(`WebSocket transport URL is invalid: ${config.url}`);
+        }
+        if (config.protocols && !Array.isArray(config.protocols)) {
+          throw new Error("WebSocket transport protocols must be an array");
+        }
+        if (config.headers && typeof config.headers !== "object") {
+          throw new Error("WebSocket transport headers must be an object");
+        }
+      }
+      static getSupportedTransports() {
+        return ["stdio", "sse", "websocket"];
+      }
+      static getTransportDescription(type) {
+        switch (type) {
+          case "stdio":
+            return "Child process with stdin/stdout communication (local servers)";
+          case "sse":
+            return "Server-Sent Events over HTTP (web-based servers)";
+          case "websocket":
+            return "WebSocket bidirectional communication (real-time servers)";
+          default:
+            return "Unknown transport type";
+        }
+      }
+      static getDefaultConfig(type) {
+        switch (type) {
+          case "stdio":
+            return {
+              type: "stdio",
+              command: "",
+              args: [],
+              env: {}
+            };
+          case "sse":
+            return {
+              type: "sse",
+              url: "",
+              headers: {},
+              timeout: 3e4
+            };
+          case "websocket":
+            return {
+              type: "websocket",
+              url: "",
+              protocols: [],
+              headers: {}
+            };
+          default:
+            throw new Error(`No default config for transport type: ${type}`);
+        }
+      }
+    };
+  }
+});
+
+// ../mcp-hub/src/health/health-monitor.ts
+var import_events3, HealthMonitor;
+var init_health_monitor = __esm({
+  "../mcp-hub/src/health/health-monitor.ts"() {
+    "use strict";
+    import_events3 = require("events");
+    HealthMonitor = class extends import_events3.EventEmitter {
+      serverHealth = /* @__PURE__ */ new Map();
+      healthCheckIntervals = /* @__PURE__ */ new Map();
+      responseTimers = /* @__PURE__ */ new Map();
+      constructor() {
+        super();
+      }
+      startMonitoring(serverId, config) {
+        const health = {
+          serverId,
+          status: "connecting",
+          lastSeen: /* @__PURE__ */ new Date(),
+          responseTime: 0,
+          errorCount: 0,
+          connectionAttempts: 0,
+          toolCount: 0,
+          uptime: 0
+        };
+        this.serverHealth.set(serverId, health);
+        const interval = setInterval(() => {
+          this.performHealthCheck(serverId);
+        }, config.healthCheckInterval);
+        this.healthCheckIntervals.set(serverId, interval);
+      }
+      stopMonitoring(serverId) {
+        const interval = this.healthCheckIntervals.get(serverId);
+        if (interval) {
+          clearInterval(interval);
+          this.healthCheckIntervals.delete(serverId);
+        }
+        this.serverHealth.delete(serverId);
+        this.responseTimers.delete(serverId);
+      }
+      updateServerStatus(serverId, status, error) {
+        const health = this.serverHealth.get(serverId);
+        if (!health)
+          return;
+        const wasUnhealthy = this.isUnhealthy(health);
+        health.status = status;
+        health.lastSeen = /* @__PURE__ */ new Date();
+        if (error) {
+          health.lastError = error;
+          health.errorCount++;
+        }
+        if (status === "connected") {
+          health.connectionAttempts = 0;
+          const now = Date.now();
+          health.uptime = now;
+        } else if (status === "connecting") {
+          health.connectionAttempts++;
+        }
+        this.serverHealth.set(serverId, health);
+        this.emit("health:updated", serverId, health);
+        const isNowUnhealthy = this.isUnhealthy(health);
+        if (!wasUnhealthy && isNowUnhealthy) {
+          this.emit("server:unhealthy", serverId, health);
+        } else if (wasUnhealthy && !isNowUnhealthy) {
+          this.emit("server:recovered", serverId, health);
+        }
+      }
+      recordRequestStart(serverId, messageId) {
+        this.responseTimers.set(serverId, {
+          start: Date.now(),
+          messageId
+        });
+      }
+      recordRequestEnd(serverId, messageId, success) {
+        const timer = this.responseTimers.get(serverId);
+        if (!timer || timer.messageId !== messageId)
+          return;
+        const responseTime = Date.now() - timer.start;
+        this.responseTimers.delete(serverId);
+        const health = this.serverHealth.get(serverId);
+        if (!health)
+          return;
+        if (health.responseTime === 0) {
+          health.responseTime = responseTime;
+        } else {
+          health.responseTime = health.responseTime * 0.8 + responseTime * 0.2;
+        }
+        if (!success) {
+          health.errorCount++;
+        }
+        health.lastSeen = /* @__PURE__ */ new Date();
+        this.serverHealth.set(serverId, health);
+        this.emit("health:updated", serverId, health);
+      }
+      updateToolCount(serverId, count) {
+        const health = this.serverHealth.get(serverId);
+        if (!health)
+          return;
+        health.toolCount = count;
+        this.serverHealth.set(serverId, health);
+        this.emit("health:updated", serverId, health);
+      }
+      updateCapabilities(serverId, capabilities) {
+        const health = this.serverHealth.get(serverId);
+        if (!health)
+          return;
+        health.capabilities = capabilities;
+        this.serverHealth.set(serverId, health);
+        this.emit("health:updated", serverId, health);
+      }
+      getServerHealth(serverId) {
+        return this.serverHealth.get(serverId) || null;
+      }
+      getAllServerHealth() {
+        return new Map(this.serverHealth);
+      }
+      generateHealthReport() {
+        const servers = {};
+        let connectedServers = 0;
+        let totalTools = 0;
+        let externalTools = 0;
+        for (const [serverId, health] of this.serverHealth) {
+          servers[serverId] = health;
+          if (health.status === "connected") {
+            connectedServers++;
+          }
+          totalTools += health.toolCount;
+          externalTools += health.toolCount;
+        }
+        return {
+          generated: /* @__PURE__ */ new Date(),
+          servers,
+          totalServers: this.serverHealth.size,
+          connectedServers,
+          totalTools,
+          builtinTools: 0,
+          // Will be updated by the main hub
+          externalTools
+        };
+      }
+      async performHealthCheck(serverId) {
+        const health = this.serverHealth.get(serverId);
+        if (!health)
+          return;
+        const now = /* @__PURE__ */ new Date();
+        const timeSinceLastSeen = now.getTime() - health.lastSeen.getTime();
+        if (timeSinceLastSeen > 12e4 && health.status === "connected") {
+          this.updateServerStatus(serverId, "error", "Health check timeout");
+        }
+      }
+      isUnhealthy(health) {
+        return health.status === "error" || health.status === "disconnected" || health.errorCount > 10 || health.responseTime > 3e4;
+      }
+      // Utility methods for health analysis
+      getHealthScore(serverId) {
+        const health = this.serverHealth.get(serverId);
+        if (!health)
+          return 0;
+        let score = 100;
+        score -= Math.min(health.errorCount * 2, 50);
+        if (health.responseTime > 1e3) {
+          score -= Math.min((health.responseTime - 1e3) / 100, 30);
+        }
+        if (health.status !== "connected") {
+          score -= 40;
+        }
+        score -= Math.min(health.connectionAttempts * 5, 20);
+        return Math.max(score, 0);
+      }
+      getServerMetrics(serverId) {
+        const health = this.serverHealth.get(serverId);
+        if (!health)
+          return null;
+        const healthScore = this.getHealthScore(serverId);
+        const totalTime = Date.now() - (health.uptime || Date.now());
+        const availability = totalTime > 0 ? health.uptime / totalTime * 100 : 0;
+        const errorRate = health.errorCount > 0 ? health.errorCount / (health.errorCount + 100) * 100 : 0;
+        return {
+          healthScore,
+          availability,
+          averageResponseTime: health.responseTime,
+          errorRate
+        };
+      }
+      destroy() {
+        for (const interval of this.healthCheckIntervals.values()) {
+          clearInterval(interval);
+        }
+        this.healthCheckIntervals.clear();
+        this.serverHealth.clear();
+        this.responseTimers.clear();
+        this.removeAllListeners();
+      }
+    };
+  }
+});
+
+// ../mcp-hub/src/client-hub.ts
+var import_events4, MCPClientHub;
+var init_client_hub = __esm({
+  "../mcp-hub/src/client-hub.ts"() {
+    "use strict";
+    import_events4 = require("events");
+    init_esm_node();
+    init_transport_factory();
+    init_health_monitor();
+    MCPClientHub = class extends import_events4.EventEmitter {
+      connections = /* @__PURE__ */ new Map();
+      configs = /* @__PURE__ */ new Map();
+      healthMonitor;
+      toolCache = /* @__PURE__ */ new Map();
+      conflictResolutions = /* @__PURE__ */ new Map();
+      pendingRequests = /* @__PURE__ */ new Map();
+      isInitialized = false;
+      constructor() {
+        super();
+        this.healthMonitor = new HealthMonitor();
+        this.setupHealthMonitorListeners();
+      }
+      async initialize() {
+        if (this.isInitialized)
+          return;
+        console.log("Initializing MCP Client Hub...");
+        await this.loadSavedConfigurations();
+        await this.autoConnectServers();
+        this.isInitialized = true;
+        console.log("MCP Client Hub initialized");
+      }
+      async addServer(config) {
+        console.log(`Adding MCP server: ${config.name} (${config.id})`);
+        TransportFactory.validateConfig(config.transport);
+        this.configs.set(config.id, config);
+        await this.saveConfiguration(config);
+        await this.connectServer(config.id);
+      }
+      async removeServer(serverId) {
+        console.log(`Removing MCP server: ${serverId}`);
+        await this.disconnectServer(serverId);
+        this.configs.delete(serverId);
+        this.connections.delete(serverId);
+        this.toolCache.delete(serverId);
+        this.healthMonitor.stopMonitoring(serverId);
+        await this.removeStoredConfiguration(serverId);
+        this.emit("server:removed", serverId);
+      }
+      async connectServer(serverId) {
+        const config = this.configs.get(serverId);
+        if (!config) {
+          throw new Error(`Server configuration not found: ${serverId}`);
+        }
+        console.log(`Connecting to MCP server: ${config.name}`);
+        if (this.connections.has(serverId)) {
+          await this.disconnectServer(serverId);
+        }
+        try {
+          const transport = TransportFactory.create(config.transport);
+          this.setupTransportHandlers(serverId, transport);
+          const connection = {
+            id: serverId,
+            config,
+            transport,
+            tools: [],
+            lastToolSync: /* @__PURE__ */ new Date(),
+            messageQueue: [],
+            connected: false
+          };
+          this.connections.set(serverId, connection);
+          this.healthMonitor.startMonitoring(serverId, config);
+          this.healthMonitor.updateServerStatus(serverId, "connecting");
+          await transport.connect();
+          await this.initializeMCPSession(serverId);
+          console.log(`Successfully connected to MCP server: ${config.name}`);
+        } catch (error) {
+          const errorMessage = error instanceof Error ? error.message : String(error);
+          console.error(`Failed to connect to MCP server ${config.name}:`, error);
+          this.healthMonitor.updateServerStatus(serverId, "error", errorMessage);
+          if (config.autoRestart) {
+            setTimeout(() => {
+              this.reconnectServer(serverId);
+            }, config.retryDelay);
+          }
+          throw error;
+        }
+      }
+      async disconnectServer(serverId) {
+        const connection = this.connections.get(serverId);
+        if (!connection)
+          return;
+        console.log(`Disconnecting from MCP server: ${connection.config.name}`);
+        try {
+          await connection.transport.disconnect();
+        } catch (error) {
+          console.warn(`Error disconnecting from ${serverId}:`, error);
+        }
+        connection.connected = false;
+        this.healthMonitor.updateServerStatus(serverId, "disconnected");
+        this.emit("server:disconnected", serverId, "Manual disconnect");
+      }
+      async reconnectServer(serverId) {
+        console.log(`Reconnecting to MCP server: ${serverId}`);
+        const config = this.configs.get(serverId);
+        if (!config) {
+          throw new Error(`Server configuration not found: ${serverId}`);
+        }
+        await this.disconnectServer(serverId);
+        await this.connectServer(serverId);
+      }
+      async executeToolCall(toolCall, context) {
+        const messageId = v4_default();
+        const { serverId, tool } = this.findToolProvider(toolCall.name);
+        if (serverId === "builtin") {
+          throw new Error("Built-in tool execution not implemented in hub");
+        }
+        const connection = this.connections.get(serverId);
+        if (!connection || !connection.connected) {
+          throw new Error(`Server ${serverId} is not connected`);
+        }
+        try {
+          this.healthMonitor.recordRequestStart(serverId, messageId);
+          const mcpRequest = {
+            jsonrpc: "2.0",
+            id: messageId,
+            method: "tools/call",
+            params: {
+              name: toolCall.name,
+              arguments: toolCall.arguments
+            }
+          };
+          const result = await this.sendRequestAndWaitForResponse(serverId, mcpRequest, context.timeoutMs);
+          this.healthMonitor.recordRequestEnd(serverId, messageId, true);
+          this.updateToolMetrics(serverId, toolCall.name, true);
+          this.emit("tool:executed", toolCall.name, serverId, Date.now() - context.timestamp.getTime(), true);
+          return this.formatToolResult(result);
+        } catch (error) {
+          this.healthMonitor.recordRequestEnd(serverId, messageId, false);
+          this.updateToolMetrics(serverId, toolCall.name, false);
+          this.emit("tool:failed", toolCall.name, serverId, error);
+          const errorObj = error instanceof Error ? error : new Error(String(error));
+          return await this.handleToolExecutionError(errorObj, toolCall, context);
+        }
+      }
+      async getAllAvailableTools() {
+        const tools = [];
+        const sources = ["builtin"];
+        const categories = /* @__PURE__ */ new Set();
+        const conflicts = [];
+        const builtinTools = await this.getBuiltinTools();
+        tools.push(...builtinTools);
+        builtinTools.forEach((tool) => categories.add(tool.category));
+        for (const [serverId, connection] of this.connections) {
+          if (connection.connected && connection.tools.length > 0) {
+            sources.push(serverId);
+            tools.push(...connection.tools);
+            connection.tools.forEach((tool) => categories.add(tool.category));
+          }
+        }
+        const toolsByName = /* @__PURE__ */ new Map();
+        for (const tool of tools) {
+          if (!toolsByName.has(tool.name)) {
+            toolsByName.set(tool.name, []);
+          }
+          toolsByName.get(tool.name).push(tool);
+        }
+        for (const [toolName, toolVersions] of toolsByName) {
+          if (toolVersions.length > 1) {
+            const conflict = {
+              toolName,
+              sources: toolVersions.map((t) => t.source),
+              resolution: "prefer_builtin",
+              // Default resolution
+              selectedSource: toolVersions.find((t) => t.source === "builtin")?.source || toolVersions[0].source
+            };
+            conflicts.push(conflict);
+            this.conflictResolutions.set(toolName, conflict);
+          }
+        }
+        const catalog = {
+          tools,
+          lastUpdated: /* @__PURE__ */ new Date(),
+          sources,
+          categories: Array.from(categories),
+          totalTools: tools.length,
+          conflicts
+        };
+        this.emit("catalog:updated", catalog);
+        return catalog;
+      }
+      async resolveToolConflicts() {
+        return Array.from(this.conflictResolutions.values());
+      }
+      async getHealthReport() {
+        const report = this.healthMonitor.generateHealthReport();
+        const builtinTools = await this.getBuiltinTools();
+        report.builtinTools = builtinTools.length;
+        report.totalTools = report.externalTools + report.builtinTools;
+        this.emit("health:updated", report);
+        return report;
+      }
+      async getServerStatus(serverId) {
+        return this.healthMonitor.getServerHealth(serverId);
+      }
+      async testServer(serverId) {
+        const connection = this.connections.get(serverId);
+        if (!connection)
+          return false;
+        try {
+          const pingRequest = {
+            jsonrpc: "2.0",
+            id: v4_default(),
+            method: "ping"
+          };
+          await this.sendRequestAndWaitForResponse(serverId, pingRequest, 5e3);
+          return true;
+        } catch (error) {
+          return false;
+        }
+      }
+      // Configuration management
+      async updateServerConfig(serverId, updates) {
+        const config = this.configs.get(serverId);
+        if (!config) {
+          throw new Error(`Server configuration not found: ${serverId}`);
+        }
+        const updatedConfig = { ...config, ...updates };
+        this.configs.set(serverId, updatedConfig);
+        await this.saveConfiguration(updatedConfig);
+        if (updates.transport) {
+          await this.reconnectServer(serverId);
+        }
+      }
+      async getServerConfig(serverId) {
+        return this.configs.get(serverId) || null;
+      }
+      async listServers() {
+        return Array.from(this.configs.values());
+      }
+      async exportConfiguration() {
+        const configs = Array.from(this.configs.values());
+        return JSON.stringify(configs, null, 2);
+      }
+      async importConfiguration(configJson) {
+        const configs = JSON.parse(configJson);
+        for (const config of configs) {
+          await this.addServer(config);
+        }
+      }
+      async shutdown() {
+        console.log("Shutting down MCP Client Hub...");
+        const disconnectPromises = Array.from(this.connections.keys()).map(
+          (serverId) => this.disconnectServer(serverId)
+        );
+        await Promise.all(disconnectPromises);
+        this.healthMonitor.destroy();
+        this.connections.clear();
+        this.configs.clear();
+        this.toolCache.clear();
+        this.conflictResolutions.clear();
+        for (const pending of this.pendingRequests.values()) {
+          clearTimeout(pending.timeout);
+          pending.reject(new Error("Hub shutting down"));
+        }
+        this.pendingRequests.clear();
+        this.removeAllListeners();
+        this.isInitialized = false;
+        console.log("MCP Client Hub shutdown complete");
+      }
+      // Private helper methods
+      setupTransportHandlers(serverId, transport) {
+        transport.on("connect", () => {
+          const connection = this.connections.get(serverId);
+          if (connection) {
+            connection.connected = true;
+            this.healthMonitor.updateServerStatus(serverId, "connected");
+            this.emit("server:connected", serverId);
+          }
+        });
+        transport.on("disconnect", () => {
+          const connection = this.connections.get(serverId);
+          if (connection) {
+            connection.connected = false;
+            this.healthMonitor.updateServerStatus(serverId, "disconnected");
+            this.emit("server:disconnected", serverId, "Transport disconnected");
+          }
+        });
+        transport.on("message", (message) => {
+          this.handleIncomingMessage(serverId, message);
+        });
+        transport.on("error", (error) => {
+          this.healthMonitor.updateServerStatus(serverId, "error", error.message);
+          this.emit("server:error", serverId, error);
+        });
+      }
+      async initializeMCPSession(serverId) {
+        const initRequest = {
+          jsonrpc: "2.0",
+          id: v4_default(),
+          method: "initialize",
+          params: {
+            protocolVersion: "2024-11-05",
+            capabilities: {
+              tools: true,
+              resources: true,
+              prompts: true
+            },
+            clientInfo: {
+              name: "TanukiMCP Atlas",
+              version: "1.0.0"
+            }
+          }
+        };
+        const response = await this.sendRequestAndWaitForResponse(serverId, initRequest, 1e4);
+        this.healthMonitor.updateCapabilities(serverId, response.capabilities || {
+          tools: true,
+          resources: true,
+          prompts: true
+        });
+        await this.syncServerTools(serverId);
+      }
+      async syncServerTools(serverId) {
+        const connection = this.connections.get(serverId);
+        if (!connection)
+          return;
+        try {
+          const toolsRequest = {
+            jsonrpc: "2.0",
+            id: v4_default(),
+            method: "tools/list"
+          };
+          const response = await this.sendRequestAndWaitForResponse(serverId, toolsRequest, 1e4);
+          const tools = (response.tools || []).map((tool) => ({
+            ...tool,
+            source: serverId,
+            reliability: "medium",
+            latency: "network",
+            category: this.categorizeToolName(tool.name),
+            tags: this.extractToolTags(tool),
+            usageCount: 0,
+            averageExecutionTime: 0,
+            successRate: 100
+          }));
+          connection.tools = tools;
+          connection.lastToolSync = /* @__PURE__ */ new Date();
+          this.toolCache.set(serverId, tools);
+          this.healthMonitor.updateToolCount(serverId, tools.length);
+          console.log(`Synced ${tools.length} tools from ${connection.config.name}`);
+        } catch (error) {
+          console.error(`Failed to sync tools from ${serverId}:`, error);
+        }
+      }
+      async sendRequestAndWaitForResponse(serverId, request, timeoutMs) {
+        const connection = this.connections.get(serverId);
+        if (!connection || !connection.connected) {
+          throw new Error(`Server ${serverId} is not connected`);
+        }
+        return new Promise((resolve, reject) => {
+          const timeout = setTimeout(() => {
+            this.pendingRequests.delete(request.id);
+            reject(new Error(`Request timeout: ${request.method}`));
+          }, timeoutMs);
+          this.pendingRequests.set(request.id, { resolve, reject, timeout });
+          connection.transport.send(request).catch((error) => {
+            this.pendingRequests.delete(request.id);
+            clearTimeout(timeout);
+            reject(error);
+          });
+        });
+      }
+      handleIncomingMessage(serverId, message) {
+        if (message.id && this.pendingRequests.has(message.id)) {
+          const pending = this.pendingRequests.get(message.id);
+          this.pendingRequests.delete(message.id);
+          clearTimeout(pending.timeout);
+          if (message.error) {
+            pending.reject(new Error(message.error.message || "MCP error"));
+          } else {
+            pending.resolve(message.result);
+          }
+        }
+      }
+      findToolProvider(toolName) {
+        const conflict = this.conflictResolutions.get(toolName);
+        if (conflict && conflict.selectedSource) {
+          const serverId = conflict.selectedSource;
+          const tools = this.toolCache.get(serverId) || [];
+          const tool = tools.find((t) => t.name === toolName);
+          if (tool) {
+            return { serverId, tool };
+          }
+        }
+        for (const [serverId, tools] of this.toolCache) {
+          const tool = tools.find((t) => t.name === toolName);
+          if (tool) {
+            return { serverId, tool };
+          }
+        }
+        throw new Error(`Tool not found: ${toolName}`);
+      }
+      async handleToolExecutionError(error, toolCall, context) {
+        return {
+          content: [{
+            type: "text",
+            text: `Tool execution failed: ${error.message}`
+          }],
+          isError: true
+        };
+      }
+      formatToolResult(result) {
+        if (result.content) {
+          return result;
+        }
+        return {
+          content: [{
+            type: "text",
+            text: typeof result === "string" ? result : JSON.stringify(result)
+          }]
+        };
+      }
+      setupHealthMonitorListeners() {
+        this.healthMonitor.on("server:unhealthy", (serverId, health) => {
+          console.warn(`Server ${serverId} is unhealthy:`, health);
+        });
+        this.healthMonitor.on("server:recovered", (serverId, health) => {
+          console.log(`Server ${serverId} has recovered:`, health);
+        });
+      }
+      // Stub methods for integration points
+      async getBuiltinTools() {
+        return [];
+      }
+      categorizeToolName(toolName) {
+        if (toolName.includes("file") || toolName.includes("read") || toolName.includes("write")) {
+          return "file-operations";
+        }
+        if (toolName.includes("search") || toolName.includes("find")) {
+          return "search";
+        }
+        if (toolName.includes("create") || toolName.includes("generate")) {
+          return "generation";
+        }
+        return "general";
+      }
+      extractToolTags(tool) {
+        const tags = [];
+        if (tool.description) {
+          if (tool.description.includes("file"))
+            tags.push("file");
+          if (tool.description.includes("search"))
+            tags.push("search");
+          if (tool.description.includes("create"))
+            tags.push("create");
+        }
+        return tags;
+      }
+      updateToolMetrics(serverId, toolName, success) {
+        const tools = this.toolCache.get(serverId) || [];
+        const tool = tools.find((t) => t.name === toolName);
+        if (tool) {
+          tool.usageCount++;
+          if (success) {
+            tool.successRate = (tool.successRate * (tool.usageCount - 1) + 100) / tool.usageCount;
+          } else {
+            tool.successRate = tool.successRate * (tool.usageCount - 1) / tool.usageCount;
+          }
+        }
+      }
+      // Storage integration points (would integrate with main app database)
+      async loadSavedConfigurations() {
+      }
+      async saveConfiguration(config) {
+      }
+      async removeStoredConfiguration(serverId) {
+      }
+      async autoConnectServers() {
+        for (const config of this.configs.values()) {
+          if (config.autoRestart) {
+            try {
+              await this.connectServer(config.id);
+            } catch (error) {
+              console.warn(`Failed to auto-connect to ${config.name}:`, error);
+            }
+          }
+        }
+      }
+    };
+  }
+});
+
+// ../mcp-hub/src/types.ts
+var init_types2 = __esm({
+  "../mcp-hub/src/types.ts"() {
+    "use strict";
+  }
+});
+
+// ../mcp-hub/src/index.ts
+var init_src2 = __esm({
+  "../mcp-hub/src/index.ts"() {
+    "use strict";
+    init_client_hub();
+    init_client_hub();
+    init_transport_factory();
+    init_types2();
+    init_base_transport();
+    init_stdio_transport();
+    init_sse_transport();
+    init_websocket_transport();
+    init_transport_factory();
+    init_health_monitor();
   }
 });
 
@@ -11421,12 +14154,14 @@ var init_main = __esm({
     init_connection();
     init_openrouter_service();
     init_system_monitor();
+    init_src2();
     init_system_tray();
     init_native_menu();
     init_auto_updater();
     init_notification_service();
     init_crash_reporter();
     init_protocol_handler();
+    init_src();
     TanukiMCPApp = class {
       mainWindow = null;
       trayService;
@@ -11438,6 +14173,7 @@ var init_main = __esm({
       // Services that might be initialized later or conditionally
       openrouterService;
       systemMonitor;
+      mcpHubService;
       isQuitting = false;
       constructor() {
         this.setupEventHandlers();
@@ -11446,6 +14182,8 @@ var init_main = __esm({
         console.log("\u{1F527} Initializing services...");
         this.openrouterService = new OpenRouterService();
         this.systemMonitor = new SystemMonitor();
+        this.mcpHubService = new MCPClientHub();
+        await this.mcpHubService.initialize();
         console.log("\u2705 Core services initialized");
         console.log("\u{1F527} Initializing desktop integration...");
         if (this.mainWindow) {
@@ -11492,6 +14230,9 @@ var init_main = __esm({
           } else {
             console.log("\u26A0\uFE0F Not connected to OpenRouter - free models will still be available");
           }
+          console.log("\u{1F527} Initializing Enhanced LLM Service...");
+          await enhancedLLMService.initialize(this.openrouterService, this.mcpHubService);
+          console.log("\u2705 Enhanced LLM Service ready");
           console.log("\u{1FA9F} Creating main window...");
           this.mainWindow = createWindow();
           await this.initializeDesktopServices();
@@ -11567,10 +14308,10 @@ var init_main = __esm({
       }
       async loadStoredApiKey() {
         try {
-          const { app: app9 } = require("electron");
+          const { app: app10 } = require("electron");
           const path7 = require("path");
           const fs2 = require("fs").promises;
-          const userDataPath = app9.getPath("userData");
+          const userDataPath = app10.getPath("userData");
           const storageFile = path7.join(userDataPath, "secure-storage.json");
           try {
             const data = await fs2.readFile(storageFile, "utf8");
@@ -11600,7 +14341,8 @@ var init_main = __esm({
           autoUpdater: this.autoUpdaterService,
           notification: this.notificationService,
           crashReporter: this.crashReporterService,
-          protocolHandler: this.protocolHandlerService
+          protocolHandler: this.protocolHandlerService,
+          mcpHub: this.mcpHubService
         };
       }
     };

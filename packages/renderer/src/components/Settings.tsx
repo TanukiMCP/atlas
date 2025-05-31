@@ -23,7 +23,7 @@ const Settings: React.FC<SettingsProps> = ({ onApiKeyChange }) => {
   const loadApiKey = async () => {
     try {
       if (window.electronAPI?.invoke) {
-        const savedKey = await window.electronAPI.invoke('storage:get', 'openrouter_api_key');
+        const savedKey = await window.electronAPI.invoke('settings:get', 'openrouter_api_key');
         if (savedKey) {
           setApiKey(savedKey);
         }
@@ -45,7 +45,7 @@ const Settings: React.FC<SettingsProps> = ({ onApiKeyChange }) => {
     try {
       // Save API key to secure storage
       if (window.electronAPI?.invoke) {
-        await window.electronAPI.invoke('storage:set', 'openrouter_api_key', apiKey.trim());
+        await window.electronAPI.invoke('settings:set', 'openrouter_api_key', apiKey.trim());
         
         // Update the OpenRouter service with the new API key
         await window.electronAPI.invoke('openrouter:updateApiKey', apiKey.trim());

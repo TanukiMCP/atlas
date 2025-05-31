@@ -5,656 +5,247 @@
 
 ## 🎯 Executive Summary
 
-**Current State:** TanukiMCP Atlas has an excellent architectural foundation with sophisticated 4-tier processing, tournament QA, comprehensive UI components, and robust service architecture.
+**Current State:** TanukiMCP Atlas has a foundational architecture.
 
-**Transformation Goal:** Evolve from a static 4-tier system into a **dynamic AI orchestration platform** that intelligently combines free local and remote models to create workflows that outperform expensive proprietary solutions.
+**Transformation Goal:** Evolve into a **dynamic AI orchestration platform** that intelligently combines local and remote models to create workflows that enable LLMs of varying sizes to become highly capable, context-aware assistants. This includes dynamic operator profile assignment, Python-based Intelligence Amplification Engines (IAEs) for reliable computation and validation, user collaboration mechanisms, and a visual workflow builder.
 
 **Revolutionary Vision:**
-- **Auto-Select Orchestration**: LLM-driven dynamic workflow generation for every request
-- **FREE-FIRST Philosophy**: Zero cost anxiety with only free models (local + OpenRouter)
-- **Transparent Intelligence**: Real-time thinking display showing orchestration decisions
-- **Community Learning**: Anonymized data collection to improve performance for all users
-- **Industry Disruption**: Democratize AI access and eliminate subscription dependency
+- **Intelligent Context-Aware Self-Orchestrated Workflows**: LLM-driven dynamic workflow generation based on user requests and assigned operator profiles.
+- **Visual Workflow Builder**: A drag-and-drop node-based interface where users can see the LLM construct workflows, interact with the process via an integrated chat, and collaborate on workflow design.
+- **Python-Based IAEs & Dynamic Validation**: LLMs utilize modular Python engines for computation and validation, with expert-tier capabilities to research (web_search) and write custom validation scripts.
+- **Dynamic Operator Profiles & Subject Modes**: LLMs generate and adapt their own operator profiles based on the task and selected subject modes (e.g., biology, physics, general) to enhance cognitive capabilities.
+- **Collaborative Problem Solving**: Failsafe mechanisms for LLMs to pause and request user collaboration when validation is uncertain or tasks are exceptionally complex.
+- **Transparent Intelligence**: Real-time display of the LLM's "thinking process," workflow construction, and tool usage.
+- **FREE-FIRST Philosophy & Comprehensive Model Management**: Leverage OpenRouter and local Ollama models, with systems for model discovery, capability mapping, and assignment to workflow nodes based on strengths/weaknesses.
+- **Community Learning**: Anonymized data collection to improve orchestration strategies and model performance for all users.
 
 ---
 
-## 🔴 PRIORITY 1: Intelligent Orchestration Engine
-*Transform static tiers into dynamic workflow orchestration*
+## 🔵 PHASE 1: Foundations of Intelligent Orchestration & Visual Workflow
+*Establish the core dynamic workflow engine, initial orchestration logic, and the visual interface for workflow construction and interaction.*
 
-### 1.1 Implement Auto-Select Orchestration System
-**Package:** `packages/llm-enhanced`
-**Complexity:** Revolutionary
-**Estimated Effort:** 4-5 weeks
+**Overall Goal:** Build the foundational components that allow an LLM to analyze a request, propose a workflow, and visualize this process for the user, enabling initial interaction.
 
-#### Task 1.1.1: Create Orchestration Router Agent
-**File:** `src/orchestration/OrchestrationRouter.ts`
-
+### Task 1.1: Core Orchestration Router Agent
+**File:** `src/orchestration/OrchestrationRouter.ts` (or new appropriate structure)
 **Implementation Steps:**
-- [ ] Design fast local LLM (Llama 3.2:7B) as orchestration conductor
-- [ ] Implement dynamic workflow generation based on request analysis
-- [ ] Create agent assignment logic with operator profiles
-- [ ] Add tool mapping and availability assessment
-- [ ] Implement confidence scoring and success metrics**Validation Methodology:**
-```bash
-# Use clear-thought to design orchestration algorithms
-npm run dev
-# Open Electron DevTools Console (Ctrl+Shift+I)
-# Test orchestration router:
-await window.electronAPI.invoke('orchestration:analyzeRequest', {
-  content: 'Build a React component with TypeScript',
-  autoSelect: true
-});
-# Verify workflow generation and agent assignment
-```
+- [ ] Design core LLM (e.g., fast local model) as the initial orchestration conductor.
+- [ ] Implement initial request analysis to determine basic complexity (e.g., Atomic, Moderate, Complex, Expert as per user notes).
+- [ ] **LLM-driven Operator Profile Assignment (Basic):** Implement logic for the orchestrator LLM to assign a preliminary operator profile to the request. This profile will be simple initially and expanded in Phase 2.
+- [ ] **Contextual Decision Making (Basic):** Allow the orchestrator LLM to make a basic determination if web access might be needed for context or if training data is sufficient (to be expanded with `web_search` tool in Phase 2).
+- [ ] Implement logic for the orchestrator agent to generate a preliminary workflow definition based on the user's request and the assigned operator profile.
+- [ ] Create basic agent assignment logic (mapping to broader capability categories).
+- [ ] Basic tool availability assessment.
 
-**Success Metrics:**
-- [ ] Orchestration router generates workflows within 2 seconds
-- [ ] Agent assignment matches request complexity (90%+ accuracy)
-- [ ] Tool mapping identifies optimal tool combinations
-- [ ] Confidence scores correlate with actual success rates
-- [ ] Workflow visualization displays in real-time UI
-
-**Tool Integration:**
-- Use clear-thought to design orchestration algorithms and decision trees
-- Use desktop-commander to monitor orchestration performance and resource usage
-- Use puppeteer to automate orchestration testing with diverse request types
-
-#### Task 1.1.2: Implement Dynamic Workflow Engine
-**File:** `src/orchestration/WorkflowEngine.ts`
-
+### Task 1.2: Dynamic Workflow Engine (Initial Version)
+**File:** `src/orchestration/WorkflowEngine.ts` (or new appropriate structure)
 **Implementation Steps:**
-- [ ] Create LangChain-based workflow execution engine
-- [ ] Implement agent handoff with context preservation
-- [ ] Add iterative reasoning chains with early stopping
-- [ ] Create verification and validation checkpoints
-- [ ] Implement parallel agent execution for efficiency
+- [ ] Create a LangChain-based (or similar framework) workflow execution engine.
+- [ ] Implement basic agent handoff with context preservation for simple sequential workflows.
+- [ ] **Workflow Node Definition (Initial):** Define a structure for workflow nodes that includes instructions (what the node does, how it does it) and placeholders for validation criteria (to be fully implemented in Phase 2).
+- [ ] Agent starts workflow by defining current state/start node, and a conceptual end state/node.
 
-**Validation Methodology:**
-```bash
-npm run dev
-# Test workflow execution:
-await window.electronAPI.invoke('workflow:execute', {
-  workflowId: 'generated-workflow-123',
-  parameters: { complexity: 'moderate', domain: 'programming' }
-});
-# Monitor agent handoffs and context preservation
-# Verify parallel execution and early stopping
-```
-
-**Success Metrics:**
-- [ ] Workflow execution maintains context across agent handoffs
-- [ ] Iterative reasoning improves response quality by 15-25%
-- [ ] Early stopping prevents over-processing (saves 30-40% resources)
-- [ ] Parallel execution reduces total processing time by 20-30%
-- [ ] Verification checkpoints catch errors before final output
-
-**Tool Integration:**
-- Use clear-thought to design workflow execution strategies and handoff protocols
-- Use desktop-commander to monitor workflow performance and resource optimization
-- Use puppeteer to automate complex workflow testing scenarios**Validation Methodology:**
-```bash
-# Use clear-thought to design orchestration algorithms
-npm run dev
-# Open Electron DevTools Console (Ctrl+Shift+I)
-# Test orchestration router:
-await window.electronAPI.invoke('orchestration:analyzeRequest', {
-  content: 'Build a React component with TypeScript',
-  autoSelect: true
-});
-# Verify workflow generation and agent assignment
-```
-
-**Success Metrics:**
-- [ ] Orchestration router generates workflows within 2 seconds
-- [ ] Agent assignment matches request complexity (90%+ accuracy)
-- [ ] Tool mapping identifies optimal tool combinations
-- [ ] Confidence scores correlate with actual success rates
-- [ ] Workflow visualization displays in real-time UI
-
-**Tool Integration:**
-- Use clear-thought to design orchestration algorithms and decision trees
-- Use desktop-commander to monitor orchestration performance and resource usage
-- Use puppeteer to automate orchestration testing with diverse request types
-
-#### Task 1.1.2: Implement Dynamic Workflow Engine
-**File:** `src/orchestration/WorkflowEngine.ts`
-
+### Task 1.3: Visual Workflow Builder & Integrated Chat (Foundation)
+**Files:** `packages/renderer/src/components/WorkflowBuilder/` (new or existing UI components)
 **Implementation Steps:**
-- [ ] Create LangChain-based workflow execution engine
-- [ ] Implement agent handoff with context preservation
-- [ ] Add iterative reasoning chains with early stopping
-- [ ] Create verification and validation checkpoints
-- [ ] Implement parallel agent execution for efficiency**Validation Methodology:**
-```bash
-npm run dev
-# Test workflow execution:
-await window.electronAPI.invoke('workflow:execute', {
-  workflowId: 'generated-workflow-123',
-  parameters: { complexity: 'moderate', domain: 'programming' }
-});
-# Monitor agent handoffs and context preservation
-# Verify parallel execution and early stopping
-```
+- [ ] Design and implement a basic visual drag-and-drop, node-based builder interface.
+- [ ] **Visual Animation of LLM Planning:** Implement functionality to visually represent the LLM formulating a branched workflow (e.g., nodes appearing sequentially as the LLM "thinks").
+- [ ] Allow users to view the workflow as it's being constructed by the LLM.
+- [ ] **Integrated Chatbox:** Implement a functional chatbox *within* the visual workflow builder interface. This chatbox serves as a direct line of communication to the agent constructing the workflow.
+- [ ] Basic user interaction: Allow users to pause the workflow generation.
 
-**Success Metrics:**
-- [ ] Workflow execution maintains context across agent handoffs
-- [ ] Iterative reasoning improves response quality by 15-25%
-- [ ] Early stopping prevents over-processing (saves 30-40% resources)
-- [ ] Parallel execution reduces total processing time by 20-30%
-- [ ] Verification checkpoints catch errors before final output
+### Task 1.4: Initial Complexity Tiers (Definition & Basic Handling)
+**Files:** `src/orchestration/ComplexityRouter.ts` (or integrated into OrchestrationRouter)
+**Implementation Steps:**
+- [ ] Define the initial structure for complexity tiers based on user notes:
+    - **Atomic:** Direct Response (NO tools).
+    - **Moderate:** Thinking tools but NO custom validation scripts (IAEs to be added in Phase 2).
+    - **Expert (Placeholder):** Full thinking + execution + custom validation (placeholder, full implementation in Phase 2/3).
+- [ ] Implement basic routing based on initial complexity assessment from Task 1.1.
 
-**Tool Integration:**
-- Use clear-thought to design workflow execution strategies and handoff protocols
-- Use desktop-commander to monitor workflow performance and resource optimization
-- Use puppeteer to automate complex workflow testing scenarios
+---
 
-#### Task 1.1.3: Create Transparent Thinking Display
+## 🟡 PHASE 2: Advanced Agent Capabilities, IAEs, and Dynamic Context
+*Enhance agents with sophisticated reasoning, custom tool creation capabilities, and dynamic contextual understanding through operator profiles and subject modes.*
+
+**Overall Goal:** Equip LLMs with the tools and intelligence to handle more complex tasks, including custom validation and a deeper understanding of their operational context.
+
+### Task 2.1: Python-based Intelligence Amplification Engines (IAEs)
+**Package:** `packages/iae-engines` (new package)
+**Implementation Steps:**
+- [ ] Design and implement a framework for modular Python-based computational engines (IAEs).
+- [ ] These engines are exposed as tools that LLMs can utilize for reliable computation, planning stage steps, individual node-level execution, or result validation.
+- [ ] Develop an initial set of IAEs for common tasks (e.g., basic calculations, data transformations).
+- [ ] **IAE Mapping:** LLM determines how to map available IAEs to workflow nodes.
+
+### Task 2.2: Expert Tier - Dynamic Validation Script Generation
+**Files:** `src/orchestration/ExpertProcessor.ts`, `src/tools/PythonExecutionTool.ts` (new or existing)
+**Implementation Steps:**
+- [ ] **Virtual Python Environment:** For "Expert" complexity tasks, allow the LLM to operate within a temporary, sandboxed Python environment.
+- [ ] **Web Search Integration:** Integrate the `web_search` tool, enabling the LLM to research methodologies for validation across diverse fields (life sciences, math, etc.).
+- [ ] **Custom Validation Scripting:** Enable the LLM to write its own temporary Python validation scripts based on its research and the task requirements.
+- [ ] The LLM can iterate, run these scripts within the virtual environment, and verify results.
+- [ ] **Display Computations:** Display the results of these computations in the chat or relevant UI.
+- [ ] **Temporary Environment Management:** Ensure the temporary Python environment is properly managed and deleted after use.
+- [ ] Option to "save computational engine" (prototype for Phase 4 refinement).
+
+### Task 2.3: Advanced Operator Profiles & Subject Modes
+**Files:** `src/orchestration/OperatorProfileManager.ts`, `src/ipcHandlers.ts`
+**Implementation Steps:**
+- [ ] **LLM-Generated Operator Profile Context:** Implement the logic (potentially using a dedicated LLM call) for an LLM to generate rich operator profile context.
+- [ ] This context is dynamically injected into the main chat LLM's system prompt or overall operational context.
+- [ ] **Subject Modes:** Develop a system for "subject modes" (e.g., General, Biology, Physics, Chemistry, Art, Literature, Language Tutor).
+- [ ] Selecting a subject mode dynamically adjusts the LLM's system prompt/operator profile using the LLM-generated context to enhance cognitive capabilities in that specific field.
+- [ ] Ensure operator profiles can be fully added or removed based on user settings or task requirements.
+- [ ] **Modular Injection:** Operator profile context and IAEs should be modularly injectable into the agent's thinking process.
+
+### Task 2.4: Enhanced Workflow Node Definition & Validation
+**Files:** `src/orchestration/WorkflowEngine.ts`, UI components
+**Implementation Steps:**
+- [ ] **Explicit Node Instructions:** Each node in the workflow must have clearly defined planning, execution, and validation criteria. The agent generating the workflow is responsible for defining these.
+- [ ] **Agent-Driven Validation:** The agent itself determines and verifies that complete workflow execution and validation has met the success criteria for each node and the overall workflow.
+- [ ] **No Pointless Workflows:** The agent should aim to generate a meaningful summary or result upon workflow completion.
+- [ ] **Failsafe for Validation & Collaboration:**
+    - If the agent determines success criteria cannot be validated (with existing IAEs or custom scripts), implement a "pause" mechanism.
+    - The system should clearly communicate this to the user and request collaboration.
+    - User should be able to interact (e.g., via the integrated chat) to refine criteria or approve continuation.
+
+### Task 2.5: Refined Complexity Tier - "Complex"
+**Files:** `src/orchestration/ComplexityRouter.ts`, `src/processors/ComplexProcessor.ts`
+**Implementation Steps:**
+- [ ] Solidify the "Complex" tier: Allows thinking + execution capabilities (e.g., using IAEs and more complex tool chains), but *without* the LLM writing its own custom validation scripts (that's for "Expert").
+- [ ] Differentiate from "Moderate" (which might use simpler tools/IAEs without deep execution chains).
+
+---
+
+## 🟢 PHASE 3: Comprehensive Model Management, UI/UX Refinements, and Collaboration
+*Integrate a broader range of models, implement the transparent thinking display, and refine user collaboration within the workflow builder.*
+
+**Overall Goal:** Create a seamless user experience with access to diverse models, clear insight into the AI's processes, and robust collaborative tools.
+
+### Task 3.1: OpenRouter Integration & Unified Model Registry (Initial)
+**Package:** `packages/llm-enhanced`, `src/services/OpenRouterService.ts`, `src/services/ModelRegistry.ts`
+**Implementation Steps:**
+- [ ] Implement OpenRouter API integration with authentication.
+- [ ] Create free model discovery and filtering system from OpenRouter.
+- [ ] Add model capability mapping (basic strengths/weaknesses) and performance tracking for OpenRouter models.
+- [ ] Create an initial unified registry for remote (OpenRouter) models.
+- [ ] **Model Assignment per Node (User Linking):**
+    - Allow users to link specific models from the OpenRouter model hub to individual nodes within the workflow builder.
+    - The system should cache LLM-assigned strengths/weakness profiles for these available/linked models.
+    - The orchestrator/agent LLM uses this information to guide which available LLM is best suited for a given node's task.
+
+### Task 3.2: Transparent Thinking Display
 **Files:** `packages/renderer/src/components/ThinkingDisplay/`
-
 **Implementation Steps:**
-- [ ] Design collapsible thinking process visualization
-- [ ] Implement real-time workflow progress display
-- [ ] Create agent chain visualization with handoff indicators
-- [ ] Add tool execution cards with expandable details
-- [ ] Implement confidence indicators and success metrics
+- [ ] Design and implement a collapsible thinking process visualization (Cursor-style agentic chat animations).
+- [ ] Show the LLM's thought chain, sequential tool calls, and file-operation visual diffs (if applicable).
+- [ ] Implement real-time workflow progress display within this visualization.
+- [ ] Create agent chain visualization with handoff indicators.
+- [ ] Add tool execution cards with expandable details.
+- [ ] Implement confidence indicators and success metrics as determined by the agent.
 
-**Validation Methodology:**
-```bash
-npm run dev
-# Navigate to chat interface
-# Submit complex request with auto-select enabled
-# Verify thinking display shows:
-# - Workflow generation process
-# - Agent assignments and handoffs
-# - Tool execution progress
-# - Confidence scores and reasoning
-```
-
-**Success Metrics:**
-- [ ] Thinking display updates in real-time (<500ms latency)
-- [ ] Workflow visualization clearly shows agent progression
-- [ ] Tool execution cards provide meaningful progress information
-- [ ] Confidence indicators help users understand AI reasoning
-- [ ] Collapsible interface maintains clean UX for casual users
-
-**Tool Integration:**
-- Use clear-thought to design optimal thinking display UX and information architecture
-- Use desktop-commander to test real-time display performance and responsiveness
-- Use puppeteer to automate thinking display testing across various workflow types### 1.2 Implement OpenRouter Integration
-**Package:** `packages/llm-enhanced`
-**Complexity:** High
-**Estimated Effort:** 2-3 weeks
-
-#### Task 1.2.1: Create OpenRouter Service
-**File:** `src/services/OpenRouterService.ts`
-
+### Task 3.3: Enhanced Visual Workflow Builder & Collaboration
+**Files:** `packages/renderer/src/components/WorkflowBuilder/`, UI components
 **Implementation Steps:**
-- [ ] Implement OpenRouter API integration with authentication
-- [ ] Create free model discovery and filtering system
-- [ ] Add model capability mapping and performance tracking
-- [ ] Implement request routing and load balancing
-- [ ] Create fallback mechanisms for service availability
+- [ ] **Full User Collaboration:**
+    - Allow users to edit, delete, or add nodes to the workflow generated by the LLM.
+    - Users can agree upon the workflow or suggest modifications directly in the visual builder.
+    - The agent should be ables to understand and adapt to these user-driven changes.
+- [ ] **Workflow Editing Capabilities:** Provide robust tools for users to directly manipulate the workflow.
+- [ ] **Start/End State Definition:** Agents always start workflows by first defining the current state/start node, then the end state upon validation, then build the "in-between" steps. This process should be clear to the user.
+- [ ] **User Approval for Execution:** After a user collaborates on or approves a workflow, the agent should then proceed to actually execute it.
 
-**Validation Methodology:**
-```bash
-npm run dev
-# Navigate to model management interface
-# Test OpenRouter integration:
-await window.electronAPI.invoke('openrouter:listFreeModels');
-await window.electronAPI.invoke('openrouter:testConnection');
-# Verify free model filtering and capability mapping
-```
-
-**Success Metrics:**
-- [ ] OpenRouter service discovers 20+ free models automatically
-- [ ] Model capability mapping accurately categorizes model strengths
-- [ ] Request routing selects optimal free models for tasks
-- [ ] Fallback mechanisms handle service outages gracefully
-- [ ] Performance tracking shows model efficiency metrics
-
-**Tool Integration:**
-- Use clear-thought to design OpenRouter integration strategies and error handling
-- Use desktop-commander to test OpenRouter service reliability and performance
-- Use puppeteer to automate OpenRouter model testing and validation
-
-#### Task 1.2.2: Implement Unified Model Registry
-**File:** `src/services/ModelRegistry.ts`
-
+### Task 3.4: Chat UI Enhancements (Cursor-Style)
+**Files:** `packages/renderer/src/components/Chat/`
 **Implementation Steps:**
-- [ ] Create unified registry for local (Ollama) and remote (OpenRouter) models
-- [ ] Implement model capability standardization and comparison
-- [ ] Add model performance benchmarking and ranking
-- [ ] Create model recommendation engine based on task requirements
-- [ ] Implement model health monitoring and availability tracking
-
-**Validation Methodology:**
-```bash
-npm run dev
-# Navigate to model registry interface
-# Test unified model management:
-await window.electronAPI.invoke('models:getUnifiedRegistry');
-await window.electronAPI.invoke('models:getRecommendations', { task: 'coding' });
-# Verify local and remote model integration
-```
-
-**Success Metrics:**
-- [ ] Model registry displays both local and remote models seamlessly
-- [ ] Model recommendations match task requirements (85%+ accuracy)
-- [ ] Performance benchmarking provides reliable model comparisons
-- [ ] Health monitoring tracks model availability in real-time
-- [ ] Capability standardization enables intelligent model selection**Tool Integration:**
-- Use clear-thought to design model registry architecture and recommendation algorithms
-- Use desktop-commander to monitor model registry performance and data accuracy
-- Use puppeteer to automate model registry testing and recommendation validation
-
-### 1.3 Transform 4-Tier System into Dynamic Orchestration
-**Package:** `packages/llm-enhanced`
-**Complexity:** High
-**Estimated Effort:** 3-4 weeks
-
-#### Task 1.3.1: Evolve Tier Processors into Orchestration Agents
-**Files:** `src/processors/{Atomic,Moderate,Complex,Expert}Processor.ts`
-
-**Implementation Steps:**
-- [ ] Transform static tier processors into dynamic orchestration agents
-- [ ] Implement agent specialization profiles (coding expert, reasoning specialist, etc.)
-- [ ] Add dynamic tool selection based on agent capabilities
-- [ ] Create agent collaboration and handoff mechanisms
-- [ ] Implement adaptive agent selection based on request analysis
-
-**Validation Methodology:**
-```bash
-npm run dev
-# Test dynamic agent selection:
-await window.electronAPI.invoke('orchestration:processRequest', {
-  content: 'Complex coding task requiring multiple steps',
-  autoSelect: true
-});
-# Verify agent specialization and collaboration
-```
-
-**Success Metrics:**
-- [ ] Agent specialization improves task-specific performance by 20-30%
-- [ ] Dynamic tool selection optimizes resource usage
-- [ ] Agent collaboration produces higher quality outputs than single agents
-- [ ] Adaptive selection chooses optimal agents for request types
-- [ ] Handoff mechanisms preserve context and maintain quality
-
-**Tool Integration:**
-- Use clear-thought to design agent specialization profiles and collaboration strategies
-- Use desktop-commander to monitor agent performance and resource optimization
-- Use puppeteer to automate agent collaboration testing scenarios
-
-#### Task 1.3.2: Implement Intelligent Model Selection
-**File:** `src/orchestration/ModelSelector.ts`
-
-**Implementation Steps:**
-- [ ] Create cost-efficiency optimization engine (free models only)
-- [ ] Implement model capability matching for specific tasks
-- [ ] Add performance-based model ranking and selection
-- [ ] Create model switching logic with context preservation
-- [ ] Implement model load balancing and availability management**Validation Methodology:**
-```bash
-npm run dev
-# Test intelligent model selection:
-await window.electronAPI.invoke('orchestration:selectOptimalModel', {
-  task: 'code generation',
-  complexity: 'moderate',
-  requirements: ['fast', 'accurate']
-});
-# Verify model selection reasoning and performance
-```
-
-**Success Metrics:**
-- [ ] Model selection chooses optimal free models for tasks (90%+ accuracy)
-- [ ] Cost optimization maintains zero user costs while maximizing performance
-- [ ] Model switching preserves context and maintains conversation flow
-- [ ] Load balancing prevents model overload and ensures availability
-- [ ] Performance ranking adapts based on actual results and user feedback
-
-**Tool Integration:**
-- Use clear-thought to design model selection algorithms and optimization strategies
-- Use desktop-commander to monitor model selection performance and resource usage
-- Use puppeteer to automate model selection testing across various scenarios
+- [ ] Replicate Cursor-style agentic chat animations (thought chain, tool calls, etc. – links to Task 3.2).
+- [ ] Implement a working "@" tool selector for files, directories, and available tools/IAEs.
+- [ ] Add a token-usage indicator with guidance.
+- [ ] Implement a media-upload button (placeholder if full functionality is later).
+- [ ] Hide send button while generating, show a stop button instead.
+- [ ] Place Agent/Chat toggle and Stop button inside the chat container.
 
 ---
 
-## 🟠 PRIORITY 2: Community Learning and Optimization
-*Enable collective intelligence and continuous improvement*
+## 🟣 PHASE 4: Production Hardening, Optimization, and Advanced Model Ecosystem
+*Ensure the platform is robust, performant, and supports a rich ecosystem of local and remote models, with community-driven improvements.*
 
-### 2.1 Implement Community Learning System
-**Package:** `packages/shared`
-**Complexity:** Medium-High
-**Estimated Effort:** 2-3 weeks
+**Overall Goal:** Deliver a polished, reliable, and continuously improving AI orchestration platform.
 
-#### Task 2.1.1: Create Anonymized Data Collection
-**File:** `src/community/DataCollector.ts`
-
+### Task 4.1: Local LLM Store & Advanced Unified Model Registry
+**Package:** `packages/llm-enhanced`, `src/services/OllamaService.ts`, `src/services/ModelRegistry.ts`
+**Files:** `packages/renderer/src/components/ModelStore/`
 **Implementation Steps:**
-- [ ] Design privacy-preserving data collection system
-- [ ] Implement user consent management and opt-out mechanisms
-- [ ] Create data anonymization and aggregation pipelines
-- [ ] Add performance metrics and success rate tracking
-- [ ] Implement secure data transmission and storage
+- [ ] **Ollama Integration:** Integrate a local LLM store served by Ollama for locally installed models.
+- [ ] **Hardware Checks:** Perform hardware checks to gate local usage of demanding models.
+- [ ] **Seamless Switching:** Allow seamless switching between remote (OpenRouter) and local (Ollama) models.
+- [ ] **Local LLM Store UI:**
+    - Display all available local models in a card-based grid.
+    - Each card shows model strengths, weaknesses, and hardware-based maximum context size.
+    - Animated "Install" button for models from Ollama library.
+    - Pop-up dialog upon install completion with instructions for activating the model in Atlas and a "Don't ask again" option.
+- [ ] **Advanced Unified Model Registry:** Extend the registry to include local models, with full capability standardization, comparison, performance benchmarking, and ranking.
+- [ ] Model recommendation engine based on task requirements, considering both local and remote options.
 
-**Validation Methodology:**
-```bash
-npm run dev
-# Navigate to privacy settings
-# Test data collection consent:
-await window.electronAPI.invoke('community:getConsentStatus');
-await window.electronAPI.invoke('community:updateConsent', { enabled: true });
-# Verify data anonymization and privacy protection
-```
-
-**Success Metrics:**
-- [ ] Data collection respects user privacy and consent preferences
-- [ ] Anonymization prevents individual user identification
-- [ ] Performance metrics accurately capture orchestration effectiveness
-- [ ] Secure transmission protects data in transit and at rest
-- [ ] Opt-out mechanisms work immediately and completely**Tool Integration:**
-- Use clear-thought to design privacy-preserving data collection strategies
-- Use desktop-commander to test data collection security and anonymization
-- Use puppeteer to automate consent management and privacy testing
-
-#### Task 2.1.2: Implement Community Intelligence Engine
-**File:** `src/community/IntelligenceEngine.ts`
-
+### Task 4.2: Community Learning System
+**Package:** `packages/shared`, `src/community/DataCollector.ts`, `src/community/IntelligenceEngine.ts`
 **Implementation Steps:**
-- [ ] Create aggregated performance analysis system
-- [ ] Implement pattern recognition for successful orchestration strategies
-- [ ] Add community-driven model performance rankings
-- [ ] Create optimization recommendations based on collective data
-- [ ] Implement adaptive orchestration improvements
+- [ ] Design privacy-preserving data collection system for workflows, IAE usage, and validation outcomes.
+- [ ] Implement user consent management and opt-out mechanisms.
+- [ ] Create data anonymization and aggregation pipelines.
+- [ ] Implement an aggregated performance analysis system to identify successful orchestration strategies and IAE combinations.
+- [ ] Add community-driven model performance rankings and optimization recommendations.
 
-**Validation Methodology:**
-```bash
-npm run dev
-# Test community intelligence features:
-await window.electronAPI.invoke('community:getPerformanceInsights');
-await window.electronAPI.invoke('community:getOptimizationRecommendations');
-# Verify community-driven improvements and recommendations
-```
+### Task 4.3: Comprehensive Error Handling, Recovery, and Performance Optimization
+**All Packages**
+**Implementation Steps:**
+- [ ] Implement global error boundaries for orchestration and workflow execution failures.
+- [ ] Graceful degradation when models/services/IAEs are unavailable.
+- [ ] User-friendly error messages with actionable suggestions and collaboration prompts.
+- [ ] **Intelligent Caching:** Cache successful workflow patterns, IAE execution results, and model responses where appropriate.
+- [ ] **Parallel Processing:** Optimize workflow engine for parallel execution of independent nodes.
+- [ ] Resource pooling for model and tool access.
+- [ ] **"Save Computational Engine" (Full Implementation):** Allow users to save validated custom Python computational engines (from Expert Tier) for cached reuse in other requests/workflows.
 
-**Success Metrics:**
-- [ ] Performance analysis identifies successful orchestration patterns
-- [ ] Pattern recognition improves orchestration strategies over time
-- [ ] Community rankings provide reliable model performance data
-- [ ] Optimization recommendations demonstrably improve user experience
-- [ ] Adaptive improvements show measurable performance gains
-
-**Tool Integration:**
-- Use clear-thought to design community intelligence algorithms and pattern recognition
-- Use desktop-commander to monitor community intelligence performance and accuracy
-- Use puppeteer to automate community intelligence testing and validation
-
-### 2.2 Implement Advanced UI/UX Features
+### Task 4.4: Final UI/UX Polish & Renderer Requirements
 **Package:** `packages/renderer`
-**Complexity:** Medium
-**Estimated Effort:** 3-4 weeks
-
-#### Task 2.2.1: Create Auto-Select Toggle and Controls
-**Files:** `src/components/AutoSelect/`
-
 **Implementation Steps:**
-- [ ] Design prominent auto-select toggle with clear state indication
-- [ ] Implement orchestration preferences and customization
-- [ ] Create manual model selection interface for advanced users
-- [ ] Add orchestration history and analytics dashboard
-- [ ] Implement user feedback collection for orchestration quality**Validation Methodology:**
-```bash
-npm run dev
-# Test auto-select interface:
-# - Toggle auto-select on/off
-# - Customize orchestration preferences
-# - Review orchestration history
-# - Provide feedback on orchestration quality
-```
+- [ ] **Top-Level Navigation Bar:** Implement a visible top-level navigation bar in the renderer UI:
+    - File, Edit, View, Tools, Models
+    - Workflow Builder button
+    - "Coming soon" placeholders: Agent Training Hub, AI Image/Video Generation Hub, Chat-based LLM Collaborative MCP Server Generator, LLM-driven 2D Game Engine, I.A.E.s (saved/default Intelligence Amplification Engines).
+- [ ] Ensure all UI components meet the specified requirements (e.g., Local LLM Store card UI, MCP Tools tab distinguishing Atlas/External tools with refresh status).
 
-**Success Metrics:**
-- [ ] Auto-select toggle is prominent and clearly indicates current state
-- [ ] Orchestration preferences allow meaningful customization
-- [ ] Manual model selection provides full control for power users
-- [ ] History dashboard shows orchestration decisions and outcomes
-- [ ] Feedback collection improves orchestration quality over time
-
-**Tool Integration:**
-- Use clear-thought to design optimal auto-select UX and control interfaces
-- Use desktop-commander to test auto-select functionality and performance
-- Use puppeteer to automate auto-select interface testing and validation
-
-#### Task 2.2.2: Implement Model Store Integration
-**Files:** `src/components/ModelStore/`
-
-**Implementation Steps:**
-- [ ] Create unified model store interface for local and remote models
-- [ ] Implement "Install Local" vs "OpenRouter Host" selection
-- [ ] Add model comparison and recommendation features
-- [ ] Create model configuration and optimization interface
-- [ ] Implement model usage analytics and performance tracking
-
-**Validation Methodology:**
-```bash
-npm run dev
-# Navigate to model store interface
-# Test model management features:
-# - Browse local and remote models
-# - Install/configure models
-# - Compare model capabilities
-# - Review usage analytics
-```
-
-**Success Metrics:**
-- [ ] Model store seamlessly integrates local and remote model management
-- [ ] Install/host selection is clear and guides users appropriately
-- [ ] Model comparison helps users make informed decisions
-- [ ] Configuration interface allows meaningful model optimization
-- [ ] Analytics provide actionable insights into model performance
-
-**Tool Integration:**
-- Use clear-thought to design intuitive model store UX and workflows
-- Use desktop-commander to test model store functionality and performance
-- Use puppeteer to automate model store testing and user journey validation---
-
-## 🟡 PRIORITY 3: Production Quality and Reliability
-*Ensure robust, reliable, production-ready implementation*
-
-### 3.1 Complete Error Handling and Recovery
+### Task 4.5: Comprehensive Testing Suite
 **All Packages**
-**Complexity:** Medium
-**Estimated Effort:** 2-3 weeks
-
-#### Task 3.1.1: Implement Comprehensive Error Boundaries
-**Files:** Error handling across all packages
-
 **Implementation Steps:**
-- [ ] Create global error boundary system for orchestration failures
-- [ ] Implement graceful degradation when models/services unavailable
-- [ ] Add user-friendly error messages with actionable suggestions
-- [ ] Create error reporting and analytics for continuous improvement
-- [ ] Implement automatic recovery mechanisms where possible
-
-**Validation Methodology:**
-```bash
-npm run dev
-# Test error handling scenarios:
-# - Disconnect from internet (test OpenRouter fallback)
-# - Stop Ollama service (test local model fallback)
-# - Submit malformed requests (test error boundaries)
-# - Simulate model failures (test recovery mechanisms)
-```
-
-**Success Metrics:**
-- [ ] Error boundaries prevent application crashes in 100% of test scenarios
-- [ ] Graceful degradation maintains core functionality during service failures
-- [ ] Error messages provide clear explanations and recovery steps
-- [ ] Error reporting captures context for debugging and improvement
-- [ ] Automatic recovery restores functionality within 60 seconds
-
-**Tool Integration:**
-- Use clear-thought to design comprehensive error handling strategies
-- Use desktop-commander to test error scenarios and recovery mechanisms
-- Use puppeteer to automate error condition testing and validation
-
-### 3.2 Implement Performance Optimization
-**All Packages**
-**Complexity:** Medium
-**Estimated Effort:** 2 weeks
-
-#### Task 3.2.1: Optimize Orchestration Performance
-**Files:** Performance optimization across orchestration system
-
-**Implementation Steps:**
-- [ ] Implement intelligent caching for orchestration decisions
-- [ ] Add parallel processing for independent workflow steps
-- [ ] Create resource pooling for model and tool access
-- [ ] Implement smart preloading of frequently used models
-- [ ] Add performance monitoring and optimization recommendations**Validation Methodology:**
-```bash
-npm run dev
-# Test performance optimizations:
-# - Measure orchestration decision time
-# - Test parallel processing efficiency
-# - Verify caching effectiveness
-# - Monitor resource usage optimization
-```
-
-**Success Metrics:**
-- [ ] Orchestration decisions complete within 2 seconds consistently
-- [ ] Parallel processing reduces total workflow time by 25-40%
-- [ ] Caching improves repeat request performance by 60-80%
-- [ ] Resource pooling prevents bottlenecks and improves throughput
-- [ ] Performance monitoring identifies and resolves optimization opportunities
-
-**Tool Integration:**
-- Use clear-thought to design performance optimization strategies
-- Use desktop-commander to monitor performance metrics and resource usage
-- Use puppeteer to automate performance testing and validation
-
-### 3.3 Complete Testing and Quality Assurance
-**All Packages**
-**Complexity:** Medium
-**Estimated Effort:** 2-3 weeks
-
-#### Task 3.3.1: Implement Comprehensive Testing Suite
-**Files:** Test suites across all packages
-
-**Implementation Steps:**
-- [ ] Create unit tests for all orchestration components
-- [ ] Implement integration tests for model and service interactions
-- [ ] Add end-to-end tests for complete user workflows
-- [ ] Create performance benchmarks and regression testing
-- [ ] Implement automated testing in CI/CD pipeline
-
-**Validation Methodology:**
-```bash
-# Run comprehensive test suite:
-npm run test:unit
-npm run test:integration
-npm run test:e2e
-npm run test:performance
-# Verify all tests pass and coverage meets requirements
-```
-
-**Success Metrics:**
-- [ ] Unit test coverage ≥90% for all orchestration components
-- [ ] Integration tests validate all model and service interactions
-- [ ] End-to-end tests cover all major user workflows
-- [ ] Performance benchmarks establish baseline and detect regressions
-- [ ] Automated testing prevents deployment of broken functionality
-
-**Tool Integration:**
-- Use clear-thought to design comprehensive testing strategies
-- Use desktop-commander to run tests and monitor coverage
-- Use puppeteer to implement end-to-end testing scenarios---
-
-## 🚀 Implementation Timeline and Success Validation
-
-### Phase 1: Intelligent Orchestration Foundation (Weeks 1-6)
-- Complete auto-select orchestration system
-- Implement OpenRouter integration
-- Transform 4-tier system into dynamic orchestration
-
-### Phase 2: Community Learning and Advanced Features (Weeks 7-10)
-- Implement community learning system
-- Complete advanced UI/UX features
-- Add transparent thinking display
-
-### Phase 3: Production Quality and Launch (Weeks 11-13)
-- Complete error handling and recovery
-- Implement performance optimization
-- Finish comprehensive testing suite
-
-### Validation Architecture
-
-**TanukiMCP Atlas Architecture:**
-- **Electron Desktop App** with main ↔ renderer IPC communication
-- **No HTTP server** for main app (mobile-server has separate APIs)
-- **React dev server** at localhost:3000 for development only
-
-**Validation Pattern:**
-```bash
-npm run dev  # Starts Electron app + React dev server
-# Electron app opens automatically
-# Press Ctrl+Shift+I for DevTools Console
-# Test via IPC: await window.electronAPI.invoke('channel-name', params)
-```
-
-**Available IPC Channels:**
-- `'orchestration:analyzeRequest'` - Test orchestration router
-- `'workflow:execute'` - Test workflow execution
-- `'openrouter:listFreeModels'` - Test OpenRouter integration
-- `'models:getUnifiedRegistry'` - Test model registry
-- `'community:getConsentStatus'` - Test community features
-
-**Tool Integration:**
-- **clear-thought**: Plan implementation strategies and algorithms
-- **desktop-commander**: Monitor performance, logs, and system resources
-- **puppeteer**: Automate Electron app testing and validation
-
-### Success Criteria for Industry Disruption
-
-**Technical Excellence:**
-- [ ] Auto-select orchestration outperforms static model selection by 30-50%
-- [ ] Free model combinations match or exceed paid model performance
-- [ ] Community learning demonstrably improves platform performance over time
-- [ ] Zero-cost operation eliminates subscription anxiety completely
-
-**User Experience Revolution:**
-- [ ] Transparent thinking builds user trust and understanding
-- [ ] Auto-select mode provides superior results with zero configuration
-- [ ] Model store democratizes access to AI capabilities
-- [ ] Community features create collective intelligence benefits**Industry Impact:**
-- [ ] Platform demonstrates that intelligent orchestration > raw model size
-- [ ] Free-first philosophy proves sustainable alternative to subscription models
-- [ ] Community learning creates network effects that improve with scale
-- [ ] Open architecture enables ecosystem growth and innovation
-
-**Completion of this roadmap will result in a production-ready platform that fundamentally disrupts the AI industry by proving that intelligent orchestration of free models can outperform expensive proprietary solutions while eliminating cost anxiety and democratizing AI access.**
+- [ ] Unit tests for all orchestration, workflow, IAE, and model management components.
+- [ ] Integration tests for model interactions, tool/IAE usage, and service communications.
+- [ ] End-to-end tests for complete user workflows, including visual builder interactions and collaborative scenarios.
+- [ ] Performance benchmarks and regression testing.
 
 ---
 
-## 📋 Implementation Notes
+## 🚀 Validation and Success
 
-### Current Foundation Strengths
-- Excellent 4-tier processing architecture in `packages/llm-enhanced`
-- Comprehensive UI components in `packages/renderer` 
-- Robust service architecture in `packages/main`
-- MCP hub with transport layer in `packages/mcp-hub`
-- Tool router with @ symbol interface in `packages/tool-router`
+**Validation Pattern (Maintain existing and expand):**
+```bash
+npm run dev
+# Electron app opens
+# Use DevTools Console (Ctrl+Shift+I) for IPC testing:
+# await window.electronAPI.invoke('channel-name', params)
+# Examples:
+# await window.electronAPI.invoke('orchestration:analyzeAndGenerateWorkflow', { content: 'Plan a research paper on quantum entanglement and write the abstract.' });
+# await window.electronAPI.invoke('workflow:execute', { workflowId: 'generated-workflow-id', ... });
+# await window.electronAPI.invoke('models:listAll', { includeLocal: true, includeRemote: true });
+```
 
-### Key Transformation Areas
-1. **Static → Dynamic**: Transform fixed tiers into intelligent orchestration
-2. **Local Only → Hybrid**: Add OpenRouter for free remote models
-3. **Hidden Process → Transparent**: Show thinking and decision-making
-4. **Individual → Community**: Enable collective learning and improvement
-5. **Cost Anxiety → Free-First**: Eliminate subscription dependency
+**Success Criteria for Industry Disruption (Adapted):**
+- **Intelligent Orchestration:** Platform demonstrably enables LLMs to create and execute complex, validated workflows that solve user problems more reliably than standalone LLM interactions.
+- **Enhanced Capabilities:** LLMs (even smaller ones) significantly improve their reasoning, computation, and validation abilities through IAEs and dynamic context.
+- **User Empowerment:** Visual workflow builder and collaborative tools allow users to understand, guide, and co-create solutions with AI.
+- **Cost-Efficiency & Accessibility:** Effective use of free/local models makes advanced AI capabilities accessible.
+- **Reliability:** Hallucinations are significantly reduced through structured validation and IAEs.
 
-### Success Validation Approach
-Each task includes specific validation steps using:
-- **clear-thought**: Design algorithms and strategies
-- **desktop-commander**: Monitor performance and system resources  
-- **puppeteer**: Automate testing and validation
-- **IPC testing**: Validate Electron app functionality
-
-This comprehensive roadmap transforms TanukiMCP Atlas from a sophisticated foundation into a revolutionary AI orchestration platform that will fundamentally disrupt the AI industry through intelligent orchestration, free-first philosophy, and community-driven improvement.
+This consolidated roadmap aims to guide the development of TanukiMCP Atlas into the visionary platform you've described.

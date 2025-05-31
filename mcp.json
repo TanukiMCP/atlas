@@ -1,0 +1,88 @@
+{
+  "servers": [
+    {
+      "id": "clear-thought",
+      "name": "Clear Thought MCP",
+      "url": "http://localhost:3001",
+      "tools": [
+        {
+          "id": "sequential-thinking",
+          "name": "Sequential Thinking",
+          "description": "Break down complex problems into steps",
+          "category": "external",
+          "server": "clear-thought"
+        },
+        {
+          "id": "mental-model",
+          "name": "Mental Model",
+          "description": "Apply structured mental models",
+          "category": "external",
+          "server": "clear-thought"
+        },
+        {
+          "id": "design-pattern",
+          "name": "Design Pattern",
+          "description": "Apply software design patterns",
+          "category": "external",
+          "server": "clear-thought"
+        },
+        {
+          "id": "programming-paradigm",
+          "name": "Programming Paradigm",
+          "description": "Apply programming paradigms",
+          "category": "external",
+          "server": "clear-thought"
+        },
+        {
+          "id": "debugging-approach",
+          "name": "Debugging Approach",
+          "description": "Apply systematic debugging approaches",
+          "category": "external",
+          "server": "clear-thought"
+        },
+        {
+          "id": "collaborative-reasoning",
+          "name": "Collaborative Reasoning",
+          "description": "Simulate expert collaboration",
+          "category": "external",
+          "server": "clear-thought"
+        },
+        {
+          "id": "decision-framework",
+          "name": "Decision Framework",
+          "description": "Apply decision analysis frameworks",
+          "category": "external",
+          "server": "clear-thought"
+        },
+        {
+          "id": "metacognitive-monitoring",
+          "name": "Metacognitive Monitoring",
+          "description": "Monitor knowledge and reasoning quality",
+          "category": "external",
+          "server": "clear-thought"
+        },
+        {
+          "id": "scientific-method",
+          "name": "Scientific Method",
+          "description": "Apply scientific reasoning",
+          "category": "external",
+          "server": "clear-thought"
+        },
+        {
+          "id": "structured-argumentation",
+          "name": "Structured Argumentation",
+          "description": "Apply formal argumentation structures",
+          "category": "external",
+          "server": "clear-thought"
+        },
+        {
+          "id": "visual-reasoning",
+          "name": "Visual Reasoning",
+          "description": "Create and analyze visual representations",
+          "category": "external",
+          "server": "clear-thought"
+        }
+      ]
+    }
+  ]
+} 

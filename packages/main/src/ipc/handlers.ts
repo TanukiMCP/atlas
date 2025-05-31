@@ -1,7 +1,15 @@
-import { ipcMain, IpcMainInvokeEvent } from 'electron';
+import { app, ipcMain, IpcMainInvokeEvent, dialog, BrowserWindow } from 'electron';
 import { getDatabase, getRawDatabase, checkDatabaseHealth } from '../database/connection';
 import { v4 as uuidv4 } from 'uuid';
 import { tanukiApp } from '../main';
+import {
+  processRequest as enhancedProcessRequest,
+  getStatus as enhancedGetStatus,
+  testComplexityAssessment as enhancedTestComplexity,
+  setLLMDrivenComplexity as enhancedSetLLMDrivenComplexity
+} from '../../../llm-enhanced/src';
+import { join } from 'path';
+import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
 
 // Define IPC channel types for type safety
 export interface IPCChannels {
@@ -48,7 +56,8 @@ export interface IPCChannels {
   // Enhanced LLM operations
   'enhancedLLM:processRequest': { params: [any]; result: any };
   'enhancedLLM:getStatus': { params: []; result: any };
-  'enhancedLLM:testTier': { params: [number]; result: any };
+  'enhancedLLM:testComplexity': { params: [string]; result: boolean };
+  'enhancedLLM:setLLMDrivenComplexity': { params: [boolean]; result: void };
   
   // MCP Hub operations
   'mcpHub:listServers': { params: []; result: any[] };
@@ -138,6 +147,60 @@ function setupAppHandlers(): void {
       throw error;
     }
   });
+  
+  // Handle directory selection from renderer
+  ipcMain.handle('dialog:showOpenDialog', async (event: IpcMainInvokeEvent, options: Electron.OpenDialogOptions) => {
+    const win = BrowserWindow.fromWebContents(event.sender);
+    try {
+      let result;
+      if (win) {
+        result = await dialog.showOpenDialog(win, options);
+      } else {
+        result = await dialog.showOpenDialog(options);
+      }
+      return result;
+    } catch (error) {
+      console.error('Failed to show open dialog:', error);
+      throw error;
+    }
+  });
+  
+  // Set working directory
+  ipcMain.handle('app:setWorkingDirectory', async (event: IpcMainInvokeEvent, dirPath: string) => {
+    try {
+      const fs = require('fs').promises;
+      const path = require('path');
+      
+      // Check if directory exists
+      await fs.access(dirPath);
+      
+      // Change process working directory
+      process.chdir(dirPath);
+      
+      console.log(`Changed working directory to: ${dirPath}`);
+      
+      // Notify renderer about directory change
+      const sender = event.sender;
+      if (sender) {
+        sender.send('app:workingDirectoryChanged', dirPath);
+      }
+      
+      return { success: true, path: dirPath };
+    } catch (error) {
+      console.error(`Failed to set working directory to ${dirPath}:`, error);
+      throw error;
+    }
+  });
+  
+  // Get current working directory
+  ipcMain.handle('app:getWorkingDirectory', async () => {
+    try {
+      return process.cwd();
+    } catch (error) {
+      console.error('Failed to get working directory:', error);
+      throw error;
+    }
+  });
 }
 
 function setupSettingsHandlers(): void {
@@ -169,6 +232,18 @@ function setupSettingsHandlers(): void {
       stmt.run(key, JSON.stringify(value), Date.now());
     } catch (error) {
       console.error(`Failed to set setting ${key}:`, error);
+      throw error;
+    }
+  });
+  
+  // Remove setting value
+  ipcMain.handle('storage:remove', async (event: IpcMainInvokeEvent, key: string) => {
+    try {
+      const db = getRawDatabase();
+      db.prepare('DELETE FROM settings WHERE key = ?').run(key);
+      return true;
+    } catch (error) {
+      console.error(`Failed to remove setting ${key}:`, error);
       throw error;
     }
   });
@@ -499,6 +574,32 @@ function setupFileSystemHandlers(): void {
     }
   });
 
+  // Move file or directory
+  ipcMain.handle('fs:moveFile', async (event: IpcMainInvokeEvent, sourcePath: string, destPath: string) => {
+    try {
+      const fs = require('fs').promises;
+      const path = require('path');
+      const workspace = process.cwd();
+      const fullSource = path.resolve(workspace, sourcePath);
+      const fullDest = path.resolve(workspace, destPath);
+
+      // Security: ensure both source and dest are within workspace
+      if (!fullSource.startsWith(workspace) || !fullDest.startsWith(workspace)) {
+        throw new Error('Access denied: cannot move items outside workspace');
+      }
+
+      // Ensure destination directory exists
+      await fs.mkdir(path.dirname(fullDest), { recursive: true });
+      // Perform rename/move
+      await fs.rename(fullSource, fullDest);
+      console.log(`📁 Moved item from ${sourcePath} to ${destPath}`);
+      return true;
+    } catch (error) {
+      console.error(`Failed to move item from ${sourcePath} to ${destPath}:`, error);
+      throw error;
+    }
+  });
+
   // Basic file system operations (placeholder for Phase 3)
   
   // Read file (placeholder)
@@ -544,130 +645,294 @@ function handleIPC<T extends keyof IPCChannels>(
   });
 }
 
+function setupSystemHandlers(): void {
+  // Get system capabilities (RAM, CPU, GPU, disk space)
+  ipcMain.handle('system:getCapabilities', async () => {
+    try {
+      const os = require('os');
+      const fs = require('fs').promises;
+      const path = require('path');
+      const { execSync } = require('child_process');
+      
+      // Get total and available RAM
+      const totalRam = Math.round(os.totalmem() / (1024 * 1024)); // Convert to MB
+      const freeRam = Math.round(os.freemem() / (1024 * 1024)); // Convert to MB
+      
+      // Get CPU info
+      const cpuCores = os.cpus().length;
+      
+      // Get disk space (for the current drive)
+      let diskSpace = 0;
+      let availableDiskSpace = 0;
+      
+      try {
+        // Different commands based on platform
+        if (process.platform === 'win32') {
+          // Windows
+          const homeDir = os.homedir();
+          const drive = homeDir.split(path.sep)[0];
+          const output = execSync(`wmic logicaldisk where "DeviceID='${drive}'" get Size,FreeSpace /format:csv`).toString();
+          const lines = output.trim().split('\n');
+          if (lines.length >= 2) {
+            const values = lines[1].split(',');
+            if (values.length >= 3) {
+              availableDiskSpace = Math.round(parseInt(values[1]) / (1024 * 1024)); // Convert to MB
+              diskSpace = Math.round(parseInt(values[2]) / (1024 * 1024)); // Convert to MB
+            }
+          }
+        } else if (process.platform === 'darwin') {
+          // macOS
+          const homeDir = os.homedir();
+          const output = execSync(`df -k "${homeDir}"`).toString();
+          const lines = output.trim().split('\n');
+          if (lines.length >= 2) {
+            const values = lines[1].split(/\s+/);
+            if (values.length >= 4) {
+              diskSpace = Math.round(parseInt(values[1]) * 1024 / (1024 * 1024)); // Convert to MB
+              availableDiskSpace = Math.round(parseInt(values[3]) * 1024 / (1024 * 1024)); // Convert to MB
+            }
+          }
+        } else if (process.platform === 'linux') {
+          // Linux
+          const homeDir = os.homedir();
+          const output = execSync(`df -k "${homeDir}"`).toString();
+          const lines = output.trim().split('\n');
+          if (lines.length >= 2) {
+            const values = lines[1].split(/\s+/);
+            if (values.length >= 4) {
+              diskSpace = Math.round(parseInt(values[1]) * 1024 / (1024 * 1024)); // Convert to MB
+              availableDiskSpace = Math.round(parseInt(values[3]) * 1024 / (1024 * 1024)); // Convert to MB
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error getting disk space:', error);
+      }
+      
+      // Try to get GPU info
+      let gpuInfo = null;
+      try {
+        if (process.platform === 'win32') {
+          // Windows
+          const output = execSync('wmic path win32_VideoController get Name,AdapterRAM /format:csv').toString();
+          const lines = output.trim().split('\n');
+          if (lines.length >= 2) {
+            const values = lines[1].split(',');
+            if (values.length >= 3) {
+              const gpuName = values[1];
+              const gpuMemory = Math.round(parseInt(values[2]) / (1024 * 1024)); // Convert to MB
+              gpuInfo = {
+                name: gpuName,
+                memory: gpuMemory
+              };
+            }
+          }
+        } else if (process.platform === 'darwin') {
+          // macOS
+          const output = execSync('system_profiler SPDisplaysDataType').toString();
+          const match = output.match(/Chipset Model: (.+?)[\r\n]/);
+          const vramMatch = output.match(/VRAM \(Total\): (\d+) MB/);
+          if (match && vramMatch) {
+            gpuInfo = {
+              name: match[1],
+              memory: parseInt(vramMatch[1])
+            };
+          }
+        } else if (process.platform === 'linux') {
+          // Linux
+          try {
+            const output = execSync('lspci | grep -i vga').toString();
+            const match = output.match(/VGA compatible controller: (.+)/);
+            if (match) {
+              gpuInfo = {
+                name: match[1],
+                memory: 0 // Can't reliably get VRAM on Linux without additional tools
+              };
+            }
+          } catch (error) {
+            console.error('Error getting GPU info on Linux:', error);
+          }
+        }
+      } catch (error) {
+        console.error('Error getting GPU info:', error);
+      }
+      
+      // Determine recommended models based on available RAM
+      const recommendedModels = [];
+      
+      if (freeRam >= 8 * 1024) { // 8 GB+
+        recommendedModels.push('llama2-13b-chat-q4_0', 'mixtral-8x7b-instruct-v0.1-q4_0');
+      } else if (freeRam >= 4 * 1024) { // 4 GB+
+        recommendedModels.push('llama2-7b-chat-q4_0', 'mistral-7b-instruct-v0.1-q4_0');
+      } else if (freeRam >= 2 * 1024) { // 2 GB+
+        recommendedModels.push('orca-mini-3b-q4_0', 'phi-2-q4_0');
+      }
+      
+      return {
+        totalRam,
+        availableRam: freeRam,
+        cpuCores,
+        diskSpace,
+        availableDiskSpace,
+        gpuInfo,
+        recommendedModels
+      };
+    } catch (error) {
+      console.error('Error getting system capabilities:', error);
+      throw error;
+    }
+  });
+
+  // Hardware assessment for LLM usage
+  ipcMain.handle('system:assessHardwareForLLM', async () => {
+    try {
+      const { HardwareAssessor } = require('../services/hardware-assessor');
+      const hardwareAssessor = new HardwareAssessor();
+      
+      const assessment = await hardwareAssessor.assessHardwareForLLM();
+      return assessment;
+    } catch (error) {
+      console.error('Error assessing hardware for LLM:', error);
+      return {
+        isCapable: false,
+        warnings: ['Failed to assess hardware capabilities'],
+        limitations: ['Hardware assessment failed'],
+        optimizationTips: ['Try running the application with administrator privileges']
+      };
+    }
+  });
+}
+
 function setupLLMHandlers(): void {
-  // OpenRouter service handlers (free models only)
+  const services = tanukiApp.getServices();
+  const openrouterService = services.openrouter;
+
+  // OpenRouter specific handlers
   ipcMain.handle('openrouter:checkHealth', async () => {
-    const services = tanukiApp.getServices();
-    return await services.openrouter.checkHealth();
+    if (!openrouterService) throw new Error('OpenRouterService not available via getServices().openrouter');
+    try {
+      const health = await openrouterService.checkHealth();
+      return health;
+    } catch (error) {
+      console.error('Error checking OpenRouter health:', error);
+      return {
+        isConnected: false,
+        availableModels: [],
+        lastChecked: new Date(),
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    }
   });
-  
-  ipcMain.handle('openrouter:getAvailableModels', async () => {
-    const services = tanukiApp.getServices();
-    return await services.openrouter.getAvailableFreeModels();
+
+  ipcMain.handle('openrouter:listModels', async () => {
+    if (!openrouterService) throw new Error('OpenRouterService not available via getServices().openrouter');
+    try {
+      return await openrouterService.getAvailableFreeModels();
+    } catch (error) {
+      console.error('Error listing OpenRouter models:', error);
+      return [];
+    }
   });
-  
-  ipcMain.handle('openrouter:generate', async (event: IpcMainInvokeEvent, request: any) => {
-    const services = tanukiApp.getServices();
-    return await services.openrouter.generate(request);
+
+  ipcMain.handle('openrouter:generate', async (event: IpcMainInvokeEvent, params: any) => {
+    if (!openrouterService) throw new Error('OpenRouterService not available via getServices().openrouter');
+    try {
+      return await openrouterService.generate(params);
+    } catch (error) {
+      console.error('Error generating with OpenRouter:', error);
+      throw error;
+    }
   });
-  
+
+  ipcMain.handle('openrouter:updateApiKey', async (event: IpcMainInvokeEvent, apiKey: string) => {
+    if (!openrouterService) throw new Error('OpenRouterService not available via getServices().openrouter');
+    try {
+      openrouterService.setApiKey(apiKey);
+      return true;
+    } catch (error) {
+      console.error('Error updating OpenRouter API key:', error);
+      throw error;
+    }
+  });
+
   ipcMain.handle('openrouter:getRecommendations', async (event: IpcMainInvokeEvent, taskType: string) => {
-    const services = tanukiApp.getServices();
-    return await services.openrouter.getModelRecommendations(taskType as any);
+    if (!openrouterService) throw new Error('OpenRouterService not available via getServices().openrouter');
+    try {
+      return await openrouterService.getModelRecommendations(taskType as any);
+    } catch (error) {
+      console.error('Error getting model recommendations:', error);
+      return [];
+    }
   });
 
   ipcMain.handle('openrouter:getBestModel', async (event: IpcMainInvokeEvent, taskType: string) => {
-    const services = tanukiApp.getServices();
-    return await services.openrouter.getBestFreeModelForTask(taskType as any);
-  });
-
-  ipcMain.handle('openrouter:getModelInfo', async (event: IpcMainInvokeEvent, modelId: string) => {
-    const services = tanukiApp.getServices();
-    return services.openrouter.getModelInfo(modelId);
-  });
-
-  // OpenRouter API key management
-  ipcMain.handle('openrouter:updateApiKey', async (event: IpcMainInvokeEvent, apiKey: string) => {
-    const services = tanukiApp.getServices();
-    // Update the API key in the service
-    services.openrouter.setApiKey(apiKey);
-    return { success: true };
-  });
-
-  // Storage handlers for secure API key storage
-  ipcMain.handle('storage:get', async (event: IpcMainInvokeEvent, key: string) => {
+    if (!openrouterService) throw new Error('OpenRouterService not available via getServices().openrouter');
     try {
-      const { app } = require('electron');
-      const path = require('path');
-      const fs = require('fs').promises;
-      
-      const userDataPath = app.getPath('userData');
-      const storageFile = path.join(userDataPath, 'secure-storage.json');
-      
-      try {
-        const data = await fs.readFile(storageFile, 'utf8');
-        const storage = JSON.parse(data);
-        return storage[key] || null;
-      } catch (error) {
-        // File doesn't exist or is invalid
-        return null;
-      }
+      return await openrouterService.getBestFreeModelForTask(taskType as any);
     } catch (error) {
-      console.error('Storage get error:', error);
+      console.error('Error getting best model for task:', error);
       return null;
     }
   });
 
-  ipcMain.handle('storage:set', async (event: IpcMainInvokeEvent, key: string, value: any) => {
+  // Enhanced LLM handlers
+  ipcMain.handle('enhancedLLM:processRequest', async (event: IpcMainInvokeEvent, request: any) => {
     try {
-      const { app } = require('electron');
-      const path = require('path');
-      const fs = require('fs').promises;
-      
-      const userDataPath = app.getPath('userData');
-      const storageFile = path.join(userDataPath, 'secure-storage.json');
-      
-      let storage: Record<string, any> = {};
-      try {
-        const data = await fs.readFile(storageFile, 'utf8');
-        storage = JSON.parse(data);
-      } catch (error) {
-        // File doesn't exist, start with empty object
-      }
-      
-      storage[key] = value;
-      await fs.writeFile(storageFile, JSON.stringify(storage, null, 2));
-      return { success: true };
+      return await enhancedProcessRequest(request);
     } catch (error) {
-      console.error('Storage set error:', error);
+      console.error('Error processing enhancedLLM request:', error);
       throw error;
     }
   });
 
-  ipcMain.handle('storage:remove', async (event: IpcMainInvokeEvent, key: string) => {
+  ipcMain.handle('enhancedLLM:getStatus', async () => {
     try {
-      const { app } = require('electron');
-      const path = require('path');
-      const fs = require('fs').promises;
-      
-      const userDataPath = app.getPath('userData');
-      const storageFile = path.join(userDataPath, 'secure-storage.json');
-      
-      try {
-        const data = await fs.readFile(storageFile, 'utf8');
-        const storage = JSON.parse(data);
-        delete storage[key];
-        await fs.writeFile(storageFile, JSON.stringify(storage, null, 2));
-      } catch (error) {
-        // File doesn't exist, nothing to remove
-      }
-      
-      return { success: true };
+      return await enhancedGetStatus();
     } catch (error) {
-      console.error('Storage remove error:', error);
+      console.error('Error getting enhancedLLM status:', error);
       throw error;
     }
   });
 
-  // OpenRouter handlers
-  ipcMain.handle('openrouter:listModels', async () => {
+  ipcMain.handle('enhancedLLM:testComplexity', async (event: IpcMainInvokeEvent, query: string) => {
     try {
-      // Implementation for OpenRouter model listing
-      return [];
+      return await enhancedTestComplexity(query);
     } catch (error) {
-      console.error('OpenRouter list models error:', error);
+      console.error('Error testing complexity with enhancedLLM:', error);
       throw error;
     }
+  });
+
+  ipcMain.handle('enhancedLLM:setLLMDrivenComplexity', async (event: IpcMainInvokeEvent, enabled: boolean) => {
+    try {
+      await enhancedSetLLMDrivenComplexity(enabled);
+      return { success: true };
+    } catch (error) {
+      console.error('Error setting LLM-driven complexity:', error);
+      throw new Error(`Failed to set LLM-driven complexity: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  });
+
+  // System and Model Management Handlers (placeholders or to be reviewed)
+  // These might need to interact with systemMonitor or other services
+  ipcMain.handle('system:getCapabilities', async () => { 
+    // const systemMonitor = tanukiApp.getServices()?.systemMonitor;
+    // return systemMonitor?.getCapabilities(); 
+    return { /* placeholder */ }; 
+  });
+  
+  ipcMain.handle('system:getCurrentMetrics', async () => { 
+    // const systemMonitor = tanukiApp.getServices()?.systemMonitor;
+    // return systemMonitor?.getCurrentMetrics(); 
+    return { /* placeholder */ }; 
+  });
+  
+  ipcMain.handle('models:getRecommendations', async () => { 
+    return []; /* placeholder */ 
+  });
+  
+  ipcMain.handle('models:getInstallationStatus', async (event: IpcMainInvokeEvent, modelName: string) => { 
+    return { modelName, installed: false }; /* placeholder */ 
   });
 }
 

@@ -1,5 +1,10 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { Save, Trash2, ChevronDown, RefreshCw, Check, Edit2 } from 'lucide-react';
+import { Save, Trash2, ChevronDown, RefreshCw, Check, Edit2, MessageSquare, X } from 'lucide-react';
+import { FileWelfareAgent } from './FileWelfareAgent';
+import { Button } from './ui/button';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
+import { cn } from '../lib/utils';
+import { useTheme } from '../contexts/ThemeContext';
 
 interface MonacoEditorProps {
   value: string;
@@ -9,7 +14,6 @@ interface MonacoEditorProps {
   onDelete?: () => void;
   onRename?: (newName: string) => void;
   filePath?: string;
-  theme?: 'vs-dark' | 'vs-light';
   readOnly?: boolean;
   height?: string;
 }
@@ -22,21 +26,23 @@ const MonacoEditor: React.FC<MonacoEditorProps> = ({
   onDelete,
   onRename,
   filePath,
-  theme = 'vs-dark',
   readOnly = false,
-  height = '400px'
+  height = '100%'
 }) => {
-  const editorRef = useRef<HTMLDivElement>(null);
-  const [editor, setEditor] = useState<any>(null);
+  const { theme } = useTheme();
+  const editorRef = useRef<any>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const renameInputRef = useRef<HTMLInputElement>(null);
   const [monaco, setMonaco] = useState<any>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [editor, setEditor] = useState<any>(null);
   const [isModified, setIsModified] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [isRenaming, setIsRenaming] = useState(false);
   const [newFileName, setNewFileName] = useState('');
-  const renameInputRef = useRef<HTMLInputElement>(null);
+  const [showFileAgent, setShowFileAgent] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -325,107 +331,144 @@ const MonacoEditor: React.FC<MonacoEditorProps> = ({
   }
 
   return (
-    <div className="flex flex-col w-full h-full border border-border rounded-lg overflow-hidden">
-      {/* Editor Toolbar */}
-      <div className="flex items-center justify-between bg-card border-b border-border px-3 py-2">
-        <div className="flex items-center space-x-2 text-sm overflow-hidden">
-          {filePath && !isRenaming && (
-            <div className="flex items-center text-muted-foreground truncate max-w-md">
-              <span className="truncate">{filePath}</span>
-              {isModified && (
-                <span className="ml-2 text-yellow-500 text-xs font-medium">
-                  (modified)
-                </span>
+    <div className="flex flex-col w-full h-full">
+      <div className="flex flex-row w-full h-full border border-border rounded-lg overflow-hidden">
+        {/* Editor Container */}
+        <div className="flex flex-col flex-1">
+          {/* Editor Toolbar */}
+          <div className="flex items-center justify-between bg-card border-b border-border px-3 py-2">
+            <div className="flex items-center space-x-2 text-sm overflow-hidden">
+              {filePath && !isRenaming && (
+                <div className="flex items-center text-muted-foreground truncate max-w-md">
+                  <span className="truncate">{filePath}</span>
+                  {isModified && (
+                    <span className="ml-2 text-yellow-500 text-xs font-medium">
+                      (modified)
+                    </span>
+                  )}
+                </div>
+              )}
+              {isRenaming && (
+                <div className="flex items-center gap-2">
+                  <input
+                    ref={renameInputRef}
+                    type="text"
+                    value={newFileName}
+                    onChange={(e) => setNewFileName(e.target.value)}
+                    onKeyDown={handleRenameKeyDown}
+                    onBlur={cancelRename}
+                    className="px-2 py-1 bg-background border border-border rounded text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                  />
+                  <button
+                    onClick={submitRename}
+                    className="p-1 text-primary hover:text-primary/90 hover:bg-primary/10 rounded"
+                    title="Confirm rename"
+                  >
+                    <Check className="w-4 h-4" />
+                  </button>
+                </div>
               )}
             </div>
-          )}
-          {isRenaming && (
-            <div className="flex items-center gap-2">
-              <input
-                ref={renameInputRef}
-                type="text"
-                value={newFileName}
-                onChange={(e) => setNewFileName(e.target.value)}
-                onKeyDown={handleRenameKeyDown}
-                onBlur={cancelRename}
-                className="px-2 py-1 bg-background border border-border rounded text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-              />
+            <div className="flex items-center space-x-1">
+              {saveSuccess && (
+                <div className="flex items-center text-xs text-green-500 mr-2">
+                  <Check size={14} className="mr-1" />
+                  <span>Saved</span>
+                </div>
+              )}
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setShowFileAgent(!showFileAgent)}
+                      className="text-muted-foreground hover:text-foreground"
+                    >
+                      {showFileAgent ? (
+                        <X className="w-4 h-4" />
+                      ) : (
+                        <MessageSquare className="w-4 h-4" />
+                      )}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    {showFileAgent ? 'Hide File Agent' : 'Show File Agent'}
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              
               <button
-                onClick={submitRename}
-                className="p-1 text-primary hover:text-primary/90 hover:bg-primary/10 rounded"
-                title="Confirm rename"
+                onClick={handleSave}
+                disabled={readOnly || isSaving || !isModified}
+                className={`p-1.5 rounded-md text-sm font-medium flex items-center 
+                  ${readOnly || !isModified 
+                    ? 'opacity-50 cursor-not-allowed text-muted-foreground' 
+                    : 'text-primary hover:bg-primary/10 hover:text-primary-foreground'}
+                `}
+                title="Save (Ctrl+S)"
               >
-                <Check className="w-4 h-4" />
+                {isSaving ? (
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Save className="w-4 h-4" />
+                )}
               </button>
-            </div>
-          )}
-        </div>
-        <div className="flex items-center space-x-1">
-          {saveSuccess && (
-            <div className="flex items-center text-xs text-green-500 mr-2">
-              <Check size={14} className="mr-1" />
-              <span>Saved</span>
-            </div>
-          )}
-          <button
-            onClick={handleSave}
-            disabled={readOnly || isSaving || !isModified}
-            className={`p-1.5 rounded-md text-sm font-medium flex items-center 
-              ${readOnly || !isModified 
-                ? 'opacity-50 cursor-not-allowed text-muted-foreground' 
-                : 'text-primary hover:bg-primary/10 hover:text-primary-foreground'}
-            `}
-            title="Save (Ctrl+S)"
-          >
-            {isSaving ? (
-              <RefreshCw className="w-4 h-4 animate-spin" />
-            ) : (
-              <Save className="w-4 h-4" />
-            )}
-          </button>
-          
-          {onRename && !isRenaming && (
-            <button
-              onClick={startRenaming}
-              disabled={readOnly}
-              className={`p-1.5 rounded-md text-sm font-medium flex items-center 
-                ${readOnly ? 'opacity-50 cursor-not-allowed text-muted-foreground' : 'text-primary hover:bg-primary/10 hover:text-primary-foreground'}
-              `}
-              title="Rename file"
-            >
-              <Edit2 className="w-4 h-4" />
-            </button>
-          )}
-          
-          {onDelete && (
-            <button
-              onClick={handleDelete}
-              disabled={readOnly}
-              className={`p-1.5 rounded-md text-sm font-medium flex items-center 
-                ${readOnly ? 'opacity-50 cursor-not-allowed text-muted-foreground' : 'text-destructive hover:bg-destructive/10 hover:text-destructive'}
-              `}
-              title="Delete file"
-            >
-              <Trash2 className="w-4 h-4" />
-            </button>
-          )}
-        </div>
-      </div>
-      
-      <div className="relative flex-1">
-        {isLoading && (
-          <div className="absolute inset-0 flex items-center justify-center bg-card text-foreground">
-            <div className="text-center">
-              <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
-              <div className="text-sm">Loading Monaco Editor...</div>
+              
+              {onRename && !isRenaming && (
+                <button
+                  onClick={startRenaming}
+                  disabled={readOnly}
+                  className={`p-1.5 rounded-md text-sm font-medium flex items-center 
+                    ${readOnly ? 'opacity-50 cursor-not-allowed text-muted-foreground' : 'text-primary hover:bg-primary/10 hover:text-primary-foreground'}
+                  `}
+                  title="Rename file"
+                >
+                  <Edit2 className="w-4 h-4" />
+                </button>
+              )}
+              
+              {onDelete && (
+                <button
+                  onClick={handleDelete}
+                  disabled={readOnly}
+                  className={`p-1.5 rounded-md text-sm font-medium flex items-center 
+                    ${readOnly ? 'opacity-50 cursor-not-allowed text-muted-foreground' : 'text-destructive hover:bg-destructive/10 hover:text-destructive'}
+                  `}
+                  title="Delete file"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              )}
             </div>
           </div>
+          
+          <div className="relative flex-1">
+            {isLoading && (
+              <div className="absolute inset-0 flex items-center justify-center bg-card text-foreground">
+                <div className="text-center">
+                  <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
+                  <div className="text-sm">Loading Monaco Editor...</div>
+                </div>
+              </div>
+            )}
+            <div
+              ref={editorRef}
+              className="w-full h-full"
+              style={{ display: isLoading ? 'none' : 'block' }}
+            />
+          </div>
+        </div>
+        
+        {/* File Welfare Agent */}
+        {showFileAgent && filePath && (
+          <FileWelfareAgent
+            filePath={filePath}
+            fileContent={value}
+            language={language}
+            onClose={() => setShowFileAgent(false)}
+          />
         )}
-        <div
-          ref={editorRef}
-          className="w-full h-full"
-          style={{ display: isLoading ? 'none' : 'block' }}
-        />
       </div>
     </div>
   );

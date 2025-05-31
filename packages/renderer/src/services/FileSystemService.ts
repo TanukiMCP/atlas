@@ -4,6 +4,49 @@ import { FileSystemItem } from '../types/index';
 class FileSystemService {
   private watchers: Map<string, any> = new Map();
   private listeners: Set<(files: FileSystemItem[]) => void> = new Set();
+  private dirChangeListeners: Set<(dirPath: string) => void> = new Set();
+  private currentWorkingDirectory: string | null = null;
+
+  constructor() {
+    // Initialize current working directory
+    this.initWorkingDirectory();
+    
+    // Set up listener for directory changes
+    if (window.electronAPI?.invoke) {
+      // Use a polling approach since we can't directly listen for events
+      this.pollForDirectoryChanges();
+    }
+  }
+
+  private async initWorkingDirectory() {
+    try {
+      if (window.electronAPI?.invoke) {
+        this.currentWorkingDirectory = await window.electronAPI.invoke('app:getWorkingDirectory');
+      }
+    } catch (error) {
+      console.error('Failed to get initial working directory:', error);
+    }
+  }
+  
+  private pollForDirectoryChanges() {
+    // Poll every 2 seconds to check if the working directory has changed
+    setInterval(async () => {
+      try {
+        if (window.electronAPI?.invoke) {
+          const currentDir = await window.electronAPI.invoke('app:getWorkingDirectory');
+          if (currentDir !== this.currentWorkingDirectory && currentDir) {
+            const oldDir = this.currentWorkingDirectory;
+            this.currentWorkingDirectory = currentDir;
+            this.notifyDirectoryChangeListeners(currentDir);
+            this.refreshFiles();
+            console.log(`Working directory changed from ${oldDir} to ${currentDir}`);
+          }
+        }
+      } catch (error) {
+        console.error('Error polling for directory changes:', error);
+      }
+    }, 2000);
+  }
 
   async getWorkspaceFiles(rootPath?: string): Promise<FileSystemItem[]> {
     if (!window.electronAPI?.invoke) {
@@ -20,7 +63,55 @@ class FileSystemService {
     }
   }
 
+  async setWorkingDirectory(dirPath: string): Promise<boolean> {
+    if (!window.electronAPI?.invoke) {
+      console.error('Electron API not available for setting working directory');
+      return false;
+    }
+
+    try {
+      const result = await window.electronAPI.invoke('app:setWorkingDirectory', dirPath);
+      if (result && result.success) {
+        this.currentWorkingDirectory = dirPath;
+        this.refreshFiles();
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('Failed to set working directory:', error);
+      return false;
+    }
+  }
+
+  async getCurrentWorkingDirectory(): Promise<string> {
+    if (this.currentWorkingDirectory) {
+      return this.currentWorkingDirectory;
+    }
+    
+    if (window.electronAPI?.invoke) {
+      try {
+        const dirPath = await window.electronAPI.invoke('app:getWorkingDirectory');
+        if (dirPath) {
+          this.currentWorkingDirectory = dirPath;
+          return dirPath;
+        }
+      } catch (error) {
+        console.error('Failed to get working directory:', error);
+      }
+    }
+    
+    return this.getDefaultWorkingDirectory();
+  }
+
   private getCurrentPath(): string {
+    if (this.currentWorkingDirectory) {
+      return this.currentWorkingDirectory;
+    }
+    
+    return this.getDefaultWorkingDirectory();
+  }
+
+  private getDefaultWorkingDirectory(): string {
     if (typeof process !== 'undefined') {
       // In Electron renderer, process.cwd() might not be available
       // Use a default workspace path or get it from main process
@@ -182,6 +273,19 @@ class FileSystemService {
   onFilesChanged(listener: (files: FileSystemItem[]) => void): () => void {
     this.listeners.add(listener);
     return () => this.listeners.delete(listener);
+  }
+
+  onDirectoryChanged(listener: (dirPath: string) => void): () => void {
+    this.dirChangeListeners.add(listener);
+    return () => this.dirChangeListeners.delete(listener);
+  }
+
+  private notifyDirectoryChangeListeners(dirPath: string): void {
+    this.dirChangeListeners.forEach(listener => listener(dirPath));
+  }
+
+  private async refreshFiles(): Promise<void> {
+    await this.notifyListeners();
   }
 
   private resolvePath(filePath: string): string {

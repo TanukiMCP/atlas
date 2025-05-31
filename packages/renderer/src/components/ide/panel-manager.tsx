@@ -1,22 +1,59 @@
 import React from 'react';
-import { PanelLayout } from '../../hooks/use-ui-store';
+import { TerminalPanel } from './terminal/TerminalPanel';
 
 interface PanelManagerProps {
-  layout: PanelLayout;
-  onLayoutChange: (layout: Partial<PanelLayout>) => void;
+  layout: {
+    leftPanel: {
+      width: number;
+      isVisible: boolean;
+      activeTab: string;
+    };
+    rightPanel: {
+      width: number;
+      isVisible: boolean;
+      activeTab: string;
+    };
+    bottomPanel: {
+      height: number;
+      isVisible: boolean;
+      activeTab: string;
+    };
+  };
+  onLayoutChange: (layout: any) => void;
   panels: {
     fileExplorer: React.ReactNode;
     centerPanel: React.ReactNode;
-    rightPanel: React.ReactNode;
-    bottomPanel: React.ReactNode;
+    bottomPanel?: React.ReactNode;
   };
+  workingDirectory?: string;
 }
 
 export const PanelManager: React.FC<PanelManagerProps> = ({
   layout,
   onLayoutChange,
-  panels
+  panels,
+  workingDirectory,
 }) => {
+  const handleTerminalClose = () => {
+    onLayoutChange({
+      ...layout,
+      bottomPanel: {
+        ...layout.bottomPanel,
+        isVisible: false,
+      },
+    });
+  };
+
+  const handleTerminalMaximize = () => {
+    onLayoutChange({
+      ...layout,
+      bottomPanel: {
+        ...layout.bottomPanel,
+        height: layout.bottomPanel.height === 500 ? 200 : 500,
+      },
+    });
+  };
+
   return (
     <div className="panel-manager flex h-full w-full">
       {/* Left Panel (File Explorer) */}
@@ -43,10 +80,10 @@ export const PanelManager: React.FC<PanelManagerProps> = ({
       <div className="flex-1 flex flex-col min-w-0 bg-color-bg-primary">
         {/* Center Panel takes up most space */}
         <div className="flex-grow min-h-0 overflow-y-auto">
-          {panels.centerPanel} {/* This will render Chat, Editor, Settings, etc. */}
+          {panels.centerPanel}
         </div>
-        {/* Bottom Panel (only rendered when there's actual content) */}
-        {layout.bottomPanel.isVisible && panels.bottomPanel && (
+        {/* Bottom Panel (Terminal) */}
+        {layout.bottomPanel.isVisible && (
           <div 
             className="panel border-t custom-scrollbar bg-color-bg-secondary flex-shrink-0"
             style={{ 
@@ -54,7 +91,16 @@ export const PanelManager: React.FC<PanelManagerProps> = ({
               minHeight: layout.bottomPanel.height 
             }}
           >
-            {panels.bottomPanel}
+            {layout.bottomPanel.activeTab === 'terminal' ? (
+              <TerminalPanel
+                workingDirectory={workingDirectory}
+                onClose={handleTerminalClose}
+                isMaximized={layout.bottomPanel.height > 200}
+                onMaximize={handleTerminalMaximize}
+              />
+            ) : (
+              panels.bottomPanel
+            )}
           </div>
         )}
       </div>
@@ -73,8 +119,8 @@ export const PanelManager: React.FC<PanelManagerProps> = ({
               {layout.rightPanel.activeTab === 'workflowManager' ? 'Workflow Manager' : 'Panel'}
             </div>
           </div>
-          <div className="panel-content">
-            {panels.rightPanel}
+          <div className="panel-content h-full overflow-y-auto">
+            {/* Right panel content */}
           </div>
         </div>
       )}

@@ -12,6 +12,7 @@ export interface IPCChannels {
   'settings:get': { params: [string]; result: any };
   'settings:set': { params: [string, any]; result: void };
   'settings:getAll': { params: []; result: Setting[] };
+  'storage:remove': { params: [string]; result: boolean };
   
   // Chat session management
   'chat:createSession': { params: [NewChatSessionData]; result: ChatSession };
@@ -43,13 +44,14 @@ export interface IPCChannels {
   // Phase 2: LLM and Model Management
   // OpenRouter handlers (current)
   'openrouter:checkHealth': { params: []; result: { isConnected: boolean; availableModels: any[]; lastChecked: Date; error?: string } };
-  'openrouter:getAvailableModels': { params: []; result: any[] };
   'openrouter:generate': { params: [any]; result: { content: string; usage: any } };
   'openrouter:getModelRecommendations': { params: [string]; result: any[] };
+  'openrouter:updateApiKey': { params: [string]; result: boolean };
+  'openrouter:getRecommendations': { params: [string]; result: any[] };
+  'openrouter:getBestModel': { params: [string]; result: any | null };
   
   // OpenRouter model management
   'openrouter:listModels': { params: []; result: any[] };
-  'openrouter:checkHealth': { params: []; result: boolean };
   
   'system:getCapabilities': { params: []; result: any };
   'system:getCurrentMetrics': { params: []; result: any };

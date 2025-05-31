@@ -88,13 +88,8 @@ class ToolContextService {
 
     let enhancedPrompt = basePrompt;
 
-    // Add tool context
-    enhancedPrompt = generateSystemPromptWithToolContext(enhancedPrompt, tools);
-
-    // Add Clear Thought context if enabled
-    if (this.settings.clearThoughtReasoning) {
-      enhancedPrompt += '\n\n' + generateClearThoughtContext();
-    }
+    // Add tool context for all tools, including Clear Thought tools
+    enhancedPrompt = generateSystemPromptWithToolContext(enhancedPrompt, tools, this.settings.clearThoughtReasoning); // Pass clearThoughtReasoning to control detail level if needed
 
     return enhancedPrompt;
   }

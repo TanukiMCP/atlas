@@ -7,6 +7,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import MCPService from '../services/MCPService';
 import { MCPTool } from '../types/index';
 import { formatToolInvocation } from '../utils/parseToolInvocation';
+import { Search, Wrench, ExternalLink } from 'lucide-react';
 
 interface ToolSelectorProps {
   visible: boolean;
@@ -26,12 +27,31 @@ export const ToolSelector: React.FC<ToolSelectorProps> = ({
   const [tools, setTools] = useState<MCPTool[]>([]);
   const [filteredTools, setFilteredTools] = useState<MCPTool[]>([]);
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const selectorRef = useRef<HTMLDivElement>(null);
 
   // Fetch available tools
   useEffect(() => {
-    setTools(MCPService.getAvailableTools());
-  }, []);
+    const fetchTools = async () => {
+      try {
+        setLoading(true);
+        // Use MCPService to get available tools
+        const availableTools = MCPService.getAvailableTools();
+        setTools(availableTools);
+        setFilteredTools(availableTools);
+        setLoading(false);
+      } catch (err) {
+        console.error('Error fetching tools:', err);
+        setError('Failed to load tools');
+        setLoading(false);
+      }
+    };
+
+    if (visible) {
+      fetchTools();
+    }
+  }, [visible]);
 
   // Filter tools based on search text
   useEffect(() => {
@@ -94,71 +114,127 @@ export const ToolSelector: React.FC<ToolSelectorProps> = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [visible, onClose]);
 
-  // Scroll selected item into view
-  useEffect(() => {
-    if (visible && selectorRef.current) {
-      const selectedElement = selectorRef.current.querySelector(`[data-index="${selectedIndex}"]`);
-      if (selectedElement) {
-        selectedElement.scrollIntoView({ block: 'nearest' });
-      }
-    }
-  }, [selectedIndex, visible]);
+  if (!visible || !position) {
+    return null;
+  }
 
-  if (!visible || !position) return null;
+  // Calculate position to ensure it's always visible on screen
+  const calculatePosition = () => {
+    if (!position) return {};
+    
+    // Get viewport dimensions
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+    
+    // Default dimensions for the selector
+    const selectorWidth = 300;
+    const selectorHeight = 350;
+    
+    // Calculate positions that keep the selector within viewport
+    let left = position.x;
+    let top = position.y;
+    
+    // Adjust if would go off right edge
+    if (left + selectorWidth > viewportWidth) {
+      left = Math.max(0, viewportWidth - selectorWidth - 10);
+    }
+    
+    // Adjust if would go off bottom edge
+    if (top + selectorHeight > viewportHeight) {
+      top = Math.max(0, viewportHeight - selectorHeight - 10);
+    }
+    
+    return { left, top };
+  };
+
+  const positionStyle = calculatePosition();
 
   return (
     <div
       ref={selectorRef}
-      className="absolute z-50 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg overflow-hidden"
+      className="fixed z-[9999] bg-card border border-border rounded-lg shadow-lg overflow-hidden"
       style={{
-        left: position.x,
-        top: position.y,
+        ...positionStyle,
         width: '300px',
-        maxHeight: '350px'
+        maxHeight: '350px',
       }}
+      data-testid="tool-selector"
     >
-      <div className="p-2 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
-        <div className="text-sm font-medium text-gray-700 dark:text-gray-300">
-          Available Tools {filteredTools.length > 0 && `(${filteredTools.length})`}
+      <div className="p-2 border-b border-border bg-muted/50 sticky top-0">
+        <div className="flex justify-between items-center mb-1">
+          <div className="flex items-center gap-2">
+            <Wrench className="w-4 h-4 text-primary" />
+            <span className="text-sm font-medium">
+              Available Tools {filteredTools.length > 0 && `(${filteredTools.length})`}
+            </span>
+          </div>
+          <button 
+            onClick={onClose}
+            className="text-muted-foreground hover:text-foreground rounded-full p-1 hover:bg-muted"
+          >
+            ×
+          </button>
         </div>
-        <div className="text-xs text-gray-500 dark:text-gray-400">
-          Select a tool or continue typing to filter
+        <div className="relative">
+          <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <input
+            type="text"
+            placeholder="Search tools..."
+            value={searchText}
+            className="w-full pl-8 pr-2 py-1 text-xs bg-background border border-border rounded focus:outline-none focus:ring-1 focus:ring-primary"
+            onChange={(e) => {/* This should be handled by the parent component */}}
+          />
         </div>
       </div>
       
-      <div className="overflow-y-auto max-h-[300px]">
-        {filteredTools.length === 0 ? (
-          <div className="p-4 text-center text-gray-500 dark:text-gray-400">
-            No tools match your search
+      <div className="overflow-y-auto max-h-[270px]">
+        {loading ? (
+          <div className="flex items-center justify-center p-4 text-sm text-muted-foreground">
+            Loading tools...
+          </div>
+        ) : error ? (
+          <div className="flex items-center justify-center p-4 text-sm text-destructive">
+            {error}
+          </div>
+        ) : filteredTools.length === 0 ? (
+          <div className="flex items-center justify-center p-4 text-sm text-muted-foreground">
+            No tools found matching '{searchText}'
           </div>
         ) : (
-          <ul className="py-1">
+          <div className="py-1">
             {filteredTools.map((tool, index) => (
-              <li
+              <div
                 key={tool.name}
-                data-index={index}
-                className={`px-3 py-2 cursor-pointer ${
-                  index === selectedIndex
-                    ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300'
-                    : 'hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-900 dark:text-gray-100'
+                className={`px-3 py-2 cursor-pointer text-sm ${
+                  index === selectedIndex 
+                    ? 'bg-primary/10 text-primary' 
+                    : 'hover:bg-muted'
                 }`}
                 onClick={() => onSelect(tool.name)}
+                data-index={index}
               >
-                <div className="flex items-center">
-                  <span className="mr-2 text-lg">{tool.icon || '🔧'}</span>
-                  <div>
-                    <div className="font-medium">{tool.name}</div>
-                    {tool.description && (
-                      <div className="text-xs text-gray-600 dark:text-gray-400">
-                        {tool.description}
-                      </div>
-                    )}
-                  </div>
+                <div className="flex items-center gap-2 mb-0.5">
+                  <span className="font-medium">{tool.name}</span>
+                  {tool.serverId && (
+                    <span className="text-xs bg-muted px-1.5 py-0.5 rounded text-muted-foreground">
+                      {tool.serverName || tool.serverId}
+                    </span>
+                  )}
                 </div>
-              </li>
+                {tool.description && (
+                  <div className="text-xs text-muted-foreground line-clamp-2">
+                    {tool.description}
+                  </div>
+                )}
+              </div>
             ))}
-          </ul>
+          </div>
         )}
+      </div>
+      
+      <div className="p-2 border-t border-border bg-muted/30 text-xs text-muted-foreground flex justify-between items-center">
+        <div>↑↓ to navigate</div>
+        <div>↵ to select</div>
       </div>
     </div>
   );

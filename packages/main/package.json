@@ -13,19 +13,25 @@
     "build:test": "esbuild src/test-phase2.ts --bundle --platform=node --outfile=dist/test-phase2.js --external:better-sqlite3 --external:drizzle-orm --sourcemap"
   },
   "dependencies": {
+    "@radix-ui/react-scroll-area": "^1.2.9",
+    "@radix-ui/react-separator": "^1.1.7",
+    "@radix-ui/react-slot": "^1.2.3",
     "better-sqlite3": "^9.2.2",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
     "drizzle-orm": "^0.29.0",
     "electron-updater": "^6.1.7",
+    "tailwind-merge": "^3.3.0",
     "uuid": "^9.0.1"
   },
   "devDependencies": {
-    "esbuild": "^0.19.0",
-    "drizzle-kit": "^0.20.0",
     "@types/better-sqlite3": "^7.6.0",
+    "@types/node": "^20.10.0",
     "@types/uuid": "^9.0.7",
+    "drizzle-kit": "^0.20.0",
+    "esbuild": "^0.19.0",
     "rimraf": "^5.0.5",
-    "typescript": "^5.3.0",
     "ts-node": "^10.9.0",
-    "@types/node": "^20.10.0"
+    "typescript": "^5.3.0"
   }
-} 
+}

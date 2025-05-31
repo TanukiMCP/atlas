@@ -1,6 +1,8 @@
-import { mcpService } from './mcp-service';
+import mcpService from './MCPService';
 import { toolContextService } from './ToolContextService';
 import { eventBus } from './event-bus';
+import type { ToolCall } from '../components/chat/ToolCallApprovalPanel';
+import type { MCPTool } from '../types/index';
 
 interface OpenRouterModel {
   id: string;
@@ -61,6 +63,22 @@ interface OpenRouterResponse {
   };
 }
 
+interface OpenRouterModelData {
+  id: string;
+  name: string;
+  description: string | null;
+  context_length: number;
+  pricing: {
+    prompt: string; // these are strings like "0.000"
+    completion: string;
+  };
+  // Add other fields if needed from the actual API response
+}
+
+interface OpenRouterAPIResponse {
+  data: OpenRouterModelData[];
+}
+
 export class OpenRouterService {
   private apiKey: string | null = null;
   private baseUrl = 'https://openrouter.ai/api/v1';
@@ -92,8 +110,8 @@ export class OpenRouterService {
 
     const model = options.model || 'meta-llama/llama-3.1-8b-instruct:free';
     
-    // Get available tools
-    const availableTools = mcpService.getAvailableTools('agent');
+    // Get available tools, typed correctly
+    const availableTools: MCPTool[] = mcpService.getAvailableTools().filter(tool => tool.operationalMode === 'agent' || tool.operationalMode === 'both');
     
     // Enhance system message with tool context if enabled
     if (messages.length > 0 && messages[0].role === 'system' && toolContextService.getSettings().showToolContext) {
@@ -123,14 +141,35 @@ export class OpenRouterService {
         stream: options.stream || false,
         max_tokens: options.maxTokens || 1024,
         temperature: options.temperature || 0.7,
-        tools: availableTools.map(tool => ({
-          type: 'function',
-          function: {
-            name: tool.name,
-            description: tool.description,
-            parameters: tool.parameters || {}
+        tools: availableTools.map(tool => {
+          const parametersSchema: { type: string, properties: any, required?: string[] } = {
+            type: 'object',
+            properties: {},
+            required: []
+          };
+          if (tool.parameters) {
+            tool.parameters.forEach(param => {
+              parametersSchema.properties[param.name] = {
+                type: param.type === 'file' ? 'string' : param.type, // map 'file' to 'string' for schema
+                description: param.description
+              };
+              if (param.required) {
+                parametersSchema.required?.push(param.name);
+              }
+            });
           }
-        }))
+          if (parametersSchema.required?.length === 0) {
+            delete parametersSchema.required;
+          }
+          return {
+            type: 'function',
+            function: {
+              name: tool.name,
+              description: tool.description,
+              parameters: parametersSchema
+            }
+          };
+        })
       })
     };
 
@@ -152,45 +191,37 @@ export class OpenRouterService {
    * Execute a tool with approval handling
    */
   async executeToolWithApproval(toolName: string, parameters: any): Promise<any> {
-    // Register the tool call for approval if needed
-    const toolCall = {
+    const toolDefinition = mcpService.getTool(toolName);
+
+    const toolCall: ToolCall = {
       id: `tool-call-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
       toolName,
       parameters,
       timestamp: new Date(),
-      status: 'pending'
+      status: 'pending',
+      category: toolDefinition?.category === 'Clear Thought' ? 'reasoning' : toolDefinition?.category?.toLowerCase() as ToolCall['category'] || 'other',
+      description: toolDefinition?.description
     };
     
     const callId = toolContextService.registerToolCall(toolCall);
     
-    // If auto-approved, execute immediately
     if (toolCall.status === 'approved') {
-      return mcpService.executeTool({
-        toolName,
-        parameters,
-        requestId: callId
-      });
+      return mcpService.executeTool(toolName, parameters);
     }
     
-    // Otherwise, wait for approval/rejection
     return new Promise((resolve, reject) => {
-      const approvedSubscription = eventBus.on('tool:approved', (approvedToolCall: any) => {
+      const approvedSubscription = eventBus.on('tool:approved', (approvedToolCall: ToolCall) => {
         if (approvedToolCall.id === callId) {
           approvedSubscription();
           rejectedSubscription();
           
-          // Execute the approved tool
-          mcpService.executeTool({
-            toolName,
-            parameters,
-            requestId: callId
-          })
+          mcpService.executeTool(approvedToolCall.toolName, approvedToolCall.parameters)
             .then(resolve)
             .catch(reject);
         }
       });
       
-      const rejectedSubscription = eventBus.on('tool:rejected', (rejectedToolCall: any) => {
+      const rejectedSubscription = eventBus.on('tool:rejected', (rejectedToolCall: ToolCall) => {
         if (rejectedToolCall.id === callId) {
           approvedSubscription();
           rejectedSubscription();
@@ -202,54 +233,94 @@ export class OpenRouterService {
 
   // Get available models
   async getAvailableModels(): Promise<FreeModelConfig[]> {
-    const freeModels = [
-      {
-        id: 'meta-llama/llama-3.1-8b-instruct:free',
-        displayName: 'Llama 3.1 8B (Free)',
-        description: 'Fast and capable model for general conversation and reasoning',
-        specialization: ['conversation', 'reasoning', 'general'],
-        isAvailable: true,
-        rateLimits: {
-          requestsPerMinute: 10,
-          tokensPerDay: 200000
+    if (!this.apiKey) {
+      console.warn('OpenRouter API key not set. Returning empty model list.');
+      return [];
+    }
+
+    try {
+      const response = await fetch(`${this.baseUrl}/models`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${this.apiKey}`,
+          'HTTP-Referer': window.location.origin, // Required by OpenRouter
+          'X-Title': 'TanukiMCP Atlas'
         }
-      },
-      {
-        id: 'google/gemma-2-9b-it:free',
-        displayName: 'Gemma 2 9B (Free)',
-        description: 'Google\'s efficient model optimized for instruction following',
-        specialization: ['conversation', 'instruction-following', 'coding'],
-        isAvailable: true,
-        rateLimits: {
-          requestsPerMinute: 10,
-          tokensPerDay: 200000
+      });
+
+      if (!response.ok) {
+        console.error(`OpenRouter API error: ${response.status} ${response.statusText}`);
+        // Attempt to parse error body
+        try {
+          const errorData = await response.json();
+          console.error('OpenRouter error details:', errorData);
+        } catch (e) {
+          // Ignore if error body is not JSON
         }
-      },
-      {
-        id: 'microsoft/phi-3-mini-128k-instruct:free',
-        displayName: 'Phi-3 Mini (Free)',
-        description: 'Compact yet powerful model from Microsoft, great for coding tasks',
-        specialization: ['coding', 'problem-solving', 'reasoning'],
-        isAvailable: true,
-        rateLimits: {
-          requestsPerMinute: 15,
-          tokensPerDay: 100000
-        }
-      },
-      {
-        id: 'mistralai/mistral-7b-instruct:free',
-        displayName: 'Mistral 7B (Free)',
-        description: 'Balanced model with strong multilingual capabilities',
-        specialization: ['conversation', 'multilingual', 'creative-writing'],
-        isAvailable: true,
-        rateLimits: {
-          requestsPerMinute: 10,
-          tokensPerDay: 150000
-        }
+        return []; // Return empty on error
       }
-    ];
-    
-    return freeModels;
+
+      const apiResponse: OpenRouterAPIResponse = await response.json();
+      
+      // Filter for free models and map to FreeModelConfig
+      // This is a heuristic: models with pricing "0.0" or "0" for prompt/completion, 
+      // or IDs containing ":free" are considered free.
+      // Also, provide some default rate limits as the /models endpoint doesn't give them.
+      const freeModels = apiResponse.data
+        .filter(model => 
+          (model.id.includes(':free')) || 
+          (model.pricing && (model.pricing.prompt === "0.0" || model.pricing.prompt === "0") && (model.pricing.completion === "0.0" || model.pricing.completion === "0"))
+        )
+        .map((model: OpenRouterModelData): FreeModelConfig => ({
+          id: model.id,
+          displayName: model.name || model.id, // Use name, fallback to id
+          description: model.description || 'N/A',
+          // Heuristic for specialization based on model name/description - needs improvement
+          specialization: this.determineSpecialization(model),
+          isAvailable: true, // Assuming all fetched free models are available
+          rateLimits: { // Default rate limits for free models, as API doesn't provide this per model
+            requestsPerMinute: 5, // Conservative default
+            tokensPerDay: 100000  // Conservative default
+          }
+        }));
+
+      return freeModels;
+
+    } catch (error) {
+      console.error('Failed to fetch or process models from OpenRouter:', error);
+      return [];
+    }
+  }
+
+  // Helper to determine specialization (heuristic, can be improved)
+  private determineSpecialization(model: OpenRouterModelData): string[] {
+    const specializations: string[] = [];
+    const modelIdLower = model.id.toLowerCase();
+    const modelNameLower = (model.name || '').toLowerCase();
+    const modelDescLower = (model.description || '').toLowerCase();
+
+    if (modelIdLower.includes('cod') || modelNameLower.includes('cod') || modelDescLower.includes('cod')) {
+      specializations.push('coding');
+    }
+    if (modelIdLower.includes('instruct') || modelNameLower.includes('instruct')) {
+      specializations.push('instruction-following');
+    }
+    if (modelIdLower.includes('chat') || modelNameLower.includes('chat') || modelDescLower.includes('chat') || modelIdLower.includes('convers') || modelNameLower.includes('convers')) {
+      specializations.push('conversation');
+    }
+    if (modelIdLower.includes('reason') || modelNameLower.includes('reason') || modelDescLower.includes('reason')) {
+      specializations.push('reasoning');
+    }
+     if (modelIdLower.includes('general') || modelNameLower.includes('general') || modelDescLower.includes('general')) {
+      specializations.push('general');
+    }
+    if (modelIdLower.includes('writing') || modelNameLower.includes('writing') || modelDescLower.includes('writing')) {
+      specializations.push('creative-writing');
+    }
+    if (specializations.length === 0) {
+      specializations.push('general'); // Default if no specific keywords found
+    }
+    return Array.from(new Set(specializations)); // Remove duplicates
   }
 
   // Health check

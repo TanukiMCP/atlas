@@ -100,6 +100,27 @@ export class OpenRouterService {
     error?: string;
   }> {
     try {
+      // Make a test request to the OpenRouter API
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+        'HTTP-Referer': 'https://tanukimcp.com',
+        'X-Title': 'TanukiMCP Atlas'
+      };
+
+      if (this.apiKey) {
+        headers['Authorization'] = `Bearer ${this.apiKey}`;
+      }
+
+      const response = await fetch(`${this.baseUrl}/models`, {
+        method: 'GET',
+        headers
+      });
+
+      if (!response.ok) {
+        throw new Error(`OpenRouter API error: ${response.status}`);
+      }
+
+      // If we get here, the connection is working
       const availableModels = await this.getAvailableFreeModels();
       return {
         isConnected: true,
@@ -107,6 +128,7 @@ export class OpenRouterService {
         lastChecked: new Date()
       };
     } catch (error) {
+      console.error('OpenRouter health check failed:', error);
       return {
         isConnected: false,
         availableModels: [],

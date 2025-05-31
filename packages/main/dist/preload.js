@@ -49,6 +49,16 @@ import_electron.contextBridge.exposeInMainWorld("electronAPI", {
   isMaximized: () => {
     return import_electron.ipcRenderer.invoke("window:isMaximized");
   },
+  // File system and workspace management
+  setWorkingDirectory: (dirPath) => {
+    return import_electron.ipcRenderer.invoke("app:setWorkingDirectory", dirPath);
+  },
+  getWorkingDirectory: () => {
+    return import_electron.ipcRenderer.invoke("app:getWorkingDirectory");
+  },
+  onWorkingDirectoryChanged: (callback) => {
+    import_electron.ipcRenderer.on("app:workingDirectoryChanged", (_, dirPath) => callback(dirPath));
+  },
   // Mobile proxy management
   startProxyServer: () => import_electron.ipcRenderer.invoke("start-proxy-server"),
   stopProxyServer: () => import_electron.ipcRenderer.invoke("stop-proxy-server"),

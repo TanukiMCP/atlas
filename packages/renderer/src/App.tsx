@@ -4,7 +4,7 @@ import { MCPToolResult } from './services/mcp-service';
 import Header from './components/Header';
 import FileExplorer from './components/FileExplorer';
 import ToolsPanel from './components/ToolsPanel';
-import { ChatView } from './components/chat/ChatView';
+import Chat from './components/Chat';
 import StatusBar from './components/StatusBar';
 import ModelManagementHub from './components/ModelManagementHub';
 import MonacoEditor from './components/MonacoEditor';
@@ -12,9 +12,14 @@ import Settings from './components/Settings';
 import { ComingSoon } from './components/shared/ComingSoon';
 import { AboutView } from './components/views/AboutView';
 import OpenRouterModelHub from './components/llm/OpenRouterModelHub';
+import LocalLLMHub from './components/llm/LocalLLMHub';
 import WindowControls from './components/WindowControls';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from './components/ui/resizable';
 import { VisualWorkflowBuilder } from './components/workflows/visual-workflow-builder';
+import MCPToolHub from './components/mcp/MCPToolHub';
+import IntegratedTerminal from './components/ide/IntegratedTerminal';
+import { ThemeProvider } from './contexts/ThemeContext';
+import { ModernIDELayout } from './components/ide/modern-ide-layout';
 
 // Import services
 import { fileSystemService } from './services/FileSystemService';
@@ -26,7 +31,6 @@ import { useLLMStore } from './stores/llm-store';
 
 function App() {
   const [currentView, setCurrentView] = useState<ViewType>('chat');
-  const [theme, setTheme] = useState<Theme>('dark');
 
   // Real data from services
   const [files, setFiles] = useState<FileSystemItem[]>([]);
@@ -43,22 +47,29 @@ function App() {
   const [modelInstallations, setModelInstallations] = useState<ModelInstallation[]>([]);
   const [modelConfigurations, setModelConfigurations] = useState<ModelConfiguration[]>([]);
   const [systemCapabilities, setSystemCapabilities] = useState<SystemCapabilities | null>(null);
-  const [isModelHubOpen, setIsModelHubOpen] = useState(false);
-  const [isOpenRouterModelHubOpen, setIsOpenRouterModelHubOpen] = useState(false);
-
-  // Subscribe to LLM store changes
-  const { isConnected: isOpenRouterConnected, checkHealth: refreshOpenRouterHealth, availableModels: openRouterModels } = useLLMStore();
-
+  
   // Editor state
   const [currentFile, setCurrentFile] = useState<FileSystemItem | null>(null);
   const [fileContent, setFileContent] = useState<string>('');
   const [isFileLoading, setIsFileLoading] = useState(false);
 
-  // UI state for toolbar
+  // UI state for modals and toolbars
   const [isFileExplorerVisible, setIsFileExplorerVisible] = useState(true);
   const [subjectMode, setSubjectMode] = useState('general');
   const [agentMode, setAgentMode] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isModelHubOpen, setIsModelHubOpen] = useState(false);
+  const [isOpenRouterModelHubOpen, setIsOpenRouterModelHubOpen] = useState(false);
+  const [isLocalLLMHubOpen, setIsLocalLLMHubOpen] = useState(false);
+  const [isMCPToolHubOpen, setIsMCPToolHubOpen] = useState(false);
+  const [isWorkflowBuilderOpen, setIsWorkflowBuilderOpen] = useState(false);
+  const [isTerminalVisible, setIsTerminalVisible] = useState(false);
+
+  // Track the current working directory
+  const [currentWorkingDirectory, setCurrentWorkingDirectory] = useState<string | null>(null);
+
+  // Subscribe to LLM store changes
+  const { isConnected: isOpenRouterConnected, checkHealth: refreshOpenRouterHealth, availableModels: openRouterModels } = useLLMStore();
 
   // Auto-select first model when OpenRouter connects and models are available
   useEffect(() => {
@@ -68,6 +79,36 @@ function App() {
       console.log('Auto-selected OpenRouter model:', firstModel.name);
     }
   }, [isOpenRouterConnected, openRouterModels, currentModel]);
+
+  // Subscribe to LLM store currentModel changes
+  useEffect(() => {
+    // Initial sync from LLM store
+    const { currentModel: llmCurrentModel, availableModels: llmAvailableModels } = useLLMStore.getState();
+    
+    if (llmCurrentModel && llmAvailableModels.length > 0) {
+      const modelDetails = llmAvailableModels.find(m => m.id === llmCurrentModel);
+      if (modelDetails) {
+        const tanukiModel = convertFreeModelToTanukiModel(modelDetails);
+        setCurrentModel(tanukiModel);
+        console.log('Synced current model from LLM store:', tanukiModel.name);
+      }
+    }
+    
+    // Subscribe to future changes
+    const unsubscribe = useLLMStore.subscribe((state) => {
+      const newModelId = state.currentModel;
+      if (newModelId && (!currentModel || newModelId !== currentModel.name)) {
+        const modelDetails = state.availableModels.find(m => m.id === newModelId);
+        if (modelDetails) {
+          const tanukiModel = convertFreeModelToTanukiModel(modelDetails);
+          setCurrentModel(tanukiModel);
+          console.log('Updated current model from LLM store:', tanukiModel.name);
+        }
+      }
+    });
+    
+    return unsubscribe;
+  }, [currentModel]);
 
   // Sync OpenRouter connection status to ConnectionManager for StatusBar
   useEffect(() => {
@@ -86,11 +127,6 @@ function App() {
   }, [isOpenRouterConnected]);
 
   useEffect(() => {
-    // Apply theme class to document
-    document.documentElement.className = theme;
-  }, [theme]);
-
-  useEffect(() => {
     initializeServices();
     
     // Also initialize OpenRouter connection
@@ -98,6 +134,26 @@ function App() {
     checkHealth().catch(error => {
       console.error('Failed to check OpenRouter health:', error);
     });
+    
+    // Set up listener for directory changes
+    const unsubscribeDirectory = fileSystemService.onDirectoryChanged((dirPath) => {
+      console.log('Working directory changed to:', dirPath);
+      setCurrentWorkingDirectory(dirPath);
+      refreshFileList();
+    });
+    
+    // Get initial working directory
+    fileSystemService.getCurrentWorkingDirectory()
+      .then(dirPath => {
+        setCurrentWorkingDirectory(dirPath);
+      })
+      .catch(error => {
+        console.error('Failed to get current working directory:', error);
+      });
+    
+    return () => {
+      unsubscribeDirectory();
+    };
   }, []);
 
   const initializeServices = async () => {
@@ -228,10 +284,18 @@ function App() {
       console.log('🔍 Opening Model Hub...');
       setIsOpenRouterModelHubOpen(true);
     }
-  };
-
-  const handleThemeToggle = () => {
-    setTheme(theme === 'dark' ? 'light' : 'dark');
+    
+    // Open Local LLM Hub when local-llm-hub view is selected
+    if (view === 'local-llm-hub') {
+      console.log('🔧 Opening Local LLM Hub...');
+      setIsLocalLLMHubOpen(true);
+    }
+    
+    // Open MCP Tool Hub when mcp-tool-hub view is selected
+    if (view === 'mcp-tool-hub') {
+      console.log('🔧 Opening MCP Tool Hub...');
+      setIsMCPToolHubOpen(true);
+    }
   };
 
   const handleFileSelect = async (file: FileSystemItem) => {
@@ -262,7 +326,11 @@ function App() {
   // Model management handlers
   const handleModelSwitch = async (modelName: string) => {
     try {
-      // Implementation needed
+      // Use the LLM store to set the current model
+      useLLMStore.getState().setCurrentModel(modelName);
+      console.log('Switched model to:', modelName);
+      
+      // The TanukiModel will be updated via the subscription we set up
     } catch (error) {
       console.error('Failed to switch model:', error);
     }
@@ -430,7 +498,46 @@ function App() {
     }
   };
 
-  const [isWorkflowBuilderOpen, setIsWorkflowBuilderOpen] = useState(false);
+  const handleOpenModelHub = () => {
+    console.log('🔍 Opening Model Hub...');
+    setIsOpenRouterModelHubOpen(true);
+  };
+
+  const handleOpenLocalLLMHub = () => {
+    console.log('🔍 Opening Local LLM Hub...');
+    setIsLocalLLMHubOpen(true);
+  };
+  
+  const toggleTerminal = () => {
+    console.log('🖥️ Toggling terminal visibility...');
+    setIsTerminalVisible(!isTerminalVisible);
+  };
+
+  // Function to refresh the file list
+  const refreshFileList = async () => {
+    try {
+      const workspaceFiles = await fileSystemService.getWorkspaceFiles();
+      setFiles(workspaceFiles);
+    } catch (error) {
+      console.error('Failed to refresh file list:', error);
+    }
+  };
+  
+  // Function to change the working directory
+  const changeWorkingDirectory = async (dirPath: string) => {
+    try {
+      const success = await fileSystemService.setWorkingDirectory(dirPath);
+      if (success) {
+        console.log(`Successfully changed working directory to: ${dirPath}`);
+        setCurrentWorkingDirectory(dirPath);
+        refreshFileList();
+      } else {
+        console.error(`Failed to change working directory to: ${dirPath}`);
+      }
+    } catch (error) {
+      console.error('Error changing working directory:', error);
+    }
+  };
 
   const renderMainContent = () => {
     if (isLoading) {
@@ -447,258 +554,55 @@ function App() {
     switch (currentView) {
       case 'chat':
         return (
-          <ChatView 
-            currentModel={currentModel?.name || "llama3.2:3b"}
-            isConnected={isOpenRouterConnected}
-            subjectMode={subjectMode}
-            agentMode={agentMode}
-            onProcessingChange={(processing: boolean) => {
-              setIsProcessing(processing);
-              console.log('Chat processing:', processing);
-            }}
-          />
-        );
-      case 'models':
-        // This case is handled by the ModelManagementHub overlay
-        return (
-          <div className="flex items-center justify-center h-full">
-            <div className="text-center space-y-4">
-              <div className="text-6xl">🤖</div>
-              <div className="text-xl font-semibold">Model Management</div>
-              <div className="text-sm text-muted-foreground">
-                The model management hub should be opening...
-              </div>
-            </div>
-          </div>
+          <Chat />
         );
       case 'editor':
+        if (currentFile) {
+          return (
+            <MonacoEditor
+              value={fileContent}
+              language={getLanguageFromFile(currentFile.name)}
+              onChange={(value) => setFileContent(value)}
+              onSave={handleSaveFile}
+              onDelete={handleFileDelete}
+              filePath={currentFile.path}
+              theme={theme === 'dark' ? 'vs-dark' : 'vs-light'}
+              height="100%"
+            />
+          );
+        } else {
+          return <div className="flex items-center justify-center h-full text-muted-foreground">No file selected</div>;
+        }
+      case 'models':
         return (
-          <div className="max-w-full mx-auto h-full flex flex-col">
-            <div className="flex-1 p-6">
-              <div className="h-full">
-                {currentFile ? (
-                  <MonacoEditor
-                    value={fileContent}
-                    language={getLanguageFromFile(currentFile.name)}
-                    onChange={(value) => setFileContent(value)}
-                    onSave={handleSaveFile}
-                    onDelete={handleFileDelete}
-                    filePath={currentFile.path}
-                    theme={theme === 'dark' ? 'vs-dark' : 'vs-light'}
-                    height="100%"
-                  />
-                ) : (
-                  <div className="h-full flex items-center justify-center text-muted-foreground border border-border rounded-lg">
-                    <div className="text-center space-y-4">
-                      <div className="text-6xl">📝</div>
-                      <div className="text-xl font-semibold">No file selected</div>
-                      <div className="text-sm">Select a file from the explorer to start editing</div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
+          <div className="p-4 h-full overflow-auto">
+            <OpenRouterModelHub />
           </div>
         );
-      case 'tools':
+      case 'local-llm-hub':
         return (
-          <div className="max-w-6xl mx-auto space-y-4">
-            <div className="flex items-center gap-3 mb-6">
-              <h1 className="text-2xl font-bold">MCP Tools</h1>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {mcpTools.map((tool, index) => (
-                <div key={index} className="p-4 bg-card rounded-lg border border-border">
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
-                      🔧
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-foreground">{tool.name}</h3>
-                      <div className={`text-xs ${tool.available ? 'text-green-500' : 'text-red-500'}`}>
-                        {tool.available ? 'Available' : 'Unavailable'}
-                      </div>
-                    </div>
-                  </div>
-                  <p className="text-sm text-muted-foreground mb-4">{tool.description}</p>
-                  <button 
-                    onClick={() => executeTool(tool.name)}
-                    disabled={!tool.available}
-                    className="w-full px-3 py-2 bg-primary text-primary-foreground rounded text-sm hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    Execute Tool
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
-        );
-      case 'workflows':
-        return (
-          <div className="max-w-6xl mx-auto space-y-4">
-            <div className="flex items-center gap-3 mb-6">
-              <h1 className="text-2xl font-bold">Workflows</h1>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {workflows.map((workflow) => (
-                <div key={workflow.id} className="p-4 bg-card rounded-lg border border-border">
-                  <div className="flex items-center justify-between mb-2">
-                    <h3 className="font-semibold text-foreground">{workflow.name}</h3>
-                    <div className={`text-xs px-2 py-1 rounded ${
-                      workflow.status === 'available' ? 'bg-green-500/10 text-green-500' :
-                      workflow.status === 'running' ? 'bg-yellow-500/10 text-yellow-500' :
-                      workflow.status === 'completed' ? 'bg-blue-500/10 text-blue-500' :
-                      'bg-red-500/10 text-red-500'
-                    }`}>
-                      {workflow.status}
-                    </div>
-                  </div>
-                  <p className="text-sm text-muted-foreground mb-3">{workflow.description}</p>
-                  <button 
-                    onClick={() => executeWorkflow(workflow.id)}
-                    disabled={workflow.status === 'running'}
-                    className="w-full px-3 py-2 bg-secondary text-secondary-foreground rounded text-sm hover:bg-secondary/80 transition-colors disabled:opacity-50"
-                  >
-                    {workflow.status === 'running' ? 'Running...' : 'Execute Workflow'}
-                  </button>
-                </div>
-              ))}
-              
-              {workflows.length === 0 && (
-                <div className="col-span-full flex items-center justify-center py-12">
-                  <div className="text-center space-y-4">
-                    <div className="text-6xl">⚡</div>
-                    <div className="text-xl font-semibold">No workflows available</div>
-                    <div className="text-sm text-muted-foreground">
-                      Create workflows using the workflow builder in the Tools panel
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
+          <div className="p-4 h-full overflow-auto">
+            <LocalLLMHub />
           </div>
         );
       case 'settings':
-        return <Settings onApiKeyChange={(apiKey) => console.log('API key updated:', apiKey)} />;
+        return (
+          <Settings />
+        );
       case 'about':
-        return <AboutView onViewChange={(view: string) => handleViewChange(view as ViewType)} />;
-      case 'workflow-manager':
         return (
-          <ComingSoon 
-            featureName="Workflow Manager"
-            description="Advanced workflow creation and management interface with visual editor and automation tools."
-            onBackToChat={() => handleViewChange('chat')}
-            expectedRelease="Q1 2024"
-          />
-        );
-      case 'prompt-management':
-        return (
-          <ComingSoon 
-            featureName="LLM Prompt Management"
-            description="Create, edit, and organize prompts for different AI models with version control and sharing capabilities."
-            onBackToChat={() => handleViewChange('chat')}
-            expectedRelease="Q1 2024"
-          />
-        );
-      case 'tool-browser':
-        return (
-          <ComingSoon 
-            featureName="Tool Browser"
-            description="Browse, install, and manage MCP tools from the community marketplace."
-            onBackToChat={() => handleViewChange('chat')}
-            expectedRelease="Q2 2024"
-          />
-        );
-      case 'mcp-servers':
-        return (
-          <ComingSoon 
-            featureName="MCP Servers"
-            description="Manage Model Context Protocol server connections and configurations."
-            onBackToChat={() => handleViewChange('chat')}
-            expectedRelease="Q1 2024"
-          />
-        );
-      case 'performance-monitor':
-        return (
-          <ComingSoon 
-            featureName="Performance Monitor"
-            description="Real-time system performance metrics, resource usage, and optimization recommendations."
-            onBackToChat={() => handleViewChange('chat')}
-            expectedRelease="Q2 2024"
-          />
+          <AboutView onViewChange={(view) => handleViewChange(view as ViewType)} />
         );
       case 'workflow-builder':
-        return (
-          <div className="fixed inset-0 z-50 flex bg-background">
-            {/* Side Panel for workflow selection and tools */}
-            <div className="w-80 bg-card border-r border-border p-4 overflow-y-auto flex flex-col">
-              <h2 className="text-lg font-bold mb-4">Workflows</h2>
-              {/* List of workflows (placeholder) */}
-              <div className="flex-1 space-y-2 overflow-y-auto">
-                {workflows.length === 0 ? (
-                  <div className="text-muted-foreground">No workflows yet.</div>
-                ) : (
-                  workflows.map((wf) => (
-                    <div key={wf.id} className="p-2 rounded hover:bg-accent cursor-pointer">
-                      <div className="font-medium">{wf.name}</div>
-                      <div className="text-xs text-muted-foreground">{wf.description}</div>
-                    </div>
-                  ))
-                )}
-              </div>
-              <button
-                className="mt-4 w-full p-2 bg-primary text-primary-foreground rounded hover:bg-primary/90 transition-colors"
-                onClick={() => {/* Add new workflow logic */}}
-              >
-                + New Workflow
-              </button>
-            </div>
-            {/* Main Visual Workflow Builder */}
-            <div className="flex-1 h-full">
-              <VisualWorkflowBuilder
-                onWorkflowSave={(wf) => {
-                  // Map WorkflowTemplate to Workflow for UI listing
-                  setWorkflows((prev) => [
-                    ...prev,
-                    {
-                      id: wf.workflowId || `workflow-${Date.now()}`,
-                      name: wf.name,
-                      description: wf.description,
-                      status: 'available',
-                    },
-                  ]);
-                }}
-                onWorkflowTest={(wf) => {
-                  // Test logic (placeholder)
-                  alert('Test run: ' + wf.name);
-                }}
-              />
-            </div>
-            {/* Close button */}
-            <button
-              className="absolute top-4 right-4 p-2 rounded hover:bg-accent transition-colors z-10"
-              onClick={() => setCurrentView('chat')}
-              title="Close Workflow Builder"
-            >
-              <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M18 6L6 18M6 6l12 12" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </button>
-          </div>
-        );
+        return <VisualWorkflowBuilder />;
       default:
+        const viewName = String(currentView).charAt(0).toUpperCase() + 
+          String(currentView).slice(1).replace('-', ' ');
         return (
-          <div className="flex items-center justify-center h-full">
-            <div className="text-center space-y-4">
-              <div className="text-6xl">🦝</div>
-              <div className="text-xl font-semibold">Welcome to TanukiMCP Atlas</div>
-              <div className="text-sm text-muted-foreground">
-                Select a view from the navigation above to get started
-              </div>
-            </div>
-          </div>
+          <ComingSoon 
+            featureName={viewName}
+            onBackToChat={() => setCurrentView('chat')}
+          />
         );
     }
   };
@@ -732,171 +636,32 @@ function App() {
     }
   };
 
-  const handleOpenModelHub = () => {
-    setIsOpenRouterModelHubOpen(true);
-  };
-
   return (
-    <div className={`flex h-screen flex-col ${theme}`}>
-      <Header 
+    <ThemeProvider>
+      <ModernIDELayout
         currentView={currentView}
-        theme={theme}
         onViewChange={handleViewChange}
-        onThemeToggle={handleThemeToggle}
-        currentModel={currentModel}
-        availableModels={availableModels}
-        isConnected={isOpenRouterConnected}
-        onModelSwitch={handleModelSwitch}
-        onOpenModelHub={handleOpenModelHub}
-        onFileExplorerToggle={() => setIsFileExplorerVisible(!isFileExplorerVisible)}
+        files={files}
+        currentFile={currentFile}
+        onFileSelect={setCurrentFile}
+        fileContent={fileContent}
+        isFileLoading={isFileLoading}
         isFileExplorerVisible={isFileExplorerVisible}
+        onFileExplorerToggle={() => setIsFileExplorerVisible(!isFileExplorerVisible)}
         subjectMode={subjectMode}
         onSubjectModeChange={setSubjectMode}
         agentMode={agentMode}
         onAgentModeToggle={() => setAgentMode(!agentMode)}
         isProcessing={isProcessing}
         onStopProcessing={() => setIsProcessing(false)}
+        currentModel={currentModel}
+        availableModels={availableModels}
+        isConnected={connectionStatus.length > 0}
+        onModelSwitch={setCurrentModel}
+        onOpenModelHub={() => setIsModelHubOpen(true)}
+        onOpenLocalLLMHub={() => setIsLocalLLMHubOpen(true)}
       />
-
-      {/* Main Content Area with Resizable Panels */}
-      <ResizablePanelGroup direction="horizontal" className="flex-1 overflow-hidden">
-        {isFileExplorerVisible && (
-          <>
-            <ResizablePanel 
-              defaultSize={20} 
-              minSize={15}
-              maxSize={30}
-              className="h-full"
-            >
-              <FileExplorer 
-                onFileSelect={(filePath: string) => {
-                  // Convert filePath to FileSystemItem for handleFileSelect
-                  const findFileItem = (items: FileSystemItem[], path: string): FileSystemItem | null => {
-                    if (!items || !Array.isArray(items)) return null;
-                    
-                    for (const item of items) {
-                      if (item.path === path) return item;
-                      if (item.children && Array.isArray(item.children)) {
-                        const found = findFileItem(item.children, path);
-                        if (found) return found;
-                      }
-                    }
-                    return null;
-                  };
-                  
-                  const fileItem = findFileItem(files, filePath);
-                  if (fileItem) {
-                    handleFileSelect(fileItem);
-                  }
-                }}
-                selectedFile={currentFile?.path}
-                onDeleteFile={async (filePath: string) => {
-                  try {
-                    await fileSystemService.deleteFile(filePath);
-                    // If the current file is deleted, reset the editor
-                    if (currentFile?.path === filePath) {
-                      setCurrentFile(null);
-                      setFileContent('');
-                      // Switch back to a different view if needed
-                      if (currentView === 'editor') {
-                        setCurrentView('chat');
-                      }
-                    }
-                    console.log(`File deleted: ${filePath}`);
-                  } catch (error) {
-                    console.error('Failed to delete file:', error);
-                  }
-                }}
-                onCreateFile={async (filePath: string, content: string) => {
-                  try {
-                    await fileSystemService.createFile(filePath, content);
-                    console.log(`File created: ${filePath}`);
-                  } catch (error) {
-                    console.error('Failed to create file:', error);
-                  }
-                }}
-                onCreateFolder={async (folderPath: string) => {
-                  try {
-                    await fileSystemService.createDirectory(folderPath);
-                    console.log(`Folder created: ${folderPath}`);
-                  } catch (error) {
-                    console.error('Failed to create folder:', error);
-                  }
-                }}
-              />
-            </ResizablePanel>
-            <ResizableHandle withHandle />
-          </>
-        )}
-
-        {/* Main Content Panel */}
-        <ResizablePanel defaultSize={isFileExplorerVisible ? 60 : 80} minSize={40}>
-          <div className="flex-1 flex flex-col bg-background h-full">
-            <div className="flex-1 p-6 overflow-y-auto">
-              {renderMainContent()}
-            </div>
-          </div>
-        </ResizablePanel>
-
-        <ResizableHandle withHandle />
-        
-        {/* Tools Panel */}
-        <ResizablePanel defaultSize={20} minSize={15} maxSize={30}>
-          <ToolsPanel 
-            operationalMode="agent"
-            onToolExecute={handleExecuteToolForPanel}
-            onWorkflowExecute={handleExecuteWorkflowForPanel}
-            onWorkflowSave={handleSaveWorkflow}
-            workflows={workflows}
-          />
-        </ResizablePanel>
-      </ResizablePanelGroup>
-
-      <StatusBar 
-        connectionStatus={connectionStatus}
-        currentView={currentView}
-        theme={theme}
-        version="v1.0.0"
-      />
-
-      {isModelHubOpen && systemCapabilities && (
-        <ModelManagementHub
-          currentModel={currentModel}
-          installedModels={installedModels}
-          availableModels={availableModels}
-          modelInstallations={modelInstallations}
-          modelConfigurations={modelConfigurations}
-          systemCapabilities={systemCapabilities}
-          onModelSwitch={handleModelSwitch}
-          onInstallModel={handleInstallModel}
-          onUninstallModel={handleUninstallModel}
-          onConfigureModel={handleConfigureModel}
-          onSetDefaultModel={handleSetDefaultModel}
-          onClose={() => setIsModelHubOpen(false)}
-        />
-      )}
-
-      {isOpenRouterModelHubOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4">
-          <div className="bg-card border border-border rounded-lg shadow-lg w-full max-w-6xl h-full max-h-[90vh] flex flex-col">
-            <div className="flex justify-between p-4 border-b border-border">
-              <h2 className="text-xl font-bold">OpenRouter Models</h2>
-              <button 
-                onClick={() => setIsOpenRouterModelHubOpen(false)}
-                className="p-2 hover:bg-accent rounded-md transition-colors"
-              >
-                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M18 6L6 18M6 6l12 12" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </button>
-            </div>
-            <div className="flex-1 overflow-auto">
-              <OpenRouterModelHub />
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
+    </ThemeProvider>
   );
 }
 

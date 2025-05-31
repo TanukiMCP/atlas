@@ -5,12 +5,14 @@ import { setupIPC } from './ipc/handlers';
 import { initializeDatabase } from './database/connection';
 import { OpenRouterService } from './services/openrouter-service';
 import { SystemMonitor } from './services/system-monitor';
+import { MCPClientHub } from '../../mcp-hub/src';
 import { SystemTrayService } from './services/system-tray';
 import { NativeMenuService } from './services/native-menu';
 import { AutoUpdaterService } from './services/auto-updater';
 import { NotificationService } from './services/notification-service';
 import { CrashReporterService } from './services/crash-reporter';
 import { ProtocolHandlerService } from './services/protocol-handler';
+import { enhancedLLMService } from '../../llm-enhanced/src';
 
 class TanukiMCPApp {
   private mainWindow: BrowserWindow | null = null;
@@ -24,6 +26,7 @@ class TanukiMCPApp {
   // Services that might be initialized later or conditionally
   private openrouterService!: OpenRouterService;
   private systemMonitor!: SystemMonitor;
+  private mcpHubService!: MCPClientHub;
   private isQuitting = false;
 
   constructor() {
@@ -36,6 +39,9 @@ class TanukiMCPApp {
     // Initialize core services - keep only what's needed for OpenRouter
     this.openrouterService = new OpenRouterService();
     this.systemMonitor = new SystemMonitor();
+    // Initialize MCP hub service
+    this.mcpHubService = new MCPClientHub();
+    await this.mcpHubService.initialize();
     
     // Skip hardware-specific services since we're using OpenRouter free models only
     
@@ -114,6 +120,11 @@ class TanukiMCPApp {
       } else {
         console.log('⚠️ Not connected to OpenRouter - free models will still be available');
       }
+      
+      // Initialize Enhanced LLM Service with OpenRouter and MCP hub
+      console.log('🔧 Initializing Enhanced LLM Service...');
+      await enhancedLLMService.initialize(this.openrouterService, this.mcpHubService);
+      console.log('✅ Enhanced LLM Service ready');
       
       // Create main window
       console.log('🪟 Creating main window...');
@@ -265,7 +276,8 @@ class TanukiMCPApp {
       autoUpdater: this.autoUpdaterService,
       notification: this.notificationService,
       crashReporter: this.crashReporterService,
-      protocolHandler: this.protocolHandlerService
+      protocolHandler: this.protocolHandlerService,
+      mcpHub: this.mcpHubService
     };
   }
 }

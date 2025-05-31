@@ -353,7 +353,7 @@ const ToolsPanel: React.FC<ToolsPanelProps> = ({
   };
 
   return (
-    <div className="flex-1 min-w-[200px] max-w-[320px] bg-card border-l border-border h-full flex flex-col">
+    <div className="w-full h-full flex flex-col bg-card border-l border-border">
       {/* Header */}
       <div className="p-4 border-b border-border">
         <h2 className="text-sm font-semibold text-foreground">MCP Tools</h2>
