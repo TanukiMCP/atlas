@@ -2,15 +2,6 @@
  * Enhanced chat service using OpenRouter for LLM operations
  */
 
-// Type declaration for electronAPI
-declare global {
-  interface Window {
-    electronAPI?: {
-      invoke: (channel: string, ...args: any[]) => Promise<any>;
-    };
-  }
-}
-
 import { RequestComplexity } from '../../../llm-enhanced/src/index';
 
 interface ChatMessage {

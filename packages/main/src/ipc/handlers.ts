@@ -86,6 +86,9 @@ export function setupIPC(): void {
   // Window control handlers
   setupWindowControlHandlers();
   
+  // Mobile proxy handlers
+  setupProxyHandlers();
+  
   console.log('✅ IPC handlers registered');
 }
 
@@ -738,6 +741,152 @@ function setupWindowControlHandlers(): void {
     
     win.on('leave-full-screen', () => {
       win.webContents.send('window-fullscreen-change', false);
+    });
+  });
+}
+
+function setupProxyHandlers(): void {
+  // Import proxy server
+  const { proxyServer } = require('../ProxyServer');
+
+  // Get proxy status
+  ipcMain.handle('get-proxy-status', () => {
+    const status = proxyServer.getStatus();
+    return {
+      active: status.running,
+      port: status.port,
+      clients: status.clientCount,
+      clientDetails: status.clients
+    };
+  });
+  
+  // Start proxy server
+  ipcMain.handle('start-proxy-server', async () => {
+    try {
+      // Get the window state from main process
+      const mainWindow = require('../main').tanukiApp.getMainWindow();
+      const windowState = {
+        proxyActive: false,
+        proxyPort: null,
+        connectedClients: 0,
+        qrCodeUrl: null
+      };
+
+      if (windowState.proxyActive) {
+        return {
+          success: true,
+          active: true,
+          port: windowState.proxyPort,
+          clients: windowState.connectedClients
+        };
+      }
+
+      const port = await proxyServer.start();
+      
+      // Update window state
+      windowState.proxyActive = true;
+      windowState.proxyPort = port;
+      
+      return {
+        success: true,
+        active: true,
+        port,
+        clients: 0
+      };
+    } catch (error) {
+      console.error('Failed to start proxy server:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    }
+  });
+  
+  // Stop proxy server
+  ipcMain.handle('stop-proxy-server', async () => {
+    try {
+      await proxyServer.stop();
+      
+      // Update window state in main process
+      const mainWindow = require('../main').tanukiApp.getMainWindow();
+      const windowState = {
+        proxyActive: false,
+        proxyPort: null,
+        connectedClients: 0,
+        qrCodeUrl: null
+      };
+      
+      return { success: true };
+    } catch (error) {
+      console.error('Failed to stop proxy server:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    }
+  });
+  
+  // Generate pairing QR code
+  ipcMain.handle('generate-pairing-qrcode', async () => {
+    try {
+      const result = await proxyServer.generatePairingQRCode();
+      
+      // Update window state in main process
+      const mainWindow = require('../main').tanukiApp.getMainWindow();
+      const windowState = {
+        qrCodeUrl: result.qrCode
+      };
+      
+      return {
+        success: true,
+        qrCode: result.qrCode,
+        token: result.token,
+        connectionUrl: result.connectionUrl
+      };
+    } catch (error) {
+      console.error('Failed to generate QR code:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    }
+  });
+  
+  // Show proxy status window
+  ipcMain.handle('show-proxy-status-window', async () => {
+    try {
+      await proxyServer.showStatusWindow();
+      return { success: true };
+    } catch (error) {
+      console.error('Failed to show proxy status window:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    }
+  });
+  
+  // Send chat response to mobile client
+  ipcMain.handle('send-proxy-chat-response', async (event, args) => {
+    const { clientId, message, messageId } = args;
+    const success = proxyServer.sendChatResponse(clientId, message, messageId);
+    return { success };
+  });
+
+  // Forward proxy server lifecycle events to renderer
+  const mainWindow = tanukiApp.getMainWindow();
+  proxyServer.on('started', (port: number) => {
+    mainWindow?.webContents.send('proxy-status-changed', {
+      active: true,
+      port,
+      clients: proxyServer.getConnectedClients().length
+    });
+  });
+  proxyServer.on('stopped', () => {
+    mainWindow?.webContents.send('proxy-status-changed', {
+      active: false,
+      port: null,
+      clients: 0
     });
   });
 }

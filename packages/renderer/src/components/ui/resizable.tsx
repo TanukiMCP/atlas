@@ -28,8 +28,8 @@ export const ResizableHandle = ({
       {withHandle && (
         <div className="absolute z-10 flex items-center justify-center rounded-sm border border-border bg-background hover:bg-accent group-hover:bg-accent transition-colors shadow-sm"
              style={{
-               width: "12px",
-               height: "40px",
+               width: "4px",
+               height: "24px",
                left: "50%",
                top: "50%",
                transform: "translate(-50%, -50%)"
@@ -45,8 +45,8 @@ export const ResizableHandle = ({
       {withHandle && (
         <div className="absolute z-10 flex items-center justify-center rounded-sm border border-border bg-background hover:bg-accent group-hover:bg-accent transition-colors shadow-sm"
              style={{
-               width: "40px",
-               height: "12px",
+               width: "24px",
+               height: "4px",
                left: "50%",
                top: "50%",
                transform: "translate(-50%, -50%)"

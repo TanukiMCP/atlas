@@ -17,8 +17,7 @@ import {
   MoreVertical,
   FilePlus,
   FolderPlus,
-  Download,
-  Menu
+  Download
 } from 'lucide-react';
 
 interface FileExplorerProps {
@@ -50,6 +49,9 @@ interface FileExplorerState {
   newFileName: string;
 }
 
+const RECENT_WORKSPACES_KEY = 'recentWorkspaces';
+const MAX_RECENT_WORKSPACES = 5;
+
 const FileExplorer: React.FC<FileExplorerProps> = ({ 
   onFileSelect, 
   selectedFile,
@@ -58,6 +60,14 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
   onCreateFolder,
   workspaceName = 'Workspace'
 }) => {
+  const [recentWorkspaces, setRecentWorkspaces] = useState<string[]>(() => {
+    try {
+      return JSON.parse(localStorage.getItem(RECENT_WORKSPACES_KEY) || '[]');
+    } catch {
+      return [];
+    }
+  });
+  const [currentWorkspace, setCurrentWorkspace] = useState<string>(() => recentWorkspaces[0] || '');
   const [state, setState] = useState<FileExplorerState>({
     files: [],
     loading: true,
@@ -83,7 +93,7 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
   const renameInputRef = useRef<HTMLInputElement>(null);
   
   useEffect(() => {
-    loadFiles();
+    loadFiles(currentWorkspace);
     
     // Listen for file system changes
     const unsubscribe = fileSystemService.onFilesChanged((files) => {
@@ -106,7 +116,7 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
       unsubscribe();
       document.removeEventListener('click', handleClickOutside);
     }
-  }, []);
+  }, [currentWorkspace]);
 
   useEffect(() => {
     // Focus the new item input when creating file/folder
@@ -151,11 +161,11 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
     return workspaceName;
   };
 
-  const loadFiles = async () => {
+  const loadFiles = async (workspacePath?: string) => {
     setState(prev => ({ ...prev, loading: true, error: null }));
     
     try {
-      const files = await fileSystemService.getWorkspaceFiles();
+      const files = await fileSystemService.getWorkspaceFiles(workspacePath);
       setState(prev => ({ 
         ...prev, 
         files, 
@@ -647,9 +657,31 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
     }));
   };
 
+  const updateRecents = (workspace: string) => {
+    let recents = [workspace, ...recentWorkspaces.filter(w => w !== workspace)];
+    if (recents.length > MAX_RECENT_WORKSPACES) recents = recents.slice(0, MAX_RECENT_WORKSPACES);
+    setRecentWorkspaces(recents);
+    localStorage.setItem(RECENT_WORKSPACES_KEY, JSON.stringify(recents));
+  };
+
+  const handleBrowse = async () => {
+    if (window.electronAPI?.invoke) {
+      const result = await window.electronAPI.invoke('dialog:showOpenDialog', { properties: ['openDirectory'] });
+      if (result && result.filePaths && result.filePaths[0]) {
+        setCurrentWorkspace(result.filePaths[0]);
+        updateRecents(result.filePaths[0]);
+      }
+    }
+  };
+
+  const handleWorkspaceChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setCurrentWorkspace(e.target.value);
+    updateRecents(e.target.value);
+  };
+
   if (state.loading) {
     return (
-      <div className="w-64 bg-card border-r border-border h-full flex flex-col">
+      <div className="w-full bg-card border-r border-border h-full flex flex-col">
         <div className="p-4 border-b border-border flex justify-between items-center">
           <h2 className="text-sm font-semibold text-foreground flex items-center gap-2">
             <Folder className="w-4 h-4" />
@@ -669,14 +701,14 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
 
   if (state.error) {
     return (
-      <div className="w-64 bg-card border-r border-border h-full flex flex-col">
+      <div className="w-full bg-card border-r border-border h-full flex flex-col">
         <div className="p-4 border-b border-border flex justify-between items-center">
           <h2 className="text-sm font-semibold text-foreground flex items-center gap-2">
             <Folder className="w-4 h-4" />
             {workspaceName}
           </h2>
           <button
-            onClick={loadFiles}
+            onClick={() => loadFiles(currentWorkspace)}
             className="p-1 text-muted-foreground hover:text-foreground hover:bg-accent rounded"
             title="Refresh"
           >
@@ -695,7 +727,7 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
                   {state.error}
                 </p>
                 <button
-                  onClick={loadFiles}
+                  onClick={() => loadFiles(currentWorkspace)}
                   className="inline-flex items-center gap-2 text-xs bg-destructive/20 text-destructive px-3 py-1.5 rounded-md hover:bg-destructive/30 transition-colors"
                 >
                   <RefreshCw className="w-3 h-3" />
@@ -711,7 +743,7 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
 
   if (state.files.length === 0) {
     return (
-      <div className="w-64 bg-card border-r border-border h-full flex flex-col">
+      <div className="w-full bg-card border-r border-border h-full flex flex-col">
         <div className="p-4 border-b border-border flex justify-between items-center">
           <h2 className="text-sm font-semibold text-foreground flex items-center gap-2">
             <Folder className="w-4 h-4" />
@@ -733,7 +765,7 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
               <FolderPlus className="w-4 h-4" />
             </button>
             <button
-              onClick={loadFiles}
+              onClick={() => loadFiles(currentWorkspace)}
               className="p-1 text-muted-foreground hover:text-foreground hover:bg-accent rounded"
               title="Refresh"
             >
@@ -802,19 +834,26 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
   }
 
   return (
-    <div className="w-64 bg-card border-r border-border h-full flex flex-col">
+    <div className="w-full bg-card border-r border-border h-full flex flex-col">
       {/* Header */}
       <div className="p-4 border-b border-border flex justify-between items-center">
-        <div className="overflow-hidden">
-          <h2 className="text-sm font-semibold text-foreground flex items-center gap-2">
-            <Folder className="w-4 h-4 flex-shrink-0" />
-            <span className="truncate">{getCurrentDisplayName()}</span>
-          </h2>
-          {selectedFile && (
-            <div className="text-xs text-muted-foreground truncate mt-0.5">
-              {getCurrentFolderPath() || workspaceName}
-            </div>
-          )}
+        <div className="overflow-hidden flex items-center gap-2">
+          <Folder className="w-4 h-4 flex-shrink-0" />
+          <select
+            className="text-sm font-semibold text-foreground bg-transparent outline-none border-none truncate max-w-[180px]"
+            value={currentWorkspace}
+            onChange={handleWorkspaceChange}
+            title="Select workspace"
+          >
+            {recentWorkspaces.map((ws) => (
+              <option key={ws} value={ws}>{ws}</option>
+            ))}
+          </select>
+          <button
+            onClick={handleBrowse}
+            className="ml-2 px-2 py-1 text-xs bg-accent rounded hover:bg-accent/70 border border-border"
+            title="Browse for workspace"
+          >Browse...</button>
         </div>
         <div className="flex gap-1">
           <button
@@ -832,7 +871,7 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
             <FolderPlus className="w-4 h-4" />
           </button>
           <button
-            onClick={loadFiles}
+            onClick={() => loadFiles(currentWorkspace)}
             className="p-1 text-muted-foreground hover:text-foreground hover:bg-accent rounded"
             title="Refresh"
           >

@@ -3,15 +3,6 @@ import { useLLMStore } from '../stores/llm-store';
 import ToolSettings, { ToolSettings as ToolSettingsType } from './settings/ToolSettings';
 import { toolContextService } from '../services/ToolContextService';
 
-// Type declaration for electronAPI
-declare global {
-  interface Window {
-    electronAPI?: {
-      invoke: (channel: string, ...args: any[]) => Promise<any>;
-    };
-  }
-}
-
 interface SettingsProps {
   onApiKeyChange?: (apiKey: string) => void;
 }

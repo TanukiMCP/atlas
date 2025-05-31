@@ -140,7 +140,7 @@ function App() {
         unsubscribeFiles();
         unsubscribeConnections();
         unsubscribeMCP();
-        fileSystemService.stopWatching(process.cwd());
+        fileSystemService.stopWatching();
       };
     } catch (error) {
       console.error('Failed to initialize services:', error);

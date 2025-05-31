@@ -1,0 +1,27 @@
+{
+  "name": "TanukiMCP Atlas Mobile",
+  "short_name": "Atlas Mobile",
+  "start_url": "/mobile",
+  "display": "standalone",
+  "theme_color": "#18181b",
+  "background_color": "#18181b",
+  "description": "Companion mobile PWA for TanukiMCP Atlas desktop.",
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/icon-maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+} 

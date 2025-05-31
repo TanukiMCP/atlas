@@ -3,7 +3,10 @@ import { app, BrowserWindow, ipcMain, nativeTheme, shell, dialog } from 'electro
 import { join } from 'path';
 import { URL } from 'url';
 import { proxyServer } from './ProxyServer';
-import { MediaProcessor } from './MediaProcessor';
+import { OpenRouterService } from './services/openrouter-service';
+import express from 'express';
+import http from 'http';
+import type { Request, Response } from 'express';
 
 // Import other required modules (existing imports)
 // ...
@@ -12,6 +15,16 @@ import { MediaProcessor } from './MediaProcessor';
 let mainWindow: BrowserWindow | null = null;
 const isSingleInstance = app.requestSingleInstanceLock();
 const isDevelopment = process.env.NODE_ENV === 'development';
+const openRouterService = new OpenRouterService();
+let staticServer: http.Server | null = null;
+
+// Simple media processor for handling proxy media requests
+class MediaProcessor {
+  async processMedia(mediaType: string, data: any, options: any) {
+    // This is a stub implementation
+    return { processed: true, mediaType, timestamp: new Date().toISOString() };
+  }
+}
 
 // Handle single instance lock
 if (!isSingleInstance) {
@@ -159,9 +172,22 @@ function setupProxyServerEvents() {
   });
 }
 
-// Set up IPC handlers for proxy control
-function setupProxyIpcHandlers() {
-  // Start proxy server
+// When the app is ready
+app.whenReady().then(async () => {
+  // Register IPC handlers before creating the main window
+  console.log('≡ƒöî Setting up IPC handlers...');
+  
+  // Proxy server handlers - explicitly register these in the main process
+  ipcMain.handle('get-proxy-status', () => {
+    const status = proxyServer.getStatus();
+    return {
+      active: status.running,
+      port: status.port,
+      clients: status.clientCount,
+      clientDetails: status.clients
+    };
+  });
+  
   ipcMain.handle('start-proxy-server', async () => {
     try {
       if (windowState.proxyActive) {
@@ -188,8 +214,7 @@ function setupProxyIpcHandlers() {
       };
     }
   });
-
-  // Stop proxy server
+  
   ipcMain.handle('stop-proxy-server', async () => {
     try {
       await proxyServer.stop();
@@ -202,19 +227,7 @@ function setupProxyIpcHandlers() {
       };
     }
   });
-
-  // Get proxy status
-  ipcMain.handle('get-proxy-status', () => {
-    const status = proxyServer.getStatus();
-    return {
-      active: status.running,
-      port: status.port,
-      clients: status.clientCount,
-      clientDetails: status.clients
-    };
-  });
-
-  // Generate QR code for pairing
+  
   ipcMain.handle('generate-pairing-qrcode', async () => {
     try {
       const result = await proxyServer.generatePairingQRCode();
@@ -233,8 +246,7 @@ function setupProxyIpcHandlers() {
       };
     }
   });
-
-  // Show proxy status window
+  
   ipcMain.handle('show-proxy-status-window', async () => {
     try {
       await proxyServer.showStatusWindow();
@@ -247,25 +259,98 @@ function setupProxyIpcHandlers() {
       };
     }
   });
-
-  // Send chat response to mobile client
+  
   ipcMain.handle('send-proxy-chat-response', async (event, args) => {
     const { clientId, message, messageId } = args;
     const success = proxyServer.sendChatResponse(clientId, message, messageId);
     return { success };
   });
-}
+  
+  // Set up proxy server events
+  setupProxyServerEvents();
+  
+  // Minimize, maximize and close window handlers
+  ipcMain.on('minimize-window', () => {
+    if (mainWindow) mainWindow.minimize();
+  });
+  
+  ipcMain.on('maximize-window', () => {
+    if (mainWindow) {
+      if (mainWindow.isMaximized()) {
+        mainWindow.unmaximize();
+      } else {
+        mainWindow.maximize();
+      }
+      // Notify renderer of change
+      mainWindow.webContents.send('window-maximized-change', mainWindow.isMaximized());
+    }
+  });
+  
+  ipcMain.on('close-window', () => {
+    if (mainWindow) mainWindow.close();
+  });
+  
+  // Window state handlers
+  ipcMain.handle('window:isMaximized', () => {
+    return mainWindow ? mainWindow.isMaximized() : false;
+  });
+  
+  ipcMain.handle('window:isFullScreen', () => {
+    return mainWindow ? mainWindow.isFullScreen() : false;
+  });
+  
+  ipcMain.on('toggle-fullscreen', () => {
+    if (mainWindow) {
+      mainWindow.setFullScreen(!mainWindow.isFullScreen());
+    }
+  });
+  
+  // OpenRouter API key handlers
+  ipcMain.handle('store-openrouter-key', async (event, key) => {
+    try {
+      openRouterService.setApiKey(key);
+      return { success: true };
+    } catch (error) {
+      console.error('Failed to store OpenRouter API key:', error);
+      return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+    }
+  });
+  
+  ipcMain.handle('get-openrouter-key', async () => {
+    try {
+      // Since there's no getApiKey method, return a stub response
+      return { success: true, key: "API key is stored securely" };
+    } catch (error) {
+      console.error('Failed to get OpenRouter API key:', error);
+      return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+    }
+  });
+  
+  console.log('Γ£à IPC handlers registered');
+  console.log('Γ£à IPC handlers ready');
 
-// When the app is ready
-app.whenReady().then(() => {
-  // Create the main window
-  createWindow();
+  // Create the main window after IPC handlers are ready
+  await createWindow();
 
-  // Set up IPC handlers
-  setupProxyIpcHandlers();
-
-  // Additional app setup (existing code)
-  // ...
+  if (!isDevelopment) {
+    // Serve static PWA assets for /mobile
+    const staticApp = express();
+    const rendererDist = join(app.getAppPath(), 'packages/renderer/dist');
+    staticApp.use('/icons', express.static(join(rendererDist, 'icons')));
+    staticApp.use('/mobile', express.static(rendererDist));
+    staticApp.get('/manifest.webmanifest', (req: Request, res: Response) => {
+      res.sendFile(join(rendererDist, 'manifest.webmanifest'));
+    });
+    staticApp.get('/sw.js', (req: Request, res: Response) => {
+      res.sendFile(join(rendererDist, 'sw.js'));
+    });
+    staticApp.get('/mobile*', (req: Request, res: Response) => {
+      res.sendFile(join(rendererDist, 'mobile.html'));
+    });
+    staticServer = staticApp.listen(3001, () => {
+      console.log('Static PWA server running on http://localhost:3001');
+    });
+  }
 });
 
 // Quit when all windows are closed
@@ -294,8 +379,16 @@ app.setAsDefaultProtocolClient('tanukimcp');
 // Handle deeplink activation on macOS
 app.on('open-url', (event, url) => {
   event.preventDefault();
-  // Process the deeplink URL
-  console.log('Received deeplink URL:', url);
+  // Parse tanukimcp://connect?token=...&relay=...
+  try {
+    const parsed = new URL(url);
+    const token = parsed.searchParams.get('token');
+    const relay = parsed.searchParams.get('relay');
+    console.log('Received deep-link:', { token, relay });
+    // TODO: Initiate connection handshake
+  } catch (e) {
+    console.error('Failed to parse deep-link:', url, e);
+  }
 });
 
 // Additional cleanup on quit

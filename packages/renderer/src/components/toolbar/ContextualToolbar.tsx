@@ -52,7 +52,7 @@ export const ContextualToolbar: React.FC<ContextualToolbarProps> = ({
   onToggleMenu
 }) => {
   const renderChatToolbar = () => (
-    <div className="flex items-center justify-between w-full">
+    <div className="flex items-center justify-between flex-1">
       <div className="flex items-center gap-2">
         {/* Mode Toggle */}
         <div className="flex items-center gap-1 p-1 bg-muted rounded-md">
@@ -120,7 +120,7 @@ export const ContextualToolbar: React.FC<ContextualToolbarProps> = ({
   );
 
   const renderWorkflowToolbar = () => (
-    <div className="flex items-center justify-between w-full">
+    <div className="flex items-center justify-between flex-1">
       <div className="flex items-center gap-2">
         {/* New Workflow Elements */}
         <Button variant="outline" size="sm">Start</Button>
@@ -160,7 +160,7 @@ export const ContextualToolbar: React.FC<ContextualToolbarProps> = ({
   );
 
   const renderDefaultToolbar = () => (
-    <div className="flex items-center justify-between w-full">
+    <div className="flex items-center justify-between flex-1">
       <div className="flex items-center gap-2">
         {currentView !== 'chat' && onViewChange && (
           <Button 
@@ -198,7 +198,7 @@ export const ContextualToolbar: React.FC<ContextualToolbarProps> = ({
 
   return (
     <div className="h-10 bg-background border-b border-border px-4 flex items-center">
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 shrink-0">
         <Button 
           variant="ghost"
           size="sm"
@@ -215,10 +215,12 @@ export const ContextualToolbar: React.FC<ContextualToolbarProps> = ({
           <ChevronRight className="w-4 h-4" />
         </Button>
       </div>
-      <div className="flex items-center ml-4">
+      <div className="flex items-center gap-2 shrink-0 ml-4">
         <MobileProxyToggle />
       </div>
+      <div className="flex items-center justify-between flex-1 ml-4">
       {renderToolbar()}
+      </div>
     </div>
   );
 };

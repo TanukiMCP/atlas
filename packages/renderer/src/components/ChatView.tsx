@@ -49,10 +49,7 @@ const ChatView: React.FC<ChatViewProps> = ({ onBack }) => {
     setIsLoading(true);
 
     try {
-      await ChatService.sendMessage(messageContent, {
-        workspaceRoot: process.cwd(),
-        files: [] // Could be populated with current workspace files
-      });
+      await ChatService.sendMessage(messageContent, { workspaceRoot: undefined });
     } catch (error) {
       console.error('Failed to send message:', error);
     } finally {

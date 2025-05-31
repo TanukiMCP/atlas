@@ -114,17 +114,17 @@
     line-height: 1.6;
   }
   
-  small, .text-sm {
+  small {
     @apply text-sm;
     line-height: 1.5;
   }
   
   .text-xs {
-    @apply text-xs;
     line-height: 1.4;
   }
   
-  code, pre, .font-mono {
+  /* Custom Monospace Fonts for code elements only */
+  code, pre {
     @apply font-mono;
     font-weight: 500;
   }
@@ -137,9 +137,9 @@
   }
   
   html, body, #root {
-    height: 100%;
-    overflow: hidden;
-  }
+  height: 100%;
+  overflow: hidden;
+}
   
   /* Text selection */
   ::selection {

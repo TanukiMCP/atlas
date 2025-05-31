@@ -1,13 +1,4 @@
-import { ConnectionInfo, ConnectionStatus } from '../types';
-
-// Add type declaration for electronAPI
-declare global {
-  interface Window {
-    electronAPI?: {
-      invoke: (channel: string, ...args: any[]) => Promise<any>;
-    };
-  }
-}
+import { ConnectionInfo, ConnectionStatus } from '../types/index';
 
 interface ConnectionConfig {
   url: string;

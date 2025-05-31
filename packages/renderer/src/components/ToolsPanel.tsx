@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { MCPTool, Workflow } from '../types/index';
-import { mcpService, MCPExecutionContext, MCPToolResult } from '../services/mcp-service';
-import WorkflowBuilder from './WorkflowBuilder';
+import { mcpService, MCPToolResult } from '../services/mcp-service';
+import type { MCPExecutionContext } from '../types/index';
 
 interface ToolsPanelProps {
   operationalMode: 'agent' | 'chat';
@@ -12,7 +12,7 @@ interface ToolsPanelProps {
 }
 
 interface ToolsPanelState {
-  activeTab: 'tools' | 'workflows' | 'builder';
+  activeTab: 'tools' | 'workflows';
   tools: MCPTool[];
   loading: boolean;
   error: string | null;
@@ -50,17 +50,10 @@ const ToolsPanel: React.FC<ToolsPanelProps> = ({
     try {
       // Get available tools from MCP service
       const tools = mcpService.getAvailableTools(operationalMode);
-      
-      // Convert to the expected format with available property
-      const formattedTools = tools.map(tool => ({
-        name: tool.name,
-        description: tool.description,
-        available: true // Assume all tools are available for now
-      }));
-      
+      // Use tools as-is (they already match MCPTool type)
       setState(prev => ({
         ...prev,
-        tools: formattedTools,
+        tools,
         loading: false,
         error: null
       }));
@@ -99,11 +92,11 @@ const ToolsPanel: React.FC<ToolsPanelProps> = ({
     setState(prev => ({ ...prev, executing: true, executionResult: null }));
 
     try {
-      const context: MCPExecutionContext = {
+      const context = {
         toolName: state.selectedTool.name,
         parameters: state.toolParameters,
         operationalMode
-      };
+      } as MCPExecutionContext & { operationalMode: 'agent' | 'chat' };
 
       const result = onToolExecute 
         ? await onToolExecute(context)
@@ -360,7 +353,7 @@ const ToolsPanel: React.FC<ToolsPanelProps> = ({
   };
 
   return (
-    <div className="w-80 bg-card border-l border-border h-full flex flex-col">
+    <div className="flex-1 min-w-[200px] max-w-[320px] bg-card border-l border-border h-full flex flex-col">
       {/* Header */}
       <div className="p-4 border-b border-border">
         <h2 className="text-sm font-semibold text-foreground">MCP Tools</h2>
@@ -368,7 +361,7 @@ const ToolsPanel: React.FC<ToolsPanelProps> = ({
 
       {/* Tab Navigation */}
       <div className="flex border-b border-border">
-        {(['tools', 'workflows', 'builder'] as const).map(tab => (
+        {(['tools', 'workflows'] as const).map(tab => (
           <button
             key={tab}
             onClick={() => setState(prev => ({ ...prev, activeTab: tab }))}
@@ -393,16 +386,6 @@ const ToolsPanel: React.FC<ToolsPanelProps> = ({
         {state.activeTab === 'workflows' && (
           <div className="flex-1 overflow-auto">
             {renderWorkflowsTab()}
-          </div>
-        )}
-        {state.activeTab === 'builder' && (
-          <div className="flex-1 overflow-hidden">
-            <WorkflowBuilder
-              availableTools={state.tools}
-              processingTiers={[]}
-              onSaveWorkflow={onWorkflowSave || (() => {})}
-              onLoadWorkflow={() => {}}
-            />
           </div>
         )}
       </div>

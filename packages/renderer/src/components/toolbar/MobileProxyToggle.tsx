@@ -12,6 +12,7 @@ import {
   DialogTitle,
 } from '../ui/dialog';
 import { QRCodeSVG } from 'qrcode.react';
+import PairDeviceQrModal from '../desktop/PairDeviceQrModal';
 
 interface ProxyStatus {
   active: boolean;
@@ -30,6 +31,9 @@ const MobileProxyToggle: React.FC = () => {
   const [qrData, setQrData] = useState<QRCodeData | null>(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [pairModalOpen, setPairModalOpen] = useState(false);
+  const [pairQr, setPairQr] = useState<string | null>(null);
+  const [pairLoading, setPairLoading] = useState(false);
 
   // Initialize status
   useEffect(() => {
@@ -83,12 +87,20 @@ const MobileProxyToggle: React.FC = () => {
     setLoading(true);
     try {
       if (status.active) {
-        await window.electronAPI.stopProxyServer();
-        setQrData(null);
+        const result = await window.electronAPI.stopProxyServer();
+        if (result.success) {
+          // Immediately update UI
+          setStatus({ active: false, port: null, clients: 0 });
+          setQrData(null);
+        }
       } else {
         const result = await window.electronAPI.startProxyServer();
         if (result.success) {
-          generateQRCode();
+          // Update UI state and generate QR
+          setStatus({ active: true, port: result.port, clients: result.clients });
+          await generateQRCode();
+          // Auto-show QR code modal
+          setIsModalVisible(true);
         }
       }
     } catch (error) {
@@ -121,6 +133,21 @@ const MobileProxyToggle: React.FC = () => {
       await window.electronAPI.showProxyStatusWindow();
     } catch (error) {
       console.error('Failed to show status window:', error);
+    }
+  };
+
+  const openPairModal = async () => {
+    setPairLoading(true);
+    try {
+      const result = await window.electronAPI.generatePairingQRCode();
+      if (result.success) {
+        setPairQr(`tanukimcp://connect?token=${encodeURIComponent(result.token)}&relay=${encodeURIComponent(result.connectionUrl)}`);
+        setPairModalOpen(true);
+      }
+    } catch (e) {
+      // handle error
+    } finally {
+      setPairLoading(false);
     }
   };
 
@@ -188,6 +215,24 @@ const MobileProxyToggle: React.FC = () => {
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
+
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={openPairModal}
+                  disabled={pairLoading}
+                >
+                  <Smartphone className="w-4 h-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                Pair Device (dynamic QR)
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </>
       )}
 
@@ -238,6 +283,8 @@ const MobileProxyToggle: React.FC = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <PairDeviceQrModal open={pairModalOpen} onClose={() => setPairModalOpen(false)} qr={pairQr} loading={pairLoading} onRegenerate={openPairModal} />
     </div>
   );
 };

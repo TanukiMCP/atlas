@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
+import { resolve } from 'path';
 
 export default defineConfig({
   plugins: [react()],
@@ -10,7 +11,10 @@ export default defineConfig({
     outDir: 'dist',
     emptyOutDir: true,
     rollupOptions: {
-      input: path.resolve(__dirname, 'index.html')
+      input: {
+        main: resolve(__dirname, 'index.html'),
+        mobile: resolve(__dirname, 'mobile.html'),
+      }
     }
   },
   resolve: {
@@ -23,7 +27,11 @@ export default defineConfig({
   server: {
     port: 3000,
     strictPort: true,
-    host: true
+    host: true,
+    fs: {
+      allow: ['..'],
+    },
+    proxy: {}
   },
   define: {
     global: 'globalThis'
@@ -34,5 +42,6 @@ export default defineConfig({
   },
   esbuild: {
     target: 'es2020'
-  }
+  },
+  publicDir: 'public'
 });

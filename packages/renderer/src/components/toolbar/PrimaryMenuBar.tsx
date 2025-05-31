@@ -6,7 +6,6 @@ import {
   FileText, 
   FolderOpen, 
   Save, 
-  Settings, 
   Download,
   Search,
   RotateCcw,
@@ -27,7 +26,9 @@ import {
   BookOpen,
   Keyboard,
   MessageSquare,
-  Info
+  Info,
+  Settings,
+  Menu
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -36,6 +37,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '../ui/dropdown-menu';
+import PwaInstallQrModal from '../desktop/PwaInstallQrModal';
+import WindowControls from '../WindowControls';
 
 interface PrimaryMenuBarProps {
   onThemeToggle: () => void;
@@ -63,6 +66,9 @@ export const PrimaryMenuBar: React.FC<PrimaryMenuBarProps> = ({
     { id: 'creative', label: '🎨 Creative', description: 'Creative writing and ideation' },
     { id: 'business', label: '📊 Business', description: 'Business analysis and strategy' },
   ];
+
+  const [pwaModalOpen, setPwaModalOpen] = React.useState(false);
+  const pwaUrl = window.location.origin + '/mobile';
 
   const handleMenuAction = (action: string) => {
     console.log(`Menu action: ${action}`);
@@ -156,6 +162,9 @@ export const PrimaryMenuBar: React.FC<PrimaryMenuBarProps> = ({
         case 'workflow-builder':
           onViewChange('workflow-builder');
           break;
+        case 'install-mobile-app':
+          setPwaModalOpen(true);
+          break;
         default:
           console.log(`Unhandled action: ${action}`);
           alert('This feature is not yet implemented.');
@@ -169,20 +178,19 @@ export const PrimaryMenuBar: React.FC<PrimaryMenuBarProps> = ({
   const currentMode = subjectModes.find(m => m.id === subjectMode) || subjectModes[0];
 
   return (
-    <div className="h-12 bg-background border-b border-border flex items-center justify-between px-4">
-      {/* Left side: Logo + App Title + Subject Mode */}
+    <div className="h-12 bg-background border-b border-border flex items-center justify-between px-4 select-none">
+      {/* Left: Favicon, Chat Title, Subject Mode */}
       <div className="flex items-center gap-4">
-        <div 
+        <div
           className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity"
-          onClick={() => onViewChange('chat')} 
+          onClick={() => onViewChange('chat')}
           role="button"
           tabIndex={0}
           aria-label="Back to chat"
         >
           <div className="text-xl">🦝</div>
-          <span className="font-semibold text-foreground">TanukiMCP Atlas</span>
         </div>
-
+        <span className="font-semibold text-foreground text-lg">TanukiMCP Chat</span>
         {/* Subject Mode Dropdown */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -206,205 +214,33 @@ export const PrimaryMenuBar: React.FC<PrimaryMenuBarProps> = ({
         </DropdownMenu>
       </div>
 
-      {/* Center: Menu Items */}
-      <div className="flex items-center gap-1">
-        {/* File Menu */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="sm">File</Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent>
-            <DropdownMenuItem onClick={() => handleMenuAction('new-chat')}>
-              <FileText className="w-4 h-4 mr-2" />
-              New Chat
-              <span className="ml-auto text-xs text-muted-foreground">Ctrl+N</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => handleMenuAction('open-project')}>
-              <FolderOpen className="w-4 h-4 mr-2" />
-              Open Project...
-              <span className="ml-auto text-xs text-muted-foreground">Ctrl+O</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => handleMenuAction('save-chat')}>
-              <Save className="w-4 h-4 mr-2" />
-              Save Chat...
-              <span className="ml-auto text-xs text-muted-foreground">Ctrl+S</span>
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => window.close()}>
-              Exit
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-
-        {/* Edit Menu */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="sm">Edit</Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent>
-            <DropdownMenuItem>
-              <RotateCcw className="w-4 h-4 mr-2" />
-              Undo
-              <span className="ml-auto text-xs text-muted-foreground">Ctrl+Z</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem>
-              <RotateCcw className="w-4 h-4 mr-2" />
-              Redo
-              <span className="ml-auto text-xs text-muted-foreground">Ctrl+Y</span>
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem>
-              <Scissors className="w-4 h-4 mr-2" />
-              Cut
-              <span className="ml-auto text-xs text-muted-foreground">Ctrl+X</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem>
-              <Copy className="w-4 h-4 mr-2" />
-              Copy
-              <span className="ml-auto text-xs text-muted-foreground">Ctrl+C</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem>
-              <ClipboardPaste className="w-4 h-4 mr-2" />
-              Paste
-              <span className="ml-auto text-xs text-muted-foreground">Ctrl+V</span>
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => handleMenuAction('command-palette')}>
-              <Command className="w-4 h-4 mr-2" />
-              Command Palette...
-              <span className="ml-auto text-xs text-muted-foreground">Ctrl+Shift+P</span>
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-
-        {/* View Menu */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="sm">View</Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent>
-            <DropdownMenuItem onClick={() => handleMenuAction('toggle-explorer')}>
-              <FileText className="w-4 h-4 mr-2" />
-              Toggle Explorer
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => handleMenuAction('toggle-fullscreen')}>
-              <Maximize className="w-4 h-4 mr-2" />
-              Toggle Fullscreen
-              <span className="ml-auto text-xs text-muted-foreground">F11</span>
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => onThemeToggle()}>
-              {theme === 'dark' ? (
-                <>
-                  <Sun className="w-4 h-4 mr-2" />
-                  Light Mode
-                </>
-              ) : (
-                <>
-                  <Moon className="w-4 h-4 mr-2" />
-                  Dark Mode
-                </>
-              )}
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-
-        {/* Tools Menu */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="sm">Tools</Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent>
-            <DropdownMenuItem onClick={() => handleMenuAction('workflow-builder')}>
-              <Zap className="w-4 h-4 mr-2" />
-              Workflow Builder
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => handleMenuAction('workflow-manager')}>
-              <Play className="w-4 h-4 mr-2" />
-              Workflow Manager
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => handleMenuAction('llm-prompt-management')}>
-              <MessageSquare className="w-4 h-4 mr-2" />
-              Prompt Management
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => handleMenuAction('tool-browser')}>
-              <Settings className="w-4 h-4 mr-2" />
-              Tool Browser
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => handleMenuAction('mcp-servers')}>
-              <Terminal className="w-4 h-4 mr-2" />
-              MCP Servers
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => handleMenuAction('performance-monitor')}>
-              <Monitor className="w-4 h-4 mr-2" />
-              Performance Monitor
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => handleMenuAction('settings')}>
-              <Settings className="w-4 h-4 mr-2" />
-              Settings
-              <span className="ml-auto text-xs text-muted-foreground">Ctrl+,</span>
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-
-        {/* Help Menu */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="sm">Help</Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent>
-            <DropdownMenuItem onClick={() => handleMenuAction('welcome-guide')}>
-              <HelpCircle className="w-4 h-4 mr-2" />
-              Welcome Guide
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => handleMenuAction('documentation')}>
-              <BookOpen className="w-4 h-4 mr-2" />
-              Documentation
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => handleMenuAction('keyboard-shortcuts')}>
-              <Keyboard className="w-4 h-4 mr-2" />
-              Keyboard Shortcuts
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => handleMenuAction('report-issue')}>
-              <Bug className="w-4 h-4 mr-2" />
-              Report Issue
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => handleMenuAction('check-updates')}>
-              <Download className="w-4 h-4 mr-2" />
-              Check for Updates
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => handleMenuAction('about')}>
-              <Info className="w-4 h-4 mr-2" />
-              About
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-
-        {/* Workflow Builder Nav Item */}
-        <Button variant="ghost" size="sm" onClick={() => handleMenuAction('workflow-builder')}>
-          <Zap className="w-4 h-4 mr-2" />
-          Workflow Builder
-        </Button>
-      </div>
-
-      {/* Right side: Theme toggle & search */}
+      {/* Right: Theme, Main Nav, Window Controls */}
       <div className="flex items-center gap-2">
-        <Button variant="ghost" size="icon" onClick={() => handleMenuAction('toggle-fullscreen')}>
-          <Maximize className="h-[1.2rem] w-[1.2rem]" />
+        <Button variant="ghost" size="icon" onClick={onThemeToggle} aria-label="Toggle theme">
+          {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
         </Button>
-        
-        <Button variant="ghost" size="icon" onClick={onThemeToggle}>
-          {theme === 'dark' ? (
-            <Sun className="h-[1.2rem] w-[1.2rem]" />
-          ) : (
-            <Moon className="h-[1.2rem] w-[1.2rem]" />
-          )}
-        </Button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon" aria-label="Main menu">
+              <Menu className="w-5 h-5" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => onViewChange('settings')}>
+              <Settings className="w-4 h-4 mr-2" /> Settings
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={() => alert('Coming Soon')}>File</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => alert('Coming Soon')}>Edit</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => alert('Coming Soon')}>View</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => alert('Coming Soon')}>Tools</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => alert('Coming Soon')}>Help</DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+        <WindowControls className="ml-2" />
       </div>
+
+      <PwaInstallQrModal open={pwaModalOpen} onClose={() => setPwaModalOpen(false)} url={pwaUrl} />
     </div>
   );
 };

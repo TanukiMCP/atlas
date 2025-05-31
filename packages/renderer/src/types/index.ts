@@ -247,6 +247,9 @@ export interface ElectronAPI {
   maximize: () => void;
   close: () => void;
   
+  // Generic IPC invoke method
+  invoke: (channel: string, ...args: any[]) => Promise<any>;
+  
   // OpenRouter integration
   storeOpenRouterKey: (key: string) => Promise<any>;
   getOpenRouterKey: () => Promise<string>;
@@ -277,6 +280,6 @@ export interface ElectronAPI {
 // Add ElectronAPI to Window interface
 declare global {
   interface Window {
-    electronAPI: ElectronAPI;
+    electronAPI?: ElectronAPI;
   }
 } 

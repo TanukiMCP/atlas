@@ -1,13 +1,5 @@
 import { FileSystemItem } from '../types/index';
-
-// Type declaration for electronAPI
-declare global {
-  interface Window {
-    electronAPI?: {
-      invoke: (channel: string, ...args: any[]) => Promise<any>;
-    };
-  }
-}
+// ElectronAPI types are declared in types/electron.d.ts
 
 class FileSystemService {
   private watchers: Map<string, any> = new Map();
@@ -182,7 +174,7 @@ class FileSystemService {
     console.log('File watching initiated via main process');
   }
 
-  stopWatching(rootPath: string): void {
+  stopWatching(rootPath?: string): void {
     // Watching cleanup is handled by main process
     console.log('File watching stopped');
   }
@@ -193,7 +185,7 @@ class FileSystemService {
   }
 
   private resolvePath(filePath: string): string {
-    if (!typeof process !== 'undefined') {
+    if (typeof process === 'undefined') {
       throw new Error('Path resolution is not available in browser environment');
     }
 

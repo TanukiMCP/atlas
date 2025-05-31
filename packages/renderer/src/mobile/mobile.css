@@ -1,0 +1,87 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  background: #18181b;
+  color: #fafafa;
+  min-height: 100vh;
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-top: env(safe-area-inset-top);
+}
+
+button, input[type="button"], input[type="submit"] {
+  min-height: 44px;
+  min-width: 44px;
+  outline: none;
+  transition: background 0.15s, box-shadow 0.15s, color 0.15s;
+  border-radius: 0.5rem;
+}
+
+button:active, button:focus, .focus-visible {
+  box-shadow: 0 0 0 2px #6366f1;
+  background: #27272a;
+}
+
+input, textarea {
+  min-height: 44px;
+  border-radius: 0.5rem;
+  outline: none;
+  transition: border 0.15s, box-shadow 0.15s;
+}
+
+input:focus, textarea:focus {
+  border-color: #6366f1;
+  box-shadow: 0 0 0 2px #6366f1;
+}
+
+::-webkit-input-placeholder { color: #a1a1aa; }
+::-moz-placeholder { color: #a1a1aa; }
+:-ms-input-placeholder { color: #a1a1aa; }
+::placeholder { color: #a1a1aa; }
+
+.bg-primary {
+  background: #6366f1;
+}
+.bg-muted {
+  background: #232329;
+}
+.text-foreground {
+  color: #fafafa;
+}
+.text-muted-foreground {
+  color: #a1a1aa;
+}
+.border-border {
+  border-color: #27272a;
+}
+
+/* Animations */
+.animate-pulse {
+  animation: pulse 1.5s cubic-bezier(0.4,0,0.6,1) infinite;
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+@keyframes spin {
+  100% { transform: rotate(360deg); }
+}
+
+/* Chat bubble animation */
+.bubble-in {
+  animation: bubble-in 0.18s cubic-bezier(0.4,0,0.6,1);
+}
+@keyframes bubble-in {
+  0% { transform: scale(0.95) translateY(10px); opacity: 0; }
+  100% { transform: scale(1) translateY(0); opacity: 1; }
+}
+
+/* Utility for safe area bottom padding */
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+} 
