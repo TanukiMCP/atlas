@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ChatViewProps } from '../types';
+import { ChatViewProps } from '../types/index';
 import ChatService from '../services/ChatService';
+import ToolSelector from './ToolSelector';
+import { formatToolInvocation } from '../utils/parseToolInvocation';
 
 interface ChatMessage {
   id: string;
@@ -19,6 +21,13 @@ const ChatView: React.FC<ChatViewProps> = ({ onBack }) => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  
+  // Tool selector state
+  const [showToolSelector, setShowToolSelector] = useState(false);
+  const [toolSelectorPos, setToolSelectorPos] = useState<{ x: number; y: number } | null>(null);
+  const [toolSearchText, setToolSearchText] = useState('');
+  const [inputCursorPosition, setInputCursorPosition] = useState(0);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     // Load current messages
@@ -57,11 +66,86 @@ const ChatView: React.FC<ChatViewProps> = ({ onBack }) => {
     }
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === '@' && !showToolSelector) {
+      // Position tool selector below the cursor
+      const target = e.currentTarget;
+      const rect = target.getBoundingClientRect();
+      const caretPos = target.selectionStart || 0;
+      setInputCursorPosition(caretPos + 1); // +1 for the @ we're adding
+      
+      // Calculate position for tool selector
+      const x = rect.left + 10; // Offset from left edge
+      const y = rect.bottom + 5; // Position below input
+      
+      setToolSelectorPos({ x, y });
+      setShowToolSelector(true);
+      setToolSearchText('');
+    }
+    
+    // Handle escape key to close tool selector
+    if (e.key === 'Escape' && showToolSelector) {
+      setShowToolSelector(false);
+      return;
+    }
+    
+    // Only handle Enter if not inside tool selector (which handles its own keys)
+    if (e.key === 'Enter' && !showToolSelector) {
       e.preventDefault();
       handleSendMessage();
     }
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setMessage(value);
+    
+    // Update tool selector when typing after @
+    if (showToolSelector) {
+      const cursorPos = e.target.selectionStart || 0;
+      
+      // Find the last @ before cursor
+      const textBeforeCursor = value.substring(0, cursorPos);
+      const lastAtIndex = textBeforeCursor.lastIndexOf('@');
+      
+      if (lastAtIndex >= 0) {
+        // Extract search text (everything between @ and cursor)
+        const searchText = textBeforeCursor.substring(lastAtIndex + 1);
+        setToolSearchText(searchText);
+        setInputCursorPosition(cursorPos);
+      } else {
+        // No @ found before cursor, close selector
+        setShowToolSelector(false);
+      }
+    }
+  };
+
+  const handleToolSelect = (toolName: string) => {
+    const cursorPos = inputCursorPosition;
+    
+    // Find the position of the @ symbol that triggered the selector
+    const textBeforeCursor = message.substring(0, cursorPos);
+    const lastAtIndex = textBeforeCursor.lastIndexOf('@');
+    
+    if (lastAtIndex >= 0) {
+      // Replace the @searchText with the selected @tool
+      const textBefore = message.substring(0, lastAtIndex);
+      const textAfter = message.substring(cursorPos);
+      const newValue = `${textBefore}@${toolName} ${textAfter}`;
+      
+      setMessage(newValue);
+      
+      // Focus back on input and set cursor after the inserted tool
+      setTimeout(() => {
+        if (inputRef.current) {
+          inputRef.current.focus();
+          const newCursorPos = lastAtIndex + toolName.length + 2; // +2 for @ and space
+          inputRef.current.setSelectionRange(newCursorPos, newCursorPos);
+        }
+      }, 0);
+    }
+    
+    setShowToolSelector(false);
   };
 
   const formatTimestamp = (timestamp: Date) => {
@@ -187,13 +271,14 @@ const ChatView: React.FC<ChatViewProps> = ({ onBack }) => {
         
         {/* Input Area */}
         <div className="border-t border-border p-4">
-          <div className="flex gap-2">
+          <div className="flex gap-2 relative">
             <input 
+              ref={inputRef}
               type="text" 
               value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              onKeyPress={handleKeyPress}
-              placeholder="Ask me anything about your code, project, or development tasks..."
+              onChange={handleInputChange}
+              onKeyDown={handleKeyDown}
+              placeholder="Ask me anything about your code, project, or type @ to use tools..."
               className="flex-1 px-4 py-3 bg-input border border-border rounded-lg focus:outline-none focus:border-primary transition-colors resize-none"
               disabled={isLoading}
             />
@@ -214,9 +299,18 @@ const ChatView: React.FC<ChatViewProps> = ({ onBack }) => {
                 </>
               )}
             </button>
+            
+            {/* Tool Selector */}
+            <ToolSelector
+              visible={showToolSelector}
+              position={toolSelectorPos}
+              onSelect={handleToolSelect}
+              onClose={() => setShowToolSelector(false)}
+              searchText={toolSearchText}
+            />
           </div>
           <div className="text-xs text-muted-foreground mt-2 flex items-center justify-between">
-            <span>Press Enter to send, Shift+Enter for new line</span>
+            <span>Type @ to access tools, Enter to send</span>
             <span>{messages.length} messages in conversation</span>
           </div>
         </div>

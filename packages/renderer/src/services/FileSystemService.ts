@@ -206,6 +206,19 @@ class FileSystemService {
       this.listeners.forEach(listener => listener([]));
     }
   }
+
+  async moveFile(sourcePath: string, destPath: string): Promise<void> {
+    if (!window.electronAPI?.invoke) {
+      throw new Error('File move requires the Electron desktop application');
+    }
+
+    try {
+      await window.electronAPI.invoke('fs:moveFile', sourcePath, destPath);
+      this.notifyListeners();
+    } catch (error) {
+      throw new Error(`Failed to move item from ${sourcePath} to ${destPath}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
 }
 
 export const fileSystemService = new FileSystemService(); 

@@ -17,7 +17,12 @@ import {
   MoreVertical,
   FilePlus,
   FolderPlus,
-  Download
+  Download,
+  Copy,
+  ExternalLink,
+  Maximize2,
+  Minimize2,
+  Search
 } from 'lucide-react';
 
 interface FileExplorerProps {
@@ -87,11 +92,30 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
     renamingFilePath: '',
     newFileName: ''
   });
+  const [isWorkspaceDropdownOpen, setIsWorkspaceDropdownOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
 
   const contextMenuRef = useRef<HTMLDivElement>(null);
   const newItemInputRef = useRef<HTMLInputElement>(null);
   const renameInputRef = useRef<HTMLInputElement>(null);
   
+  // Refs for keyboard navigation
+  const rowRefs = useRef<Record<string, HTMLDivElement | null>>({});
+
+  // Build flat list of visible item paths for navigation
+  const flatPaths: string[] = [];
+  const parentMap: Record<string, string | null> = {};
+  const buildNavigationList = (items: FileSystemItem[], parent: string | null) => {
+    for (const it of items) {
+      flatPaths.push(it.path);
+      parentMap[it.path] = parent;
+      if (it.type === 'folder' && state.expandedFolders.has(it.path) && it.children) {
+        buildNavigationList(it.children, it.path);
+      }
+    }
+  };
+  buildNavigationList(state.files, null);
+
   useEffect(() => {
     loadFiles(currentWorkspace);
     
@@ -194,6 +218,10 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
     });
   };
 
+  const collapseAllFolders = () => {
+    setState(prev => ({ ...prev, expandedFolders: new Set() }));
+  };
+
   const getFileIcon = (fileName: string) => {
     const extension = fileName.split('.').pop()?.toLowerCase();
     const iconClass = "w-4 h-4 flex-shrink-0";
@@ -256,24 +284,114 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
     }));
   };
 
+  // --- Enhanced Context Menu Action Handlers ---
+
+  const handleOpenFile = () => {
+    const item = state.contextMenu.item;
+    if (!item || item.type !== 'file') return;
+    onFileSelect(item.path);
+    closeContextMenu();
+  };
+
+  const handleCopyPath = async (type: 'absolute' | 'relative') => {
+    const item = state.contextMenu.item;
+    if (!item) return;
+    
+    let pathToCopy = item.path;
+    if (type === 'relative') {
+      if (currentWorkspace && item.path.startsWith(currentWorkspace)) {
+        pathToCopy = item.path.substring(currentWorkspace.length + 1);
+      } else {
+        console.warn("Cannot determine relative path: item not in current workspace or workspace not set.");
+        console.info(`Copied absolute path instead: ${pathToCopy}`);
+      }
+    }
+
+    try {
+      await navigator.clipboard.writeText(pathToCopy);
+      console.info(`${type.charAt(0).toUpperCase() + type.slice(1)} path copied to clipboard: ${pathToCopy}`);
+    } catch (err) {
+      console.error(`Failed to copy ${type} path:`, err);
+    }
+    closeContextMenu();
+  };
+  
+  const handleDownloadFile = async () => {
+    const item = state.contextMenu.item;
+    if (!item || item.type !== 'file') return;
+
+    try {
+      if (window.electronAPI?.invoke) {
+        const success = await window.electronAPI.invoke('fs:downloadFile', item.path);
+        if (success) {
+          console.info(`Download initiated for: ${item.name}`);
+        } else {
+          throw new Error('Download initiation failed via Electron API.');
+        }
+      } else {
+        console.warn("Download: electronAPI not available. This action is primarily for Electron context.");
+        throw new Error('Download not supported in this environment without electronAPI or specific file service method.');
+      }
+    } catch (error) {
+      console.error('Failed to download file:', error);
+    }
+    closeContextMenu();
+  };
+
+  const handleRevealInExplorer = async () => {
+    const item = state.contextMenu.item;
+    if (!item) return;
+
+    if (window.electronAPI?.invoke) {
+      try {
+        await window.electronAPI.invoke('shell:showItemInFolder', item.path);
+      } catch (error) {
+        console.error('Failed to reveal item in explorer:', error);
+      }
+    } else {
+      console.warn('Reveal in OS Explorer: electronAPI not available.');
+    }
+    closeContextMenu();
+  };
+  
+  const handleExpandCollapseFolder = (expand: boolean) => {
+    const item = state.contextMenu.item;
+    if (!item || item.type !== 'folder') return;
+    
+    const newExpanded = new Set(state.expandedFolders);
+    if (expand) {
+      newExpanded.add(item.path);
+    } else {
+      newExpanded.delete(item.path);
+    }
+    setState(prev => ({ ...prev, expandedFolders: newExpanded }));
+    closeContextMenu();
+  };
+
   const handleDeleteItem = async () => {
     const item = state.contextMenu.item;
     if (!item) return;
     
     try {
       if (item.type === 'file') {
-        if (onDeleteFile) {
-          await onDeleteFile(item.path);
-        } else {
-          await fileSystemService.deleteFile(item.path);
+        if (window.confirm(`Are you sure you want to delete file: ${item.name}?`)) {
+          if (onDeleteFile) {
+            await onDeleteFile(item.path);
+          } else {
+            await fileSystemService.deleteFile(item.path);
+          }
+          console.info(`File deleted: ${item.name}`);
         }
       } else {
-        await fileSystemService.deleteDirectory(item.path);
+        if (window.confirm(`Are you sure you want to delete folder: ${item.name}? This will delete all its contents.`)) {
+          await fileSystemService.deleteDirectory(item.path);
+          console.info(`Folder deleted: ${item.name}`);
+        }
       }
       closeContextMenu();
     } catch (error) {
       console.error(`Failed to delete ${item.type}:`, error);
-      // You could add an error notification here
+      closeContextMenu();
     }
   };
 
@@ -324,69 +442,93 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
   };
 
   const createNewItem = async (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key !== 'Enter') return;
-    
-    const { isCreatingFile, isCreatingFolder, newItemParentPath, newItemName } = state;
-    if (!newItemName.trim()) return;
-    
-    try {
-      const newPath = newItemParentPath 
-        ? `${newItemParentPath}/${newItemName}` 
-        : newItemName;
-        
-      if (isCreatingFile) {
-        if (onCreateFile) {
-          await onCreateFile(newPath, '');
-        } else {
-          await fileSystemService.createFile(newPath);
-        }
-      } else if (isCreatingFolder) {
-        if (onCreateFolder) {
-          await onCreateFolder(newPath);
-        } else {
-          await fileSystemService.createDirectory(newPath);
-        }
+    if (e.key === 'Enter') {
+      const { isCreatingFile, isCreatingFolder, newItemParentPath, newItemName } = state;
+      const trimmedName = newItemName.trim();
+      if (!trimmedName) {
+        console.warn("New item name cannot be empty.");
+        cancelNewItem();
+        return;
       }
-      
-      setState(prev => ({
-        ...prev,
-        isCreatingFile: false,
-        isCreatingFolder: false,
-        newItemParentPath: '',
-        newItemName: ''
-      }));
-    } catch (error) {
-      console.error('Failed to create new item:', error);
-      // You could add an error notification here
+
+      try {
+        const newPath = newItemParentPath ? `${newItemParentPath}/${trimmedName}` : trimmedName;
+        if (isCreatingFile) {
+          if (onCreateFile) {
+            await onCreateFile(newPath, '');
+          } else {
+            await fileSystemService.createFile(newPath);
+          }
+        } else if (isCreatingFolder) {
+          if (onCreateFolder) {
+            await onCreateFolder(newPath);
+          } else {
+            await fileSystemService.createDirectory(newPath);
+          }
+        }
+        console.info(`Created new ${isCreatingFile ? 'file' : 'folder'}: ${newPath}`);
+        setState(prev => ({
+          ...prev,
+          isCreatingFile: false,
+          isCreatingFolder: false,
+          newItemParentPath: '',
+          newItemName: ''
+        }));
+      } catch (error) {
+        console.error('Failed to create new item:', error);
+        setState(prev => ({
+          ...prev,
+          isCreatingFile: false,
+          isCreatingFolder: false,
+          newItemParentPath: '',
+          newItemName: ''
+        }));
+      }
+    } else if (e.key === 'Escape') {
+      cancelNewItem();
+      return;
     }
   };
 
   const submitRename = async (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
-      try {
-        const oldPath = state.renamingFilePath;
-        const oldName = oldPath.split('/').pop() || '';
-        const newPath = oldPath.replace(oldName, state.newFileName);
-        
-        if (oldPath === newPath) {
-          cancelRename();
-          return;
-        }
+      const oldPath = state.renamingFilePath;
+      const oldName = oldPath.split(/[\/]/).pop() || '';
+      const newName = state.newFileName.trim();
 
+      if (!newName) {
+        console.warn("New name cannot be empty.");
+        cancelRename();
+        return;
+      }
+
+      if (oldName === newName) {
+        cancelRename();
+        return;
+      }
+
+      const parentPath = oldPath.substring(0, oldPath.length - oldName.length);
+      const newPath = `${parentPath}${newName}`;
+
+      try {
         if (window.electronAPI?.invoke) {
           await window.electronAPI.invoke('fs:moveFile', oldPath, newPath);
-          
-          // Notify for file selection update if the renamed file was selected
-          if (selectedFile === oldPath) {
-            onFileSelect(newPath);
+          if (selectedFile === oldPath) onFileSelect(newPath);
+          if (state.expandedFolders.has(oldPath)) {
+            const newExpanded = new Set(state.expandedFolders);
+            newExpanded.delete(oldPath);
+            newExpanded.add(newPath);
+            setState(prev => ({ ...prev, expandedFolders: newExpanded }));
           }
-          
+          console.info(`Renamed ${oldName} to ${newName}`);
           setState(prev => ({
             ...prev,
             isRenamingFile: false,
             renamingFilePath: '',
             newFileName: ''
           }));
+        } else {
+          throw new Error("electronAPI not available for renaming.");
         }
       } catch (error) {
         console.error('Failed to rename item:', error);
@@ -415,36 +557,100 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
     }));
   };
 
+  // --- Drag and Drop Handlers ---
+  const handleDragStart = (e: React.DragEvent<HTMLDivElement>, path: string) => {
+    e.dataTransfer.setData('text/plain', path);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  };
+
+  const handleDrop = async (e: React.DragEvent<HTMLDivElement>, targetPath: string) => {
+    e.preventDefault();
+    const sourcePath = e.dataTransfer.getData('text/plain');
+    if (!sourcePath) return;
+    // Prevent dropping onto itself or its own descendants
+    if (sourcePath === targetPath || targetPath.startsWith(sourcePath + '/')) {
+      console.warn('Cannot move a folder into itself or its descendant.');
+      return;
+    }
+    const name = sourcePath.split('/').pop();
+    if (!name) return;
+    const destPath = targetPath ? `${targetPath}/${name}` : name;
+    try {
+      await fileSystemService.moveFile(sourcePath, destPath);
+      console.info(`Moved ${sourcePath} to ${destPath}`);
+    } catch (error) {
+      console.error('Failed to move item:', error);
+    }
+  };
+
+  // Filter files based on search term
+  const filterFiles = (items: FileSystemItem[]): FileSystemItem[] => {
+    return items.reduce<FileSystemItem[]>((acc, it) => {
+      const matches = it.name.toLowerCase().includes(searchTerm.toLowerCase());
+      if (matches) {
+        acc.push(it);
+      } else if (it.type === 'folder' && it.children) {
+        const filteredChildren = filterFiles(it.children);
+        if (filteredChildren.length > 0) {
+          acc.push({ ...it, children: filteredChildren });
+        }
+      }
+      return acc;
+    }, []);
+  };
+
   const renderContextMenu = () => {
     const { show, x, y, item } = state.contextMenu;
     if (!show || !item) return null;
     
     const isFolder = item.type === 'folder';
+    const isFile = item.type === 'file';
+    const isExpanded = isFolder && state.expandedFolders.has(item.path);
+    const isWorkspaceRoot = item.path === '' && item.name === 'Workspace'; // Special case for root context menu
     
     return (
       <div 
         ref={contextMenuRef}
-        className="absolute z-50 min-w-48 bg-popover text-popover-foreground shadow-md rounded-md border border-border py-1 overflow-hidden"
+        className="absolute z-50 min-w-[200px] bg-popover text-popover-foreground shadow-md rounded-md border border-border py-1 overflow-hidden text-sm"
         style={{
           top: `${y}px`,
           left: `${x}px`,
         }}
       >
-        <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground border-b border-border mb-1">
-          {item.name}
-        </div>
+        {!isWorkspaceRoot && (
+          <div className="px-3 py-1.5 text-xs font-semibold text-muted-foreground border-b border-border mb-1 truncate">
+            {item.name}
+          </div>
+        )}
         
-        {isFolder && (
+        {/* File-specific actions */}
+        {isFile && (
+          <button 
+            className="w-full text-left px-3 py-1.5 hover:bg-accent focus:outline-none focus:bg-accent/70 focus:ring-1 focus:ring-primary flex items-center gap-2"
+            onClick={handleOpenFile}
+          >
+            <ExternalLink className="w-4 h-4 text-sky-500" />
+            <span>Open</span>
+          </button>
+        )}
+
+        {/* Folder-specific actions (New File/Folder) */}
+        {isFolder && !isWorkspaceRoot && ( // Don't show "New File/Folder in Workspace" if it's the root itself
           <>
             <button 
-              className="w-full text-left px-3 py-1.5 text-sm hover:bg-accent flex items-center gap-2"
+              className="w-full text-left px-3 py-1.5 hover:bg-accent focus:outline-none focus:bg-accent/70 focus:ring-1 focus:ring-primary flex items-center gap-2"
               onClick={() => startCreatingFile(item.path)}
             >
               <FilePlus className="w-4 h-4 text-blue-500" />
               <span>New File</span>
             </button>
             <button 
-              className="w-full text-left px-3 py-1.5 text-sm hover:bg-accent flex items-center gap-2"
+              className="w-full text-left px-3 py-1.5 hover:bg-accent focus:outline-none focus:bg-accent/70 focus:ring-1 focus:ring-primary flex items-center gap-2"
               onClick={() => startCreatingFolder(item.path)}
             >
               <FolderPlus className="w-4 h-4 text-yellow-500" />
@@ -454,27 +660,122 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
           </>
         )}
         
-        <button 
-          className="w-full text-left px-3 py-1.5 text-sm hover:bg-accent flex items-center gap-2"
-          onClick={() => startRenaming(item)}
-        >
-          <Edit2 className="w-4 h-4 text-amber-500" />
-          <span>Rename</span>
-        </button>
+        {/* Actions for root workspace context menu */}
+        {isWorkspaceRoot && (
+           <>
+            <button 
+              className="w-full text-left px-3 py-1.5 hover:bg-accent focus:outline-none focus:bg-accent/70 focus:ring-1 focus:ring-primary flex items-center gap-2"
+              onClick={() => startCreatingFile(currentWorkspace || '')} // Target current workspace root
+            >
+              <FilePlus className="w-4 h-4 text-blue-500" />
+              <span>New File in Workspace</span>
+            </button>
+            <button 
+              className="w-full text-left px-3 py-1.5 hover:bg-accent focus:outline-none focus:bg-accent/70 focus:ring-1 focus:ring-primary flex items-center gap-2"
+              onClick={() => startCreatingFolder(currentWorkspace || '')} // Target current workspace root
+            >
+              <FolderPlus className="w-4 h-4 text-yellow-500" />
+              <span>New Folder in Workspace</span>
+            </button>
+            <div className="border-t border-border my-1"></div>
+          </>
+        )}
+
+        {/* Expand/Collapse for Folders */}
+        {isFolder && !isWorkspaceRoot && item.children && item.children.length > 0 && (
+          isExpanded ? (
+            <button 
+              className="w-full text-left px-3 py-1.5 hover:bg-accent focus:outline-none focus:bg-accent/70 focus:ring-1 focus:ring-primary flex items-center gap-2"
+              onClick={() => handleExpandCollapseFolder(false)}
+            >
+              <Minimize2 className="w-4 h-4" />
+              <span>Collapse</span>
+            </button>
+          ) : (
+            <button 
+              className="w-full text-left px-3 py-1.5 hover:bg-accent focus:outline-none focus:bg-accent/70 focus:ring-1 focus:ring-primary flex items-center gap-2"
+              onClick={() => handleExpandCollapseFolder(true)}
+            >
+              <Maximize2 className="w-4 h-4" />
+              <span>Expand</span>
+            </button>
+          )
+        )}
+        {isFolder && !isWorkspaceRoot && item.children && item.children.length > 0 && (<div className="border-t border-border my-1"></div>)}
+
+
+        {/* Common actions (excluding root) */}
+        {!isWorkspaceRoot && (
+          <>
+            <button 
+              className="w-full text-left px-3 py-1.5 hover:bg-accent focus:outline-none focus:bg-accent/70 focus:ring-1 focus:ring-primary flex items-center gap-2"
+              onClick={() => startRenaming(item)}
+            >
+              <Edit2 className="w-4 h-4 text-amber-500" />
+              <span>Rename</span>
+            </button>
+            <div className="border-t border-border my-1"></div>
+            <button 
+              className="w-full text-left px-3 py-1.5 hover:bg-accent focus:outline-none focus:bg-accent/70 focus:ring-1 focus:ring-primary flex items-center gap-2"
+              onClick={() => handleCopyPath('absolute')}
+            >
+              <Copy className="w-4 h-4" />
+              <span>Copy Path</span>
+            </button>
+            <button 
+              className="w-full text-left px-3 py-1.5 hover:bg-accent focus:outline-none focus:bg-accent/70 focus:ring-1 focus:ring-primary flex items-center gap-2"
+              onClick={() => handleCopyPath('relative')}
+            >
+              <Copy className="w-4 h-4 text-gray-400" /> {/* Slightly different icon/color for relative? */}
+              <span>Copy Relative Path</span>
+            </button>
+            
+            {isFile && (
+              <button 
+                className="w-full text-left px-3 py-1.5 hover:bg-accent focus:outline-none focus:bg-accent/70 focus:ring-1 focus:ring-primary flex items-center gap-2"
+                onClick={handleDownloadFile}
+              >
+                <Download className="w-4 h-4 text-green-500" />
+                <span>Download</span>
+              </button>
+            )}
+
+            <button 
+              className="w-full text-left px-3 py-1.5 hover:bg-accent focus:outline-none focus:bg-accent/70 focus:ring-1 focus:ring-primary flex items-center gap-2"
+              onClick={handleRevealInExplorer}
+            >
+              <ExternalLink className="w-4 h-4 text-indigo-500" />
+              <span>Reveal in File Explorer</span>
+            </button>
+            <div className="border-t border-border my-1"></div>
+            <button 
+              className="w-full text-left px-3 py-1.5 hover:bg-accent focus:outline-none focus:bg-accent/70 focus:ring-1 focus:ring-primary flex items-center gap-2 text-red-600 hover:bg-destructive/10"
+              onClick={handleDeleteItem}
+            >
+              <Trash2 className="w-4 h-4" />
+              <span>Delete</span>
+            </button>
+          </>
+        )}
         
-        <button 
-          className="w-full text-left px-3 py-1.5 text-sm hover:bg-accent flex items-center gap-2"
-          onClick={handleDeleteItem}
-        >
-          <Trash2 className="w-4 h-4 text-red-500" />
-          <span>Delete</span>
-        </button>
+        {/* Refresh for root workspace context menu */}
+        {isWorkspaceRoot && (
+          <button
+            onClick={() => { loadFiles(currentWorkspace); closeContextMenu(); }}
+            className="w-full text-left px-3 py-1.5 hover:bg-accent focus:outline-none focus:bg-accent/70 focus:ring-1 focus:ring-primary flex items-center gap-2"
+          >
+            <RefreshCw className="w-4 h-4" />
+            <span>Refresh Workspace</span>
+          </button>
+        )}
       </div>
     );
   };
 
   const renderFileItem = (item: FileSystemItem, depth: number = 0) => {
-    const isExpanded = state.expandedFolders.has(item.path);
+    const isExpanded = searchTerm
+      ? true
+      : state.expandedFolders.has(item.path);
     const isSelected = selectedFile === item.path;
     const isRenaming = state.isRenamingFile && state.renamingFilePath === item.path;
     const indentWidth = depth * 16;
@@ -486,7 +787,7 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
     return (
       <div key={item.path} className="select-none">
         {isRenaming ? (
-          <div 
+          <div
             className="flex items-center py-1.5 px-2 bg-accent/30"
             style={{ paddingLeft: `${indentWidth + 8}px` }}
           >
@@ -509,21 +810,51 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
           </div>
         ) : (
           <div
-            className={`
-              group flex items-center py-1.5 px-2 cursor-pointer transition-all duration-150 ease-in-out
-              hover:bg-accent/50 relative
-              ${isSelected ? 'bg-primary/10 border-r-2 border-primary' : ''}
-              ${item.type === 'folder' ? 'font-medium' : ''}
-            `}
+            ref={(el) => { rowRefs.current[item.path] = el; }}
+            tabIndex={0}
+            className={`group flex items-center py-1.5 px-2 cursor-pointer transition-all duration-150 ease-in-out hover:bg-accent/50 focus:outline-none focus:bg-accent/70 focus:ring-1 focus:ring-primary focus:ring-offset-1 relative ${isSelected ? 'bg-primary/10 border-r-2 border-primary' : ''} ${item.type === 'folder' ? 'font-medium' : ''}`}
             style={{ paddingLeft: `${indentWidth + 8}px` }}
+            draggable
+            onDragStart={(e) => handleDragStart(e, item.path)}
+            onDragOver={item.type === 'folder' ? handleDragOver : undefined}
+            onDrop={item.type === 'folder' ? (e) => handleDrop(e, item.path) : undefined}
             onClick={() => {
-              if (item.type === 'folder') {
-                toggleFolder(item.path);
-              } else {
-                onFileSelect(item.path);
-              }
+              if (item.type === 'folder') toggleFolder(item.path);
+              else onFileSelect(item.path);
             }}
             onContextMenu={(e) => showContextMenu(e, item)}
+            onKeyDown={(e) => {
+              const idx = flatPaths.indexOf(item.path);
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                if (item.type === 'folder') toggleFolder(item.path);
+                else onFileSelect(item.path);
+              } else if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                const next = flatPaths[idx + 1];
+                if (next) rowRefs.current[next]?.focus();
+              } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                const prev = flatPaths[idx - 1];
+                if (prev) rowRefs.current[prev]?.focus();
+              } else if (e.key === 'ArrowRight') {
+                e.preventDefault();
+                if (item.type === 'folder') {
+                  if (!isExpanded) toggleFolder(item.path);
+                  else if (item.children && item.children.length > 0) {
+                    const firstChild = item.children[0].path;
+                    rowRefs.current[firstChild]?.focus();
+                  }
+                }
+              } else if (e.key === 'ArrowLeft') {
+                e.preventDefault();
+                if (item.type === 'folder' && isExpanded) toggleFolder(item.path);
+                else {
+                  const parent = parentMap[item.path];
+                  if (parent) rowRefs.current[parent]?.focus();
+                }
+              }
+            }}
           >
             {/* Folder expand/collapse indicator */}
             {item.type === 'folder' && (
@@ -616,8 +947,14 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
               type="text"
               value={state.newItemName}
               onChange={handleNewItemNameChange}
-              onKeyDown={createNewItem}
-              onBlur={cancelNewItem}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  createNewItem(e); // Pass event if needed, or just call directly
+                } else if (e.key === 'Escape') {
+                  cancelNewItem();
+                }
+              }}
+              onBlur={cancelNewItem} // Keep onBlur as a fallback
               className="flex-1 bg-transparent text-sm border-none focus:outline-none"
               placeholder={state.isCreatingFile ? "New file name..." : "New folder name..."}
             />
@@ -627,9 +964,8 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
         {/* Children */}
         {item.type === 'folder' && isExpanded && item.children && (
           <div className="relative">
-            {/* Indentation guide line */}
             <div 
-              className="absolute left-0 top-0 bottom-0 w-px bg-border/30"
+              className="absolute left-0 top-0 bottom-0 w-px bg-border/50"
               style={{ left: `${indentWidth + 16}px` }}
             />
             {item.children.map(child => renderFileItem(child, depth + 1))}
@@ -670,13 +1006,103 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
       if (result && result.filePaths && result.filePaths[0]) {
         setCurrentWorkspace(result.filePaths[0]);
         updateRecents(result.filePaths[0]);
+        setIsWorkspaceDropdownOpen(false);
       }
+    } else {
+      console.warn('electronAPI not available for directory selection.');
     }
   };
 
-  const handleWorkspaceChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setCurrentWorkspace(e.target.value);
-    updateRecents(e.target.value);
+  const handleWorkspaceChange = (newWorkspace: string) => {
+    if (newWorkspace === '__browse__') {
+      handleBrowse();
+    } else {
+      setCurrentWorkspace(newWorkspace);
+      updateRecents(newWorkspace);
+    }
+    setIsWorkspaceDropdownOpen(false);
+  };
+
+  const getWorkspaceDisplayName = (path: string) => {
+    if (!path) return workspaceName;
+    const parts = path.split(/[\\/]/);
+    return parts[parts.length - 1] || workspaceName;
+  };
+
+  // Render the header of the file tree
+  const renderFileTreeHeader = () => {
+    return (
+      <div className="p-2 border-b border-border sticky top-0 bg-background z-10">
+        <div className="relative mb-2">
+          <button
+            onClick={() => setIsWorkspaceDropdownOpen(!isWorkspaceDropdownOpen)}
+            className="w-full text-left px-3 py-2 bg-muted hover:bg-muted/80 focus:outline-none focus:bg-muted/90 focus:ring-2 focus:ring-primary rounded-md text-sm font-medium flex justify-between items-center"
+          >
+            <span>{getWorkspaceDisplayName(currentWorkspace) || 'Select Workspace'}</span>
+            <ChevronDown className={`w-4 h-4 transition-transform ${isWorkspaceDropdownOpen ? 'rotate-180' : ''}`} />
+          </button>
+          {isWorkspaceDropdownOpen && (
+            <div className="absolute mt-1 w-full bg-background border border-border rounded-md shadow-lg z-20">
+              {recentWorkspaces.map((ws) => (
+                <button
+                  key={ws}
+                  onClick={() => handleWorkspaceChange(ws)}
+                  className="block w-full text-left px-3 py-2 text-sm hover:bg-muted/50"
+                >
+                  {getWorkspaceDisplayName(ws)}
+                </button>
+              ))}
+              <button
+                onClick={() => handleWorkspaceChange('__browse__')}
+                className="block w-full text-left px-3 py-2 text-sm hover:bg-muted/50 border-t border-border"
+              >
+                Browse...
+              </button>
+            </div>
+          )}
+        </div>
+        <div className="flex items-center justify-start gap-1">
+          <button
+            onClick={() => startCreatingFile(currentWorkspace || '')}
+            className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted focus:outline-none focus:ring-2 focus:ring-primary rounded-md"
+            title="New File"
+          >
+            <FilePlus className="w-4 h-4" />
+          </button>
+          <button
+            onClick={() => startCreatingFolder(currentWorkspace || '')}
+            className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted focus:outline-none focus:ring-2 focus:ring-primary rounded-md"
+            title="New Folder"
+          >
+            <FolderPlus className="w-4 h-4" />
+          </button>
+          <button
+            onClick={() => loadFiles(currentWorkspace)}
+            className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted focus:outline-none focus:ring-2 focus:ring-primary rounded-md"
+            title="Refresh"
+          >
+            <RefreshCw className="w-4 h-4" />
+          </button>
+          <button
+            onClick={collapseAllFolders}
+            className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted focus:outline-none focus:ring-2 focus:ring-primary rounded-md"
+            title="Collapse All Folders"
+          >
+            <FolderX className="w-4 h-4" />
+          </button>
+        </div>
+        <div className="relative">
+          <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
+          <input
+            type="text"
+            placeholder="Search files..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full pl-10 pr-3 py-1 text-sm bg-muted/30 border border-border rounded-md focus:outline-none focus:border-primary"
+          />
+        </div>
+      </div>
+    );
   };
 
   if (state.loading) {
@@ -794,8 +1220,14 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
                   type="text"
                   value={state.newItemName}
                   onChange={handleNewItemNameChange}
-                  onKeyDown={createNewItem}
-                  onBlur={cancelNewItem}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      createNewItem(e); // Pass event if needed, or just call directly
+                    } else if (e.key === 'Escape') {
+                      cancelNewItem();
+                    }
+                  }}
+                  onBlur={cancelNewItem} // Keep onBlur as a fallback
                   className="flex-1 bg-transparent text-sm border-none focus:outline-none"
                   placeholder={state.isCreatingFile ? "New file name..." : "New folder name..."}
                 />
@@ -834,90 +1266,56 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
   }
 
   return (
-    <div className="w-full bg-card border-r border-border h-full flex flex-col">
-      {/* Header */}
-      <div className="p-4 border-b border-border flex justify-between items-center">
-        <div className="overflow-hidden flex items-center gap-2">
-          <Folder className="w-4 h-4 flex-shrink-0" />
-          <select
-            className="text-sm font-semibold text-foreground bg-transparent outline-none border-none truncate max-w-[180px]"
-            value={currentWorkspace}
-            onChange={handleWorkspaceChange}
-            title="Select workspace"
-          >
-            {recentWorkspaces.map((ws) => (
-              <option key={ws} value={ws}>{ws}</option>
-            ))}
-          </select>
-          <button
-            onClick={handleBrowse}
-            className="ml-2 px-2 py-1 text-xs bg-accent rounded hover:bg-accent/70 border border-border"
-            title="Browse for workspace"
-          >Browse...</button>
-        </div>
-        <div className="flex gap-1">
-          <button
-            onClick={() => startCreatingFile('')}
-            className="p-1 text-muted-foreground hover:text-foreground hover:bg-accent rounded"
-            title="New File"
-          >
-            <FilePlus className="w-4 h-4" />
-          </button>
-          <button
-            onClick={() => startCreatingFolder('')}
-            className="p-1 text-muted-foreground hover:text-foreground hover:bg-accent rounded"
-            title="New Folder"
-          >
-            <FolderPlus className="w-4 h-4" />
-          </button>
-          <button
-            onClick={() => loadFiles(currentWorkspace)}
-            className="p-1 text-muted-foreground hover:text-foreground hover:bg-accent rounded"
-            title="Refresh"
-          >
-            <RefreshCw className="w-4 h-4" />
-          </button>
-        </div>
-      </div>
+    <div className="h-full flex flex-col bg-background text-foreground select-none text-sm" onContextMenu={showRootContextMenu}>
+      {renderFileTreeHeader()}
       
-      {/* File tree */}
-      <div 
-        className="flex-1 overflow-auto" 
-        onContextMenu={showRootContextMenu}
-      >
-        {(state.isCreatingFile || state.isCreatingFolder) && state.newItemParentPath === '' ? (
-          <div className="p-2">
-            <div 
-              className="flex items-center py-1.5 px-3 bg-accent/30 rounded-md"
-            >
-              <div className="mr-2 flex-shrink-0">
-                {state.isCreatingFile ? (
-                  <File className="w-4 h-4 text-blue-500" />
-                ) : (
-                  <Folder className="w-4 h-4 text-yellow-500" />
-                )}
+      {state.loading && (
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center space-y-3">
+            <RefreshCw className="w-6 h-6 animate-spin text-muted-foreground mx-auto" />
+            <p className="text-sm text-muted-foreground">Loading workspace...</p>
+          </div>
+        </div>
+      )}
+      
+      {state.error && (
+        <div className="p-4 flex-1">
+          <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4">
+            <div className="flex items-start gap-3">
+              <AlertTriangle className="w-5 h-5 text-destructive flex-shrink-0 mt-0.5" />
+              <div className="flex-1 space-y-2">
+                <h3 className="text-sm font-medium text-destructive">
+                  File System Error
+                </h3>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  {state.error}
+                </p>
+                <button
+                  onClick={() => loadFiles(currentWorkspace)}
+                  className="inline-flex items-center gap-2 text-xs bg-destructive/20 text-destructive px-3 py-1.5 rounded-md hover:bg-destructive/30 transition-colors"
+                >
+                  <RefreshCw className="w-3 h-3" />
+                  Retry
+                </button>
               </div>
-              <input
-                ref={newItemInputRef}
-                type="text"
-                value={state.newItemName}
-                onChange={handleNewItemNameChange}
-                onKeyDown={createNewItem}
-                onBlur={cancelNewItem}
-                className="flex-1 bg-transparent text-sm border-none focus:outline-none"
-                placeholder={state.isCreatingFile ? "New file name..." : "New folder name..."}
-              />
             </div>
           </div>
-        ) : null}
-        
-        <div className="py-2">
-          {state.files.map(item => renderFileItem(item))}
         </div>
-      </div>
+      )}
       
-      {/* Context Menu */}
-      {renderContextMenu()}
+      {state.files.length > 0 && (
+        <div className="flex-1 overflow-auto">
+          <div className="py-2">
+            {(searchTerm ? filterFiles(state.files) : state.files).map((item) =>
+              renderFileItem(item)
+            )}
+          </div>
+        </div>
+      )}
+      
+      {state.files.length > 0 && (
+        <div ref={contextMenuRef}>{renderContextMenu()}</div>
+      )}
     </div>
   );
 };

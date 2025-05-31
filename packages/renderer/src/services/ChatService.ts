@@ -3,6 +3,18 @@
  */
 
 import { RequestComplexity } from '../../../llm-enhanced/src/index';
+import { parseToolInvocation } from '../utils/parseToolInvocation';
+import { useMCPStore } from '../stores/mcp-store';
+import MCPService from './MCPService';
+
+// Add window.electronAPI interface
+declare global {
+  interface Window {
+    electronAPI?: {
+      invoke: (channel: string, data?: any) => Promise<any>;
+    };
+  }
+}
 
 interface ChatMessage {
   id: string;
@@ -70,15 +82,47 @@ class ChatService {
     this.notifyMessageListeners();
 
     try {
-      // Generate AI response
-      const assistantMessage = await this.generateAIResponse(conversation, context);
+      // Check if this is a tool invocation (starts with @)
+      const toolInvocation = parseToolInvocation(content.trim());
       
-      conversation.messages.push(assistantMessage);
-      conversation.updatedAt = new Date();
-      this.saveConversationsToStorage();
-      this.notifyMessageListeners();
+      if (toolInvocation) {
+        // This is a tool invocation - execute the tool
+        const startTime = Date.now();
+        const result = await this.executeToolInvocation(toolInvocation);
+        
+        // Format tool result as assistant message
+        const assistantMessage: ChatMessage = {
+          id: this.generateId(),
+          content: result.success 
+            ? typeof result.data === 'string' 
+              ? result.data 
+              : JSON.stringify(result.data, null, 2)
+            : `Error executing tool: ${result.error}`,
+          role: 'assistant',
+          timestamp: new Date(),
+          metadata: {
+            executionTime: Date.now() - startTime,
+            toolsUsed: [toolInvocation.toolName]
+          }
+        };
+        
+        conversation.messages.push(assistantMessage);
+        conversation.updatedAt = new Date();
+        this.saveConversationsToStorage();
+        this.notifyMessageListeners();
 
-      return assistantMessage;
+        return assistantMessage;
+      } else {
+        // Regular message - generate AI response
+        const assistantMessage = await this.generateAIResponse(conversation, context);
+        
+        conversation.messages.push(assistantMessage);
+        conversation.updatedAt = new Date();
+        this.saveConversationsToStorage();
+        this.notifyMessageListeners();
+
+        return assistantMessage;
+      }
     } catch (error) {
       // Add error message if AI response fails
       const errorMessage: ChatMessage = {
@@ -94,6 +138,31 @@ class ChatService {
       this.notifyMessageListeners();
 
       return errorMessage;
+    }
+  }
+
+  /**
+   * Executes a tool invocation and returns the result
+   * @param toolInvocation Tool invocation to execute
+   * @returns Result of the tool execution
+   */
+  private async executeToolInvocation(toolInvocation: ReturnType<typeof parseToolInvocation>) {
+    if (!toolInvocation) {
+      throw new Error('Invalid tool invocation');
+    }
+    
+    try {
+      // Execute the tool using MCPService
+      const result = await MCPService.executeTool(toolInvocation.toolName, toolInvocation.parameters);
+      
+      return result;
+    } catch (error) {
+      console.error('Tool execution failed:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error occurred',
+        executionTime: 0
+      };
     }
   }
 

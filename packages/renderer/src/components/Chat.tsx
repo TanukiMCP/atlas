@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import chatService from '../services/ChatService';
 import { ErrorBoundary } from './ErrorBoundary';
+import ToolSelector from './ToolSelector';
+import { formatToolInvocation } from '../utils/parseToolInvocation';
 
 interface ChatMessage {
   id: string;
@@ -36,6 +38,11 @@ const Chat: React.FC = () => {
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+
+  const [showToolSelector, setShowToolSelector] = useState(false);
+  const [toolSelectorPos, setToolSelectorPos] = useState<{ x: number; y: number } | null>(null);
+  const [toolSearchText, setToolSearchText] = useState('');
+  const [inputCursorPosition, setInputCursorPosition] = useState(0);
 
   useEffect(() => {
     // Initialize chat service and load conversation
@@ -108,18 +115,99 @@ const Chat: React.FC = () => {
     }
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSendMessage();
-    }
-  };
-
   const handleRetry = () => {
     setState(prev => ({ ...prev, error: null }));
     if (state.inputValue.trim()) {
       handleSendMessage();
     }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === '@' && !showToolSelector) {
+      // Position tool selector below the cursor
+      const target = e.currentTarget;
+      const rect = target.getBoundingClientRect();
+      const caretPos = target.selectionStart || 0;
+      setInputCursorPosition(caretPos + 1); // +1 for the @ we're adding
+      
+      // Approximate position calculation (can be improved with more precise caret position)
+      // This is a basic calculation, real implementation might need character width calculation
+      const lineHeight = parseInt(window.getComputedStyle(target).lineHeight);
+      const paddingLeft = parseInt(window.getComputedStyle(target).paddingLeft);
+      
+      // Very approximate x position based on cursor position
+      const x = rect.left + paddingLeft + (caretPos % 40) * 8; // 8px as approx char width
+      const y = rect.top + lineHeight * 1.5; // Position below first line
+      
+      setToolSelectorPos({ x, y });
+      setShowToolSelector(true);
+      setToolSearchText('');
+    }
+    
+    // Handle escape key to close tool selector
+    if (e.key === 'Escape' && showToolSelector) {
+      setShowToolSelector(false);
+      return;
+    }
+    
+    // Only handle Enter if not inside tool selector (which handles its own keys)
+    if (e.key === 'Enter' && !e.shiftKey && !showToolSelector) {
+      e.preventDefault();
+      handleSendMessage();
+    }
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const value = e.target.value;
+    setState(prev => ({ ...prev, inputValue: value }));
+    
+    // Update tool selector when typing after @
+    if (showToolSelector) {
+      const cursorPos = e.target.selectionStart || 0;
+      
+      // Find the last @ before cursor
+      const textBeforeCursor = value.substring(0, cursorPos);
+      const lastAtIndex = textBeforeCursor.lastIndexOf('@');
+      
+      if (lastAtIndex >= 0) {
+        // Extract search text (everything between @ and cursor)
+        const searchText = textBeforeCursor.substring(lastAtIndex + 1);
+        setToolSearchText(searchText);
+        setInputCursorPosition(cursorPos);
+      } else {
+        // No @ found before cursor, close selector
+        setShowToolSelector(false);
+      }
+    }
+  };
+
+  const handleToolSelect = (toolName: string) => {
+    const { inputValue } = state;
+    const cursorPos = inputCursorPosition;
+    
+    // Find the position of the @ symbol that triggered the selector
+    const textBeforeCursor = inputValue.substring(0, cursorPos);
+    const lastAtIndex = textBeforeCursor.lastIndexOf('@');
+    
+    if (lastAtIndex >= 0) {
+      // Replace the @searchText with the selected @tool
+      const textBefore = inputValue.substring(0, lastAtIndex);
+      const textAfter = inputValue.substring(cursorPos);
+      const newValue = `${textBefore}@${toolName} ${textAfter}`;
+      
+      setState(prev => ({ ...prev, inputValue: newValue }));
+      
+      // Focus back on input and set cursor after the inserted tool
+      setTimeout(() => {
+        if (inputRef.current) {
+          inputRef.current.focus();
+          const newCursorPos = lastAtIndex + toolName.length + 2; // +2 for @ and space
+          inputRef.current.setSelectionRange(newCursorPos, newCursorPos);
+        }
+      }, 0);
+    }
+    
+    setShowToolSelector(false);
   };
 
   const renderMessage = (message: ChatMessage) => {
@@ -279,13 +367,13 @@ const Chat: React.FC = () => {
 
         {/* Input Area */}
         <div className="border-t border-gray-200 dark:border-gray-700 p-4">
-          <div className="flex space-x-3">
+          <div className="flex space-x-3 relative">
             <textarea
               ref={inputRef}
               value={state.inputValue}
-              onChange={(e) => setState(prev => ({ ...prev, inputValue: e.target.value }))}
-              onKeyPress={handleKeyPress}
-              placeholder="Type your message... (Press Enter to send, Shift+Enter for new line)"
+              onChange={handleInputChange}
+              onKeyDown={handleKeyDown}
+              placeholder="Type your message... (Type @ for tools, Press Enter to send, Shift+Enter for new line)"
               className="flex-1 resize-none border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
               rows={3}
               disabled={state.isLoading}
@@ -301,6 +389,18 @@ const Chat: React.FC = () => {
                 'Send'
               )}
             </button>
+            
+            {/* Tool Selector */}
+            <ToolSelector
+              visible={showToolSelector}
+              position={toolSelectorPos}
+              onSelect={handleToolSelect}
+              onClose={() => setShowToolSelector(false)}
+              searchText={toolSearchText}
+            />
+          </div>
+          <div className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+            Type @ to access tools (e.g., @read_file, @web_search)
           </div>
         </div>
       </div>
