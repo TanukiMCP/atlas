@@ -20,7 +20,8 @@ export function parseToolInvocation(input: string): ToolInvocation | null {
   }
 
   // Match the tool name: everything after @ until a space or end of string
-  const toolNameMatch = input.match(/@([a-zA-Z0-9_-]+)/);
+  // Updated to handle dots in tool names (e.g., ClearThought.DecisionFramework)
+  const toolNameMatch = input.match(/@([a-zA-Z0-9_.-]+)/);
   if (!toolNameMatch || !toolNameMatch[1]) {
     return null;
   }

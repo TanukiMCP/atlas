@@ -1,12 +1,10 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
-export type Theme = 'light' | 'dark' | 'system';
-
 interface Settings {
   tokenLimit: number;
   localLLMEnabled: boolean;
-  theme: Theme;
+  theme: 'light' | 'dark' | 'system';
   fontSize: 'small' | 'medium' | 'large';
   editorFontSize: number;
   terminalFontSize: number;
@@ -14,15 +12,11 @@ interface Settings {
   defaultModel: string;
 }
 
-interface SettingsStore extends Settings {
-  setTheme: (theme: Theme) => void;
-  setFontSize: (size: Settings['fontSize']) => void;
-  setEditorFontSize: (size: number) => void;
-  setTerminalFontSize: (size: number) => void;
-  setShowLineNumbers: (show: boolean) => void;
-  setTokenLimit: (limit: number) => void;
-  setLocalLLMEnabled: (enabled: boolean) => void;
-  setDefaultModel: (model: string) => void;
+interface SettingsStore {
+  settings: Settings;
+  getSettings: () => Settings;
+  updateSettings: (newSettings: Partial<Settings>) => void;
+  resetSettings: () => void;
 }
 
 const DEFAULT_SETTINGS: Settings = {
@@ -38,26 +32,20 @@ const DEFAULT_SETTINGS: Settings = {
 
 export const useSettingsStore = create<SettingsStore>()(
   persist(
-    (set) => ({
-      // Initial state
-      tokenLimit: 4000,
-      localLLMEnabled: false,
-      theme: 'system',
-      fontSize: 'medium',
-      editorFontSize: 14,
-      terminalFontSize: 14,
-      showLineNumbers: true,
-      defaultModel: '',
-
-      // Actions
-      setTheme: (theme) => set({ theme }),
-      setFontSize: (fontSize) => set({ fontSize }),
-      setEditorFontSize: (editorFontSize) => set({ editorFontSize }),
-      setTerminalFontSize: (terminalFontSize) => set({ terminalFontSize }),
-      setShowLineNumbers: (showLineNumbers) => set({ showLineNumbers }),
-      setTokenLimit: (tokenLimit) => set({ tokenLimit }),
-      setLocalLLMEnabled: (localLLMEnabled) => set({ localLLMEnabled }),
-      setDefaultModel: (defaultModel) => set({ defaultModel }),
+    (set, get) => ({
+      settings: { ...DEFAULT_SETTINGS },
+      
+      getSettings: () => get().settings,
+      
+      updateSettings: (newSettings) => {
+        set((state) => ({
+          settings: { ...state.settings, ...newSettings }
+        }));
+      },
+      
+      resetSettings: () => {
+        set({ settings: { ...DEFAULT_SETTINGS } });
+      }
     }),
     {
       name: 'tanuki-settings',

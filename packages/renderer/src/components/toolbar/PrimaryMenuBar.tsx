@@ -1,8 +1,4 @@
 import React from 'react';
-import { NavigationMenu, NavigationMenuList, NavigationMenuItem } from '../ui/navigation-menu';
-import { MenuDropdown } from './MenuDropdown';
-import { SubjectModeDropdown } from './SubjectModeDropdown';
-import { useTheme } from '../../contexts/ThemeContext';
 import { Button } from '../ui/button';
 import { 
   Sun, 
@@ -75,85 +71,38 @@ declare global {
 }
 
 interface PrimaryMenuBarProps {
+  onThemeToggle: () => void;
+  theme: string;
   onViewChange: (view: string) => void;
   onFileExplorerToggle: () => void;
   subjectMode: string;
   onSubjectModeChange: (mode: string) => void;
-  onOpenModelHub: () => void;
-  onOpenLocalLLMHub: () => void;
+  onOpenModelHub?: () => void;
+  onOpenLocalLLMHub?: () => void;
+  currentWorkingDirectory: string | null;
+  onChangeWorkingDirectory: (dirPath: string) => Promise<void>;
 }
 
 export const PrimaryMenuBar: React.FC<PrimaryMenuBarProps> = ({
+  onThemeToggle,
+  theme,
   onViewChange,
   onFileExplorerToggle,
   subjectMode,
   onSubjectModeChange,
   onOpenModelHub,
-  onOpenLocalLLMHub
+  onOpenLocalLLMHub,
+  currentWorkingDirectory,
+  onChangeWorkingDirectory
 }) => {
-  const { theme, toggleTheme } = useTheme();
-
-  const menuItems = [
-    {
-      label: 'File',
-      items: [
-        { label: 'New File', action: () => console.log('New File') },
-        { label: 'Open File', action: () => console.log('Open File') },
-        { label: 'Save', action: () => console.log('Save') },
-        { label: 'Save As', action: () => console.log('Save As') },
-        { type: 'separator' },
-        { label: 'Exit', action: () => console.log('Exit') }
-      ]
-    },
-    {
-      label: 'Edit',
-      items: [
-        { label: 'Undo', action: () => console.log('Undo') },
-        { label: 'Redo', action: () => console.log('Redo') },
-        { type: 'separator' },
-        { label: 'Cut', action: () => console.log('Cut') },
-        { label: 'Copy', action: () => console.log('Copy') },
-        { label: 'Paste', action: () => console.log('Paste') }
-      ]
-    },
-    {
-      label: 'View',
-      items: [
-        { label: 'Toggle File Explorer', action: onFileExplorerToggle },
-        { label: 'Toggle Theme', action: toggleTheme },
-        { type: 'separator' },
-        { label: 'Chat View', action: () => onViewChange('chat') },
-        { label: 'Editor View', action: () => onViewChange('editor') },
-        { label: 'Tools View', action: () => onViewChange('tools') }
-      ]
-    },
-    {
-      label: 'Tools',
-      items: [
-        { label: 'Model Hub', action: onOpenModelHub },
-        { label: 'Local LLM Hub', action: onOpenLocalLLMHub },
-        { type: 'separator' },
-        { label: 'Settings', action: () => onViewChange('settings') }
-      ]
-    },
-    {
-      label: 'Models',
-      items: [
-        { label: 'OpenRouter Models', action: onOpenModelHub },
-        { label: 'Local LLM Models', action: onOpenLocalLLMHub },
-        { type: 'separator' },
-        { label: 'Model Settings', action: () => onViewChange('settings') }
-      ]
-    },
-    {
-      label: 'Workflow Builder',
-      items: [
-        { label: 'New Workflow', action: () => onViewChange('workflows') },
-        { label: 'Open Workflow', action: () => onViewChange('workflows') },
-        { type: 'separator' },
-        { label: 'Workflow Settings', action: () => onViewChange('settings') }
-      ]
-    }
+  const subjectModes = [
+    { id: 'general', label: '🤖 General AI', description: 'Multi-purpose assistance' },
+    { id: 'math', label: '🧠 Mathematics', description: 'Advanced mathematical reasoning' },
+    { id: 'code', label: '💻 Programming', description: 'Software development and coding' },
+    { id: 'science', label: '🔬 Science', description: 'Scientific analysis and research' },
+    { id: 'language', label: '🗣️ Language', description: 'Translation and linguistic analysis' },
+    { id: 'creative', label: '🎨 Creative', description: 'Creative writing and ideation' },
+    { id: 'business', label: '📊 Business', description: 'Business analysis and strategy' },
   ];
 
   const [pwaModalOpen, setPwaModalOpen] = React.useState(false);
@@ -176,7 +125,7 @@ export const PrimaryMenuBar: React.FC<PrimaryMenuBarProps> = ({
               if (!result.canceled && result.filePaths.length > 0) {
                 const dirPath = result.filePaths[0];
                 console.log(`Opening directory: ${dirPath}`);
-                onViewChange('chat');
+                onChangeWorkingDirectory(dirPath);
               }
             }).catch(err => {
               console.error('Error showing open dialog:', err);
@@ -323,42 +272,197 @@ export const PrimaryMenuBar: React.FC<PrimaryMenuBarProps> = ({
   };
 
   return (
-    <div className="flex items-center justify-between w-full gap-4 bg-background border-b border-border px-4 h-12">
-      <div className="flex items-center gap-3">
-        <div className="tanuki-brand flex items-center">
+    <div className="flex items-center justify-between h-10 px-2 border-b border-border bg-background">
+      {/* Left section */}
+      <div className="flex items-center gap-2">
+        {/* App Logo and Title */}
+        <div className="flex items-center gap-2 mr-4">
           <img 
             src="/assets/TanukiMCPLogo.png" 
-            alt="TanukiMCP Logo" 
-            className="h-6 w-auto mr-2"
+            alt="TanukiMCP Atlas" 
+            className="w-6 h-6"
           />
-          <div className="tanuki-text font-semibold text-foreground">
-            Tanuki<span className="text-orange-600">MCP</span> Atlas
-          </div>
+          <span className="font-semibold text-sm">TanukiMCP: Atlas</span>
         </div>
-        
-        <div className="w-px h-5 bg-border mx-1" />
-        
-        <NavigationMenu>
-          <NavigationMenuList className="gap-1">
-            {menuItems.map(menu => (
-              <NavigationMenuItem key={menu.label}>
-                <MenuDropdown 
-                  label={menu.label} 
-                  items={menu.items}
-                  className="menu-dropdown"
-                />
-              </NavigationMenuItem>
-            ))}
-          </NavigationMenuList>
-        </NavigationMenu>
+
+        {/* File Menu */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="sm" className="h-8">
+              File
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="w-48">
+            <DropdownMenuItem onClick={() => handleMenuAction('new-chat')}>
+              <FileText className="w-4 h-4 mr-2" />
+              New Chat
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => handleMenuAction('open-project')}>
+              <FolderOpen className="w-4 h-4 mr-2" />
+              Open Project...
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={() => handleMenuAction('save-chat')}>
+              <Save className="w-4 h-4 mr-2" />
+              Save Chat
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => handleMenuAction('export-chat')}>
+              <Download className="w-4 h-4 mr-2" />
+              Export Chat...
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        {/* Edit Menu */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="sm" className="h-8">
+              Edit
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="w-48">
+            <DropdownMenuItem onClick={() => handleMenuAction('undo')}>
+              <RotateCcw className="w-4 h-4 mr-2" />
+              Undo
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={() => handleMenuAction('copy')}>
+              <Copy className="w-4 h-4 mr-2" />
+              Copy
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => handleMenuAction('cut')}>
+              <Scissors className="w-4 h-4 mr-2" />
+              Cut
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => handleMenuAction('paste')}>
+              <ClipboardPaste className="w-4 h-4 mr-2" />
+              Paste
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        {/* View Menu */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="sm" className="h-8">
+              View
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="w-48">
+            <DropdownMenuItem onClick={() => handleMenuAction('toggle-explorer')}>
+              <FileIcon className="w-4 h-4 mr-2" />
+              Toggle Explorer
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => handleMenuAction('toggle-fullscreen')}>
+              <Maximize className="w-4 h-4 mr-2" />
+              Toggle Fullscreen
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={onThemeToggle}>
+              {theme === 'dark' ? (
+                <>
+                  <Sun className="w-4 h-4 mr-2" />
+                  Light Mode
+                </>
+              ) : (
+                <>
+                  <Moon className="w-4 h-4 mr-2" />
+                  Dark Mode
+                </>
+              )}
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        {/* Tools Menu */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="sm" className="h-8">
+              Tools
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="w-48">
+            <DropdownMenuItem onClick={() => handleMenuAction('command-palette')}>
+              <Command className="w-4 h-4 mr-2" />
+              Command Palette...
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => handleMenuAction('terminal')}>
+              <Terminal className="w-4 h-4 mr-2" />
+              Terminal
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={() => handleMenuAction('tool-browser')}>
+              <Tool className="w-4 h-4 mr-2" />
+              Tool Browser
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => handleMenuAction('mcp-servers')}>
+              <Server className="w-4 h-4 mr-2" />
+              MCP Servers
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        {/* Models Menu */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="sm" className="h-8">
+              Models
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="w-48">
+            <DropdownMenuItem onClick={onOpenModelHub}>
+              <Brain className="w-4 h-4 mr-2" />
+              Model Hub
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={onOpenLocalLLMHub}>
+              <Cpu className="w-4 h-4 mr-2" />
+              Local LLM Store
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        {/* Workflow Builder Button */}
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          className="h-8"
+          onClick={() => handleMenuAction('workflow-builder')}
+        >
+          <Workflow className="w-4 h-4 mr-2" />
+          Workflow Builder
+        </Button>
+
+        {/* Coming Soon Features */}
+        <div className="flex items-center gap-2">
+          <Badge variant="secondary" className="h-6 px-2">
+            <PenTool className="w-3 h-3 mr-1" />
+            Agent Training Hub
+          </Badge>
+          <Badge variant="secondary" className="h-6 px-2">
+            <ImageIcon className="w-3 h-3 mr-1" />
+            AI Image/Video
+          </Badge>
+          <Badge variant="secondary" className="h-6 px-2">
+            <MessageSquare className="w-3 h-3 mr-1" />
+            MCP Server Generator
+          </Badge>
+          <Badge variant="secondary" className="h-6 px-2">
+            <Gamepad2 className="w-3 h-3 mr-1" />
+            2D Game Engine
+          </Badge>
+          <Badge variant="secondary" className="h-6 px-2">
+            <Sparkles className="w-3 h-3 mr-1" />
+            I.A.E.s
+          </Badge>
+        </div>
       </div>
-      
-      <div>
-        <SubjectModeDropdown 
-          currentMode={subjectMode} 
-          onModeChange={onSubjectModeChange}
-        />
+
+      {/* Right section */}
+      <div className="flex items-center gap-2">
+        <WindowControls />
       </div>
+
+      <PwaInstallQrModal open={pwaModalOpen} onClose={() => setPwaModalOpen(false)} url={pwaUrl} />
     </div>
   );
 };

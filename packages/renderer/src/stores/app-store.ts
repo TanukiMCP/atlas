@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { useSettingsStore } from './settings-store';
 // import { persist } from 'zustand/middleware';
 
 export interface FileNode {
@@ -32,10 +33,6 @@ export interface Notification {
 export type ViewType = 'welcome' | 'chat' | 'files' | 'tools' | 'workflows' | 'settings' | string;
 
 interface AppState {
-  // Theme
-  theme: 'light' | 'dark';
-  setTheme: (theme: 'light' | 'dark') => void;
-  
   // Layout
   sidebarCollapsed: boolean;
   setSidebarCollapsed: (collapsed: boolean) => void;
@@ -84,10 +81,6 @@ interface AppState {
 }
 
 export const useAppStore = create<AppState>()((set, get) => ({
-  // Theme
-  theme: 'dark',
-  setTheme: (theme) => set({ theme }),
-  
   // Layout
   sidebarCollapsed: false,
   setSidebarCollapsed: (collapsed) => set({ sidebarCollapsed: collapsed }),
@@ -160,7 +153,19 @@ export const useAppStore = create<AppState>()((set, get) => ({
 }));
 
 // Convenience hooks for specific parts of the store
-export const useTheme = () => useAppStore(state => ({ theme: state.theme, setTheme: state.setTheme }));
+export const useTheme = () => {
+  const { settings, updateSettings } = useSettingsStore();
+  
+  return {
+    theme: settings.theme === 'system' ? 
+      (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : 
+      settings.theme,
+    setTheme: (theme: 'light' | 'dark') => {
+      updateSettings({ theme });
+    }
+  };
+};
+
 export const useFiles = () => useAppStore(state => ({ 
   files: state.files, 
   selectedFile: state.selectedFile,

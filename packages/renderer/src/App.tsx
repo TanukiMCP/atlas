@@ -18,8 +18,6 @@ import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from './componen
 import { VisualWorkflowBuilder } from './components/workflows/visual-workflow-builder';
 import MCPToolHub from './components/mcp/MCPToolHub';
 import IntegratedTerminal from './components/ide/IntegratedTerminal';
-import { ThemeProvider } from './contexts/ThemeContext';
-import { ModernIDELayout } from './components/ide/modern-ide-layout';
 
 // Import services
 import { fileSystemService } from './services/FileSystemService';
@@ -28,9 +26,11 @@ import { mcpService } from './services/mcp-service';
 import chatService from './services/ChatService';
 import { TanukiApolloService } from './services/TanukiApolloService';
 import { useLLMStore } from './stores/llm-store';
+import { useSettingsStore } from './stores/settings-store';
 
 function App() {
   const [currentView, setCurrentView] = useState<ViewType>('chat');
+  const { settings, updateSettings } = useSettingsStore();
 
   // Real data from services
   const [files, setFiles] = useState<FileSystemItem[]>([]);
@@ -127,6 +127,7 @@ function App() {
   }, [isOpenRouterConnected]);
 
   useEffect(() => {
+    // Set up listeners and initialize services
     initializeServices();
     
     // Also initialize OpenRouter connection
@@ -296,6 +297,12 @@ function App() {
       console.log('🔧 Opening MCP Tool Hub...');
       setIsMCPToolHubOpen(true);
     }
+  };
+
+  const handleThemeToggle = () => {
+    const newTheme = settings.theme === 'light' ? 'dark' : 
+                    settings.theme === 'dark' ? 'system' : 'light';
+    updateSettings({ theme: newTheme });
   };
 
   const handleFileSelect = async (file: FileSystemItem) => {
@@ -566,7 +573,7 @@ function App() {
               onSave={handleSaveFile}
               onDelete={handleFileDelete}
               filePath={currentFile.path}
-              theme={theme === 'dark' ? 'vs-dark' : 'vs-light'}
+              theme={getEffectiveTheme() === 'dark' ? 'vs-dark' : 'vs-light'}
               height="100%"
             />
           );
@@ -636,32 +643,203 @@ function App() {
     }
   };
 
+  // Get the effective theme (dark or light) accounting for system preference
+  const getEffectiveTheme = () => {
+    if (settings.theme === 'system') {
+      return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    }
+    return settings.theme;
+  };
+
   return (
-    <ThemeProvider>
-      <ModernIDELayout
+    <div className={`flex h-screen flex-col ${getEffectiveTheme()}`}>
+      <Header 
         currentView={currentView}
+        theme={getEffectiveTheme()}
         onViewChange={handleViewChange}
-        files={files}
-        currentFile={currentFile}
-        onFileSelect={setCurrentFile}
-        fileContent={fileContent}
-        isFileLoading={isFileLoading}
-        isFileExplorerVisible={isFileExplorerVisible}
-        onFileExplorerToggle={() => setIsFileExplorerVisible(!isFileExplorerVisible)}
-        subjectMode={subjectMode}
-        onSubjectModeChange={setSubjectMode}
-        agentMode={agentMode}
-        onAgentModeToggle={() => setAgentMode(!agentMode)}
-        isProcessing={isProcessing}
-        onStopProcessing={() => setIsProcessing(false)}
+        onThemeToggle={handleThemeToggle}
         currentModel={currentModel}
         availableModels={availableModels}
-        isConnected={connectionStatus.length > 0}
-        onModelSwitch={setCurrentModel}
-        onOpenModelHub={() => setIsModelHubOpen(true)}
-        onOpenLocalLLMHub={() => setIsLocalLLMHubOpen(true)}
+        isConnected={isOpenRouterConnected}
+        onModelSwitch={handleModelSwitch}
+        onOpenModelHub={handleOpenModelHub}
+        onOpenLocalLLMHub={handleOpenLocalLLMHub}
+        onFileExplorerToggle={() => setIsFileExplorerVisible(!isFileExplorerVisible)}
+        isFileExplorerVisible={isFileExplorerVisible}
+        subjectMode={subjectMode}
+        onSubjectModeChange={setSubjectMode}
+        isProcessing={isProcessing}
+        onStopProcessing={() => setIsProcessing(false)}
+        currentWorkingDirectory={currentWorkingDirectory}
+        onChangeWorkingDirectory={changeWorkingDirectory}
       />
-    </ThemeProvider>
+
+      {/* Main Content Area with Resizable Panels */}
+      <ResizablePanelGroup direction="horizontal" className="flex-1 overflow-hidden">
+        {isFileExplorerVisible && (
+          <>
+            <ResizablePanel 
+              defaultSize={20} 
+              minSize={15}
+              maxSize={30}
+              className="h-full"
+            >
+              <FileExplorer 
+                onFileSelect={(filePath: string) => {
+                  // Convert filePath to FileSystemItem for handleFileSelect
+                  const findFileItem = (items: FileSystemItem[], path: string): FileSystemItem | null => {
+                    if (!items || !Array.isArray(items)) return null;
+                    
+                    for (const item of items) {
+                      if (item.path === path) return item;
+                      if (item.children && Array.isArray(item.children)) {
+                        const found = findFileItem(item.children, path);
+                        if (found) return found;
+                      }
+                    }
+                    return null;
+                  };
+                  
+                  const fileItem = findFileItem(files, filePath);
+                  if (fileItem) {
+                    handleFileSelect(fileItem);
+                  }
+                }}
+                selectedFile={currentFile?.path}
+                onDeleteFile={async (filePath: string) => {
+                  try {
+                    await fileSystemService.deleteFile(filePath);
+                    // If the current file is deleted, reset the editor
+                    if (currentFile?.path === filePath) {
+                      setCurrentFile(null);
+                      setFileContent('');
+                      // Switch back to a different view if needed
+                      if (currentView === 'editor') {
+                        setCurrentView('chat');
+                      }
+                    }
+                    console.log(`File deleted: ${filePath}`);
+                  } catch (error) {
+                    console.error('Failed to delete file:', error);
+                  }
+                }}
+                onCreateFile={async (filePath: string, content: string) => {
+                  try {
+                    await fileSystemService.createFile(filePath, content);
+                    console.log(`File created: ${filePath}`);
+                  } catch (error) {
+                    console.error('Failed to create file:', error);
+                  }
+                }}
+                onCreateFolder={async (folderPath: string) => {
+                  try {
+                    await fileSystemService.createDirectory(folderPath);
+                    console.log(`Folder created: ${folderPath}`);
+                  } catch (error) {
+                    console.error('Failed to create folder:', error);
+                  }
+                }}
+              />
+            </ResizablePanel>
+            <ResizableHandle />
+          </>
+        )}
+
+        {/* Main Content Panel */}
+        <ResizablePanel defaultSize={isFileExplorerVisible ? 60 : 80} minSize={40}>
+          <div className="flex-1 flex flex-col bg-background h-full">
+            <div className="flex-1 p-6 overflow-y-auto">
+              {renderMainContent()}
+            </div>
+          </div>
+        </ResizablePanel>
+
+        <ResizableHandle />
+        
+        {/* Tools Panel */}
+        <ResizablePanel defaultSize={20} minSize={15} maxSize={30}>
+          <ToolsPanel 
+            operationalMode="agent"
+            onToolExecute={handleExecuteToolForPanel}
+            onWorkflowExecute={handleExecuteWorkflowForPanel}
+            onWorkflowSave={handleSaveWorkflow}
+            workflows={workflows}
+          />
+        </ResizablePanel>
+      </ResizablePanelGroup>
+
+      {/* Status bar */}
+      <StatusBar
+        connections={connectionStatus}
+        currentModel={currentModel}
+        onModelClick={handleOpenModelHub}
+        theme={getEffectiveTheme()}
+        currentView={currentView as any}
+        version="0.1.0"
+        onToggleTerminal={toggleTerminal}
+      />
+
+      {isModelHubOpen && systemCapabilities && (
+        <ModelManagementHub
+          currentModel={currentModel}
+          installedModels={installedModels}
+          availableModels={availableModels}
+          modelInstallations={modelInstallations}
+          modelConfigurations={modelConfigurations}
+          systemCapabilities={systemCapabilities}
+          onModelSwitch={handleModelSwitch}
+          onInstallModel={handleInstallModel}
+          onUninstallModel={handleUninstallModel}
+          onConfigureModel={handleConfigureModel}
+          onSetDefaultModel={handleSetDefaultModel}
+          onClose={() => setIsModelHubOpen(false)}
+        />
+      )}
+
+      {isOpenRouterModelHubOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4">
+          <div className="bg-card border border-border rounded-lg shadow-lg w-full max-w-6xl h-full max-h-[90vh] flex flex-col">
+            <div className="flex justify-between p-4 border-b border-border">
+              <h2 className="text-xl font-bold">OpenRouter Models</h2>
+              <button 
+                onClick={() => setIsOpenRouterModelHubOpen(false)}
+                className="p-2 hover:bg-accent rounded-md transition-colors"
+              >
+                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M18 6L6 18M6 6l12 12" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </button>
+            </div>
+            <div className="flex-1 overflow-auto">
+              <OpenRouterModelHub />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {isLocalLLMHubOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4">
+          <div className="bg-card border border-border rounded-lg shadow-lg w-full max-w-6xl h-full max-h-[90vh] flex flex-col">
+            <LocalLLMHub onClose={() => setIsLocalLLMHubOpen(false)} />
+          </div>
+        </div>
+      )}
+
+      {isMCPToolHubOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4">
+          <div className="bg-card border border-border rounded-lg shadow-lg w-full max-w-6xl h-full max-h-[90vh] flex flex-col">
+            <MCPToolHub onClose={() => setIsMCPToolHubOpen(false)} />
+          </div>
+        </div>
+      )}
+      
+      {/* Integrated Terminal */}
+      <IntegratedTerminal 
+        workingDirectory={currentWorkingDirectory || undefined}
+        isVisible={isTerminalVisible}
+        onToggleVisibility={toggleTerminal}
+      />
+    </div>
   );
 }
 

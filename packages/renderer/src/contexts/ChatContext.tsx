@@ -364,6 +364,8 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       // Replace the @searchText with the selected @tool
       const textBefore = inputValue.substring(0, lastAtIndex);
       const textAfter = inputValue.substring(inputCursorPosition);
+      
+      // Use the actual tool name for invocation
       const newValue = `${textBefore}@${tool.name} ${textAfter}`;
       
       dispatch({ type: 'SET_INPUT_VALUE', value: newValue });

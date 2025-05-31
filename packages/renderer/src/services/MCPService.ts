@@ -32,153 +32,219 @@ class MCPService {
   private initializeBuiltInTools(): void {
     const builtInTools: MCPTool[] = [
       {
-        name: 'file.system.operations',
-        description: 'Read, write, and manage files in the workspace',
+        name: 'file.read',
+        description: 'Read the contents of a file',
+        category: 'File System',
+        available: true,
+        icon: '📄',
+        operationalMode: 'both',
+        parameters: [],
+        serverId: 'built-in',
+        serverName: 'Atlas Built-in Tools'
+      },
+      {
+        name: 'file.write',
+        description: 'Write content to a file',
+        category: 'File System',
+        available: true,
+        icon: '✏️',
+        operationalMode: 'both',
+        parameters: [],
+        serverId: 'built-in',
+        serverName: 'Atlas Built-in Tools'
+      },
+      {
+        name: 'file.list',
+        description: 'List contents of a directory',
         category: 'File System',
         available: true,
         icon: '📁',
-        operationalMode: 'agent'
+        operationalMode: 'both',
+        parameters: [],
+        serverId: 'built-in',
+        serverName: 'Atlas Built-in Tools'
+      },
+      {
+        name: 'file.search',
+        description: 'Search for files matching a pattern',
+        category: 'File System',
+        available: true,
+        icon: '🔍',
+        operationalMode: 'both',
+        parameters: [],
+        serverId: 'built-in',
+        serverName: 'Atlas Built-in Tools'
       },
       {
         name: 'web.search',
-        description: 'Search the web for information and resources',
+        description: 'Search the web for information',
         category: 'Web',
         available: true,
         icon: '🌐',
-        operationalMode: 'agent'
+        operationalMode: 'both',
+        parameters: [],
+        serverId: 'built-in',
+        serverName: 'Atlas Built-in Tools'
       },
       {
-        name: 'code.analysis',
-        description: 'Analyze code structure, dependencies, and quality',
-        category: 'Development',
+        name: 'web.fetch',
+        description: 'Fetch the contents of a webpage',
+        category: 'Web',
         available: true,
-        icon: '💻',
-        operationalMode: 'agent'
+        icon: '📡',
+        operationalMode: 'both',
+        parameters: [],
+        serverId: 'built-in',
+        serverName: 'Atlas Built-in Tools'
       },
       {
-        name: 'git.operations',
-        description: 'Git version control operations and history',
-        category: 'Development',
+        name: 'data.process',
+        description: 'Process and analyze data from various sources',
+        category: 'Data',
         available: true,
-        icon: '🔄',
-        operationalMode: 'agent'
+        icon: '📊',
+        operationalMode: 'both',
+        parameters: [],
+        serverId: 'built-in',
+        serverName: 'Atlas Built-in Tools'
       },
       {
-        name: 'terminal.execute',
-        description: 'Execute terminal commands and scripts',
+        name: 'terminal.command',
+        description: 'Execute a command in the terminal',
         category: 'System',
         available: true,
-        icon: ' acompanha',
-        operationalMode: 'agent'
+        icon: '💻',
+        operationalMode: 'both',
+        parameters: [],
+        serverId: 'built-in',
+        serverName: 'Atlas Built-in Tools'
       },
       {
-        name: 'package.management',
-        description: 'Manage npm/yarn packages and dependencies',
-        category: 'Development',
+        name: 'ClearThought.SequentialThinking',
+        description: 'Break down complex problems into sequential steps',
+        category: 'Thinking',
         available: true,
-        icon: '📦',
-        operationalMode: 'agent'
-      },
-      {
-        name: 'clear.thought.sequentialThinking',
-        description: 'Structured thought processes with revision support',
-        category: 'Clear Thought',
-        available: true,
-        icon: '🧠',
+        icon: '🧩',
         operationalMode: 'agent',
+        parameters: [],
+        serverId: 'clear-thought',
+        serverName: 'Clear Thought'
       },
       {
-        name: 'clear.thought.mentalModels',
+        name: 'ClearThought.MentalModels',
         description: 'Apply frameworks like First Principles, Opportunity Cost, etc.',
-        category: 'Clear Thought',
+        category: 'Thinking',
         available: true,
         icon: '💡',
         operationalMode: 'agent',
+        parameters: [],
+        serverId: 'clear-thought',
+        serverName: 'Clear Thought'
       },
       {
-        name: 'clear.thought.designPatterns',
+        name: 'ClearThought.DesignPatterns',
         description: 'Utilize software design patterns for architecture and implementation',
-        category: 'Clear Thought',
+        category: 'Thinking',
         available: true,
         icon: '🏗️',
         operationalMode: 'agent',
+        parameters: [],
+        serverId: 'clear-thought',
+        serverName: 'Clear Thought'
       },
       {
-        name: 'clear.thought.programmingParadigms',
+        name: 'ClearThought.ProgrammingParadigms',
         description: 'Apply OOP, functional, reactive, concurrent programming, etc.',
-        category: 'Clear Thought',
+        category: 'Thinking',
         available: true,
         icon: '⚙️',
         operationalMode: 'agent',
+        parameters: [],
+        serverId: 'clear-thought',
+        serverName: 'Clear Thought'
       },
       {
-        name: 'clear.thought.debuggingApproaches',
+        name: 'ClearThought.DebuggingApproaches',
         description: 'Employ systematic debugging methods like Binary Search, Divide & Conquer',
-        category: 'Clear Thought',
+        category: 'Thinking',
         available: true,
         icon: '🐞',
         operationalMode: 'agent',
+        parameters: [],
+        serverId: 'clear-thought',
+        serverName: 'Clear Thought'
       },
       {
-        name: 'clear.thought.collaborativeReasoning',
+        name: 'ClearThought.CollaborativeReasoning',
         description: 'Multi-persona problem solving for complex issues',
-        category: 'Clear Thought',
+        category: 'Thinking',
         available: true,
         icon: '👥',
         operationalMode: 'agent',
+        parameters: [],
+        serverId: 'clear-thought',
+        serverName: 'Clear Thought'
       },
       {
-        name: 'clear.thought.decisionFramework',
+        name: 'ClearThought.DecisionFramework',
         description: 'Structured decision analysis with criteria weighting',
-        category: 'Clear Thought',
+        category: 'Thinking',
         available: true,
         icon: '⚖️',
         operationalMode: 'agent',
+        parameters: [],
+        serverId: 'clear-thought',
+        serverName: 'Clear Thought'
       },
       {
-        name: 'clear.thought.metacognitiveMonitoring',
+        name: 'ClearThought.MetacognitiveMonitoring',
         description: 'Knowledge boundary assessment and bias detection',
-        category: 'Clear Thought',
+        category: 'Thinking',
         available: true,
         icon: '🧐',
         operationalMode: 'agent',
+        parameters: [],
+        serverId: 'clear-thought',
+        serverName: 'Clear Thought'
       },
       {
-        name: 'clear.thought.scientificMethod',
-        description: 'Hypothesis testing and empirical investigation',
-        category: 'Clear Thought',
+        name: 'ClearThought.ScientificMethod',
+        description: 'Hypothesis testing and experimental design',
+        category: 'Thinking',
         available: true,
         icon: '🔬',
         operationalMode: 'agent',
+        parameters: [],
+        serverId: 'clear-thought',
+        serverName: 'Clear Thought'
       },
       {
-        name: 'clear.thought.structuredArgumentation',
-        description: 'Formal dialectical reasoning and argument analysis',
-        category: 'Clear Thought',
+        name: 'ClearThought.StructuredArgumentation',
+        description: 'Formal argument construction and analysis',
+        category: 'Thinking',
         available: true,
-        icon: '🗣️',
+        icon: '⚔️',
         operationalMode: 'agent',
+        parameters: [],
+        serverId: 'clear-thought',
+        serverName: 'Clear Thought'
       },
       {
-        name: 'clear.thought.visualReasoning',
-        description: 'Diagrammatic representation and spatial analysis',
-        category: 'Clear Thought',
+        name: 'ClearThought.VisualReasoning',
+        description: 'Diagram-based problem solving and communication',
+        category: 'Thinking',
         available: true,
-        icon: '👁️‍🗨️',
+        icon: '📐',
         operationalMode: 'agent',
+        parameters: [],
+        serverId: 'clear-thought',
+        serverName: 'Clear Thought'
       }
     ];
 
+    // Register built-in tools
     builtInTools.forEach(tool => {
-      const completeTool: MCPTool = {
-        ...tool,
-        category: tool.category || 'General',
-        icon: tool.icon || '❓',
-        operationalMode: tool.operationalMode || 'agent',
-        parameters: tool.parameters || [],
-        examples: tool.examples || []
-      };
-      this.tools.set(completeTool.name, completeTool);
+      this.tools.set(tool.name, tool);
     });
   }
 

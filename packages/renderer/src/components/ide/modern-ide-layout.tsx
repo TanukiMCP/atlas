@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
-import { useAppStore, useFiles, useChat, useLayout, useTools, useSubjectMode, FileNode } from '../../stores/app-store';
+import { useAppStore, useTheme, useFiles, useChat, useLayout, useTools, useSubjectMode, FileNode } from '../../stores/app-store';
 import { useLLMStore } from '../../stores/llm-store';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
@@ -9,7 +9,6 @@ import { ScrollArea } from '../ui/scroll-area';
 import { Command, CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '../ui/command';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '../ui/dialog';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '../ui/resizable';
-import { useTheme } from '../../contexts/ThemeContext';
 import { 
   MessageCircle, 
   FileText, 
@@ -64,15 +63,6 @@ import { LLMStatus } from '../llm/llm-status';
 import { MCPServersTab } from '../mcp/MCPServersTab';
 import { MCPAvailableToolsTab } from '../mcp/MCPAvailableToolsTab';
 import MonacoEditor from '../MonacoEditor';
-import { ViewType, FileSystemItem, TanukiModel } from '../../types';
-import FileExplorer from '../FileExplorer';
-import ToolsPanel from '../ToolsPanel';
-import StatusBar from '../StatusBar';
-import Header from '../Header';
-import OpenRouterModelHub from '../llm/OpenRouterModelHub';
-import LocalLLMHub from '../llm/LocalLLMHub';
-import ModelManagementHub from '../ModelManagementHub';
-import IntegratedTerminal from './IntegratedTerminal';
 
 // Type definitions
 interface ChatMessage {
@@ -299,73 +289,30 @@ const ChatMessageComponent: React.FC<{ message: ChatMessage }> = ({ message }) =
   );
 };
 
-// Convert FileInfo to FileNode
-const fileInfoToFileNode = (fileInfo: FileInfo): FileNode => {
+// Helper function to convert FileInfo to FileNode (matching store interface)
+const fileInfoToFileNode = (fileInfo: FileInfo, parentPath: string = ''): FileNode => {
   return {
-    id: fileInfo.path,
+    id: `${parentPath}/${fileInfo.name}`.replace(/^\//, ''),
     name: fileInfo.name,
-    type: fileInfo.type === 'directory' ? 'folder' : 'file',
+    type: fileInfo.type === 'directory' ? 'folder' : 'file', // Convert directory to folder for store compatibility
     path: fileInfo.path,
-    size: fileInfo.size || 0,
+    size: fileInfo.size,
     modified: fileInfo.modified,
     children: [],
     isExpanded: false
   };
 };
 
-interface ModernIDELayoutProps {
-  currentView: ViewType;
-  onViewChange: (view: ViewType) => void;
-  files: FileNode[];
-  currentFile: string | undefined;
-  onFileSelect: (filePath: string) => void;
-  fileContent: string;
-  isFileLoading: boolean;
-  isFileExplorerVisible: boolean;
-  onFileExplorerToggle: () => void;
-  subjectMode: string;
-  onSubjectModeChange: (mode: string) => void;
-  agentMode: boolean;
-  onAgentModeToggle: () => void;
-  isProcessing: boolean;
-  onStopProcessing: () => void;
-  currentModel: TanukiModel | undefined;
-  availableModels: TanukiModel[];
-  isConnected: boolean;
-  onModelSwitch: (model: TanukiModel | undefined) => void;
-  onOpenModelHub: () => void;
-  onOpenLocalLLMHub: () => void;
-}
-
-export const ModernIDELayout: React.FC<ModernIDELayoutProps> = ({
-  currentView,
-  onViewChange,
-  files,
-  currentFile,
-  onFileSelect,
-  fileContent,
-  isFileLoading,
-  isFileExplorerVisible,
-  onFileExplorerToggle,
-  subjectMode,
-  onSubjectModeChange,
-  agentMode,
-  onAgentModeToggle,
-  isProcessing,
-  onStopProcessing,
-  currentModel,
-  availableModels,
-  isConnected,
-  onModelSwitch,
-  onOpenModelHub,
-  onOpenLocalLLMHub
-}) => {
-  const { theme, toggleTheme } = useTheme();
-  const { files: appFiles, selectedFile, setFiles, setSelectedFile } = useFiles();
+// Main IDE Layout Component
+export const ModernIDELayout: React.FC = () => {
+  const { theme, setTheme } = useTheme();
+  const { files, selectedFile, setFiles, setSelectedFile } = useFiles();
   const { activeTab, setActiveTab, sidebarCollapsed, setSidebarCollapsed } = useLayout();
   const { showToolSelector, setShowToolSelector } = useTools();
   const { currentSubjectMode, setCurrentSubjectMode } = useSubjectMode();
   const { 
+    currentModel, 
+    isConnected, 
     sendMessage: sendLLMMessage, 
     isStreaming, 
     streamingMessage,
@@ -374,75 +321,81 @@ export const ModernIDELayout: React.FC<ModernIDELayoutProps> = ({
   } = useLLMStore();
   
   const [inputMessage, setInputMessage] = useState('');
-  const isDark = theme === 'dark';
+  const darkMode = theme === 'dark';
+  const [fileContent, setFileContent] = useState<FileContent | null>(null);
+  const [isFileLoading, setIsFileLoading] = useState(false);
+  const [isLoadingFiles, setIsLoadingFiles] = useState(false);
+  const [fileLoadError, setFileLoadError] = useState<string | null>(null);
   const [editorContent, setEditorContent] = useState<string>('');
   const [isDirty, setIsDirty] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [isLoadingFiles, setIsLoadingFiles] = useState(false);
-  const [fileLoadError, setFileLoadError] = useState<string | null>(null);
 
   // Load real file content when file is selected
   useEffect(() => {
     if (selectedFile && selectedFile.type === 'file') {
-      const loadContent = async () => {
-        try {
-          const content = await fileService.readFile(selectedFile.path);
-          setEditorContent(content.content);
-          setIsDirty(false);
-        } catch (err) {
+      setIsFileLoading(true);
+      fileService.readFile(selectedFile.path)
+        .then(content => setFileContent(content))
+        .catch(err => {
           console.error('Failed to load file content:', err);
-          setEditorContent('');
-        }
-      };
-      loadContent();
+          setFileContent(null);
+        })
+        .finally(() => setIsFileLoading(false));
     } else {
-      setEditorContent('');
+      setFileContent(null);
+      setIsFileLoading(false);
     }
   }, [selectedFile]);
 
   // Initialize real file system on component mount
   useEffect(() => {
     const loadRootFiles = async () => {
-      if (files.length === 0) {
+    if (files.length === 0) {
         setIsLoadingFiles(true);
         setFileLoadError(null);
         try {
           const rootFiles = await fileService.listDirectory('');
-          const fileNodes = rootFiles.map(fileInfo => {
-            const node = fileInfoToFileNode(fileInfo);
-            return {
-              ...node,
-              type: fileInfo.type === 'directory' ? 'folder' : 'file'
-            } as FileNode;
-          });
+          const fileNodes = rootFiles.map(file => fileInfoToFileNode(file));
           setFiles(fileNodes);
         } catch (error) {
           console.error('Failed to load root directory:', error);
           setFileLoadError('Failed to load project files. Please check permissions.');
         } finally {
           setIsLoadingFiles(false);
-        }
+    }
       }
     };
 
     loadRootFiles();
   }, [files.length, setFiles]);
 
+  // Load file content into editor when selectedFile changes
+  useEffect(() => {
+    if (selectedFile && selectedFile.type === 'file') {
+      setIsFileLoading(true);
+      fileService.readFile(selectedFile.path)
+        .then(fc => {
+          setEditorContent(fc.content);
+          setIsDirty(false);
+        })
+        .catch(() => {
+          setEditorContent('');
+        })
+        .finally(() => setIsFileLoading(false));
+    } else {
+      setEditorContent('');
+      setIsDirty(false);
+    }
+  }, [selectedFile]);
+
   // Track dirty state
   useEffect(() => {
     if (selectedFile && selectedFile.type === 'file' && fileContent) {
-      setIsDirty(editorContent !== fileContent);
+      setIsDirty(editorContent !== fileContent.content);
     } else {
       setIsDirty(false);
     }
   }, [editorContent, fileContent, selectedFile]);
-
-  // Convert incoming files to FileNodes and update state
-  useEffect(() => {
-    if (files.length > 0) {
-      setFiles(files);
-    }
-  }, [files, setFiles]);
 
   // Helper to get Monaco language from file extension
   const getMonacoLanguage = (filename: string): string => {
@@ -469,8 +422,11 @@ export const ModernIDELayout: React.FC<ModernIDELayoutProps> = ({
   };
 
   // File tree handlers
-  const handleFileSelect = (file: FileNode) => {
-    onFileSelect(file.path);
+  const handleFileSelect = (node: FileNode) => {
+    setSelectedFile(node);
+    if (node.type === 'file') {
+      setActiveTab('editor');
+    }
   };
 
   const handleToggleFolder = (nodeId: string) => {
@@ -496,7 +452,7 @@ export const ModernIDELayout: React.FC<ModernIDELayoutProps> = ({
 
     try {
       const childFiles = await fileService.listDirectory(node.path);
-      const childNodes = childFiles.map(file => fileInfoToFileNode(file));
+      const childNodes = childFiles.map(file => fileInfoToFileNode(file, node.path));
       
       const updateNodeChildren = (nodes: FileNode[]): FileNode[] => {
         return nodes.map(n => {
@@ -563,102 +519,473 @@ export const ModernIDELayout: React.FC<ModernIDELayoutProps> = ({
   };
 
   return (
-    <div className="flex h-screen flex-col">
-      <Header 
-        currentView={currentView}
-        onViewChange={onViewChange}
-        currentModel={currentModel}
-        availableModels={availableModels}
-        isConnected={isConnected}
-        onModelSwitch={onModelSwitch}
-        onOpenModelHub={onOpenModelHub}
-        onOpenLocalLLMHub={onOpenLocalLLMHub}
-        onFileExplorerToggle={onFileExplorerToggle}
-        isFileExplorerVisible={isFileExplorerVisible}
-        subjectMode={subjectMode}
-        onSubjectModeChange={onSubjectModeChange}
-        agentMode={agentMode}
-        onAgentModeToggle={onAgentModeToggle}
-        isProcessing={isProcessing}
-        onStopProcessing={onStopProcessing}
-      />
+    <div className={cn("ide-layout", darkMode && "dark")}>
+      {/* Navigation Bar */}
+      <div className="ide-navigation border-b bg-card/50 backdrop-blur-sm">
+        <div className="flex items-center justify-between px-4 py-2">
+          {/* Brand */}
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-6 rounded bg-tanuki-500 flex items-center justify-center">
+                <span className="text-white text-xs font-bold">T</span>
+              </div>
+              <span className="font-semibold">TanukiMCP <span className="tanuki-gradient">Atlas</span></span>
+            </div>
+            
+            {/* Menu Items */}
+            <nav className="hidden md:flex items-center gap-1">
+              <Button variant="ghost" size="sm">File</Button>
+              <Button variant="ghost" size="sm">Edit</Button>
+              <Button variant="ghost" size="sm">View</Button>
+              <Button variant="ghost" size="sm">Tools</Button>
+              <Button variant="ghost" size="sm">Window</Button>
+              <Button variant="ghost" size="sm">Help</Button>
+            </nav>
+          </div>
 
-      {/* Main Content Area with Resizable Panels */}
-      <ResizablePanelGroup direction="horizontal" className="flex-1 overflow-hidden">
-        {isFileExplorerVisible && (
-          <>
-            <ResizablePanel 
-              defaultSize={20} 
-              minSize={15}
-              maxSize={30}
-              className="h-full"
+          {/* Actions */}
+          <div className="flex items-center gap-2">
+            <Button 
+              variant="ghost" 
+              size="icon"
+              onClick={() => setTheme(darkMode ? 'light' : 'dark')}
             >
-              <FileExplorer 
-                files={files}
-                selectedFile={currentFile}
-                onFileSelect={handleFileSelect}
-              />
-            </ResizablePanel>
-            <ResizableHandle />
-          </>
-        )}
-
-        {/* Main Content Panel */}
-        <ResizablePanel defaultSize={isFileExplorerVisible ? 60 : 80} minSize={40}>
-          <div className="flex-1 flex flex-col bg-background h-full">
-            <div className="flex-1 p-6 overflow-y-auto">
-              {/* Main content rendering based on currentView */}
+              {darkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+            </Button>
+            <Button variant="ghost" size="icon">
+              <Settings className="w-4 h-4" />
+            </Button>
+            <div className="flex items-center gap-1">
+              <Button variant="ghost" size="icon">
+                <Minimize2 className="w-4 h-4" />
+              </Button>
+              <Button variant="ghost" size="icon">
+                <Maximize2 className="w-4 h-4" />
+              </Button>
+              <Button variant="ghost" size="icon">
+                <X className="w-4 h-4" />
+              </Button>
             </div>
           </div>
-        </ResizablePanel>
+        </div>
+      </div>
 
-        <ResizableHandle />
-        
-        {/* Tools Panel */}
-        <ResizablePanel defaultSize={20} minSize={15} maxSize={30}>
-          <ToolsPanel 
-            operationalMode={agentMode ? 'agent' : 'chat'}
-          />
-        </ResizablePanel>
-      </ResizablePanelGroup>
+      {/* Main Content */}
+      <div className="ide-content flex-1">
+        <ResizablePanelGroup direction="horizontal" className="h-full">
+          {/* Sidebar */}
+          <ResizablePanel 
+            defaultSize={sidebarCollapsed ? 3 : 20} 
+            minSize={3} 
+            maxSize={30}
+            className={cn("panel-container transition-all duration-200")}
+          >
+          {!sidebarCollapsed && (
+            <>
+              <div className="panel-header flex items-center justify-between">
+                <span>Explorer</span>
+                <Button 
+                  variant="ghost" 
+                  size="icon"
+                  onClick={() => setSidebarCollapsed(true)}
+                >
+                  <Menu className="w-4 h-4" />
+                </Button>
+              </div>
+              
+              <div className="panel-content">
+                <div className="p-2 space-y-1">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Files</span>
+                    <Button variant="ghost" size="icon" className="h-6 w-6">
+                      <Plus className="w-3 h-3" />
+                    </Button>
+                  </div>
+                  
+                  <ScrollArea className="h-[300px]">
+                    {files.map(node => (
+                      <FileTreeItem
+                        key={node.id}
+                        node={node}
+                        onSelect={handleFileSelect}
+                        onToggle={handleToggleFolder}
+                        onLoadChildren={handleLoadChildren}
+                      />
+                    ))}
+                  </ScrollArea>
+                </div>
+                
+                <div className="border-t p-2">
+                  <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">Subject Modes</div>
+                  <div className="space-y-1">
+                    {[
+                      { icon: '🎯', label: 'Mathematics', active: true },
+                      { icon: '💻', label: 'Programming', active: false },
+                      { icon: '🔬', label: 'Science', active: false },
+                      { icon: '🗣️', label: 'Languages', active: false }
+                    ].map(mode => (
+                      <Button
+                        key={mode.label}
+                        variant={mode.active ? "secondary" : "ghost"}
+                        size="sm"
+                        className="w-full justify-start"
+                      >
+                        <span className="mr-2">{mode.icon}</span>
+                        {mode.label}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
+          
+          {sidebarCollapsed && (
+            <div className="p-2">
+              <Button 
+                variant="ghost" 
+                size="icon"
+                onClick={() => setSidebarCollapsed(false)}
+              >
+                <Menu className="w-4 h-4" />
+              </Button>
+            </div>
+          )}
+          </ResizablePanel>
 
-      {/* Status bar */}
-      <StatusBar
-        connections={[
-          {
-            service: 'OpenRouter',
-            status: isConnected ? 'connected' : 'disconnected',
-            lastChecked: new Date()
-          }
-        ]}
-        currentView={currentView}
-        currentModel={currentModel}
-        theme={theme}
-        version="1.0.0"
-      />
+          <ResizableHandle />
 
-      {/* Window Controls */}
-      <div className="absolute top-0 right-0 flex items-center gap-2 p-2">
-        <Button 
-          variant="ghost" 
-          size="icon"
-          onClick={toggleTheme}
-        >
-          {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-        </Button>
-        <Button variant="ghost" size="icon">
-          <Settings className="w-4 h-4" />
-        </Button>
-        <div className="flex items-center gap-1">
-          <Button variant="ghost" size="icon">
-            <Minimize2 className="w-4 h-4" />
-          </Button>
-          <Button variant="ghost" size="icon">
-            <Maximize2 className="w-4 h-4" />
-          </Button>
-          <Button variant="ghost" size="icon">
-            <X className="w-4 h-4" />
-          </Button>
+          {/* Main Panel */}
+          <ResizablePanel defaultSize={60} minSize={40} className="flex flex-col">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="chat" className="flex items-center gap-2">
+                <MessageCircle className="w-4 h-4" />
+                Chat
+              </TabsTrigger>
+              <TabsTrigger value="editor" className="flex items-center gap-2">
+                <Code2 className="w-4 h-4" />
+                Editor
+              </TabsTrigger>
+              <TabsTrigger value="workflow" className="flex items-center gap-2">
+                <Workflow className="w-4 h-4" />
+                Workflows
+              </TabsTrigger>
+            </TabsList>
+
+            {/* Chat Tab */}
+            <TabsContent value="chat" className="flex-1 flex flex-col">
+              <Card className="flex-1 flex flex-col">
+                <CardHeader className="pb-3">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="flex items-center gap-2">
+                      <Bot className="w-5 h-5" />
+                      TanukiMCP Assistant
+                    </CardTitle>
+                    <LLMStatus />
+                  </div>
+                </CardHeader>
+                
+                <CardContent className="flex-1 flex flex-col overflow-hidden">
+                  <ScrollArea className="flex-1 pr-4">
+                    {(!currentSession?.messages || currentSession.messages.length === 0) ? (
+                      <div className="flex-1 flex items-center justify-center">
+                        <div className="text-center space-y-4 max-w-md">
+                          <div className="w-16 h-16 mx-auto bg-gradient-to-br from-orange-500 to-orange-600 rounded-full flex items-center justify-center">
+                            <MessageSquare className="w-8 h-8 text-white" />
+                          </div>
+                          <div className="space-y-2">
+                            <h3 className="text-lg font-semibold text-foreground">
+                              Welcome to TanukiMCP Assistant
+                            </h3>
+                            <p className="text-sm text-muted-foreground">
+                              Your local-first AI assistant is ready to help. Start a conversation to:
+                            </p>
+                          </div>
+                          <div className="grid grid-cols-2 gap-3 text-xs">
+                            <div className="flex items-center gap-2 p-2 rounded-lg bg-muted/50">
+                              <Code className="w-4 h-4 text-orange-500" />
+                              <span>Write & analyze code</span>
+                            </div>
+                            <div className="flex items-center gap-2 p-2 rounded-lg bg-muted/50">
+                              <FileText className="w-4 h-4 text-orange-500" />
+                              <span>Manage files</span>
+                            </div>
+                            <div className="flex items-center gap-2 p-2 rounded-lg bg-muted/50">
+                              <Workflow className="w-4 h-4 text-orange-500" />
+                              <span>Create workflows</span>
+                            </div>
+                            <div className="flex items-center gap-2 p-2 rounded-lg bg-muted/50">
+                              <Brain className="w-4 h-4 text-orange-500" />
+                              <span>Solve problems</span>
+                            </div>
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            {isConnected && currentModel ? (
+                              <>Connected to <span className="font-medium text-orange-500">{currentModel}</span></>
+                            ) : (
+                              <span className="text-amber-500">⚠️ No model selected - check connection</span>
+                            )}
+                          </p>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        {currentSession?.messages.map((message, index) => {
+                          const chatMessage: ChatMessage = {
+                            id: `${currentSession.id}-${index}`,
+                            type: message.role === 'user' ? 'user' : 'assistant',
+                            content: message.content,
+                            timestamp: new Date(),
+                            streaming: false
+                          };
+                          return <ChatMessageComponent key={chatMessage.id} message={chatMessage} />;
+                        })}
+                        {isStreaming && streamingMessage && (
+                          <ChatMessageComponent 
+                            key="streaming" 
+                            message={{
+                              id: 'streaming',
+                              type: 'assistant',
+                              content: streamingMessage,
+                              timestamp: new Date(),
+                              streaming: true
+                            }} 
+                          />
+                        )}
+                      </>
+                    )}
+                  </ScrollArea>
+                  
+                  <div className="border-t pt-4 space-y-4">
+                    <div className="flex gap-2">
+                      <Input
+                        placeholder={
+                          !isConnected || !currentModel 
+                            ? "Select a model to start chatting..." 
+                            : "Type your message... (use @ for tools)"
+                        }
+                        value={inputMessage}
+                        onChange={(e) => setInputMessage(e.target.value)}
+                        onKeyPress={handleKeyPress}
+                        className="flex-1"
+                        disabled={!isConnected || !currentModel || isStreaming}
+                      />
+                      <Button 
+                        onClick={handleSendMessage} 
+                        disabled={!inputMessage.trim() || !isConnected || !currentModel || isStreaming}
+                        className="bg-orange-500 hover:bg-orange-600"
+                      >
+                        {isStreaming ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Send className="w-4 h-4" />
+                        )}
+                      </Button>
+                    </div>
+                    
+                    <div className="flex items-center gap-2">
+                      <Button variant="outline" size="sm">
+                        <Paperclip className="w-4 h-4 mr-2" />
+                        Attach
+                      </Button>
+                      <Button variant="outline" size="sm">
+                        <Zap className="w-4 h-4 mr-2" />
+                        Quick Actions
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* Editor Tab */}
+            <TabsContent value="editor" className="flex-1">
+              <Card className="flex-1">
+                <CardHeader>
+                  <CardTitle className="flex items-center justify-between">
+                    <span>
+                      {selectedFile ? selectedFile.name : 'No file selected'}
+                    </span>
+                    {selectedFile && (
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <span>{selectedFile.path}</span>
+                        <span>•</span>
+                        <span>{formatTimeAgo(selectedFile.modified)}</span>
+                        {isDirty && <span className="text-orange-500 ml-2">● Unsaved</span>}
+                      </div>
+                    )}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {selectedFile && selectedFile.type === 'file' ? (
+                    <div className="space-y-4">
+                      <div className="bg-muted p-0 rounded-lg">
+                        {isFileLoading ? (
+                          <div className="text-sm text-muted-foreground p-4">Loading file content...</div>
+                        ) : (
+                          <MonacoEditor
+                            value={editorContent}
+                            language={getMonacoLanguage(selectedFile.name)}
+                            onChange={setEditorContent}
+                            onSave={async (val) => {
+                              setIsSaving(true);
+                              await fileService.writeFile(selectedFile.path, val);
+                              setIsDirty(false);
+                              setFileContent(fileContent ? {
+                                ...fileContent,
+                                content: val,
+                                encoding: fileContent.encoding || 'utf-8',
+                              } : {
+                                content: val,
+                                encoding: 'utf-8',
+                                size: 0,
+                                lastModified: new Date(),
+                              });
+                              setIsSaving(false);
+                            }}
+                            theme={darkMode ? 'vs-dark' : 'vs-light'}
+                            readOnly={false}
+                            height="500px"
+                          />
+                        )}
+                      </div>
+                      <div className="flex gap-2">
+                        <Button variant="default" disabled={isSaving || !isDirty} onClick={async () => {
+                          setIsSaving(true);
+                          await fileService.writeFile(selectedFile.path, editorContent);
+                          setIsDirty(false);
+                          setFileContent(fileContent ? {
+                            ...fileContent,
+                            content: editorContent,
+                            encoding: fileContent.encoding || 'utf-8',
+                          } : {
+                            content: editorContent,
+                            encoding: 'utf-8',
+                            size: 0,
+                            lastModified: new Date(),
+                          });
+                          setIsSaving(false);
+                        }}>
+                          <Save className="w-4 h-4 mr-2" />
+                          {isSaving ? 'Saving...' : 'Save'}
+                        </Button>
+                        <Button variant="outline">
+                          <Play className="w-4 h-4 mr-2" />
+                          Run
+                        </Button>
+                        <Button variant="outline">
+                          Format
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-center h-32 text-muted-foreground">
+                      Select a file from the explorer to edit
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* Workflow Tab */}
+            <TabsContent value="workflow" className="flex-1">
+              <Card className="flex-1">
+                <CardHeader>
+                  <CardTitle className="flex items-center justify-between">
+                    <span>Workflow Manager</span>
+                    <Button>
+                      <Plus className="w-4 h-4 mr-2" />
+                      New Workflow
+                    </Button>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {[
+                      { name: 'Project Analysis', description: 'Analyze project structure and create development plan', icon: <BarChart3 className="w-5 h-5" />, status: 'Ready' },
+                      { name: 'Code Review', description: 'Automated code review with suggestions', icon: <GitBranch className="w-5 h-5" />, status: 'Active' },
+                      { name: 'Data Pipeline', description: 'ETL data processing workflow', icon: <Activity className="w-5 h-5" />, status: 'Ready' }
+                    ].map(workflow => (
+                      <Card key={workflow.name} className="cursor-pointer hover:shadow-md transition-shadow">
+                        <CardHeader className="pb-3">
+                          <div className="flex items-center gap-3">
+                            <div className="p-2 bg-tanuki-500/10 rounded-lg">
+                              {workflow.icon}
+                            </div>
+                            <div>
+                              <h3 className="font-semibold">{workflow.name}</h3>
+                              <p className="text-sm text-muted-foreground">{workflow.description}</p>
+                            </div>
+                          </div>
+                        </CardHeader>
+                        <CardContent className="pt-0">
+                          <div className="flex items-center justify-between">
+                            <span className={cn(
+                              "text-xs px-2 py-1 rounded",
+                              workflow.status === 'Active' ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-700"
+                            )}>
+                              {workflow.status}
+                            </span>
+                            <Button variant="outline" size="sm">
+                              <Play className="w-3 h-3 mr-1" />
+                              Run
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
+          </ResizablePanel>
+
+          <ResizableHandle />
+
+          {/* Secondary Panel */}
+          <ResizablePanel defaultSize={20} minSize={15} maxSize={35} className="panel-container">
+          <div className="panel-header">
+            <span>MCP Hub</span>
+          </div>
+          <div className="panel-content">
+            <Tabs defaultValue="servers" className="h-full flex flex-col">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="servers">Servers</TabsTrigger>
+                <TabsTrigger value="available_tools">Available Tools</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="servers" className="flex-1 overflow-y-auto">
+                <MCPServersTab />
+              </TabsContent>
+              
+              <TabsContent value="available_tools" className="flex-1 overflow-y-auto">
+                <MCPAvailableToolsTab />
+              </TabsContent>
+            </Tabs>
+          </div>
+          </ResizablePanel>
+        </ResizablePanelGroup>
+      </div>
+
+      {/* Status Bar */}
+      <div className="ide-status-bar border-t bg-card/30">
+        <div className="flex items-center justify-between px-4 py-1">
+          <div className="flex items-center gap-4 text-xs">
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+              <span>Connected</span>
+            </div>
+            <span>🎯 Mathematics Mode</span>
+            <span>💾 All files saved</span>
+          </div>
+          
+          <div className="flex items-center gap-4 text-xs text-muted-foreground">
+            <span>Ready</span>
+            <span>Line 1, Col 1</span>
+            <span>UTF-8</span>
+          </div>
         </div>
       </div>
 

@@ -4,7 +4,6 @@ import { FileWelfareAgent } from './FileWelfareAgent';
 import { Button } from './ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
 import { cn } from '../lib/utils';
-import { useTheme } from '../contexts/ThemeContext';
 
 interface MonacoEditorProps {
   value: string;
@@ -14,6 +13,7 @@ interface MonacoEditorProps {
   onDelete?: () => void;
   onRename?: (newName: string) => void;
   filePath?: string;
+  theme?: 'vs-dark' | 'vs-light';
   readOnly?: boolean;
   height?: string;
 }
@@ -26,23 +26,22 @@ const MonacoEditor: React.FC<MonacoEditorProps> = ({
   onDelete,
   onRename,
   filePath,
+  theme = 'vs-dark',
   readOnly = false,
-  height = '100%'
+  height = '400px'
 }) => {
-  const { theme } = useTheme();
-  const editorRef = useRef<any>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
-  const renameInputRef = useRef<HTMLInputElement>(null);
-  const [monaco, setMonaco] = useState<any>(null);
+  const editorRef = useRef<HTMLDivElement>(null);
   const [editor, setEditor] = useState<any>(null);
+  const [monaco, setMonaco] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [isModified, setIsModified] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [isRenaming, setIsRenaming] = useState(false);
   const [newFileName, setNewFileName] = useState('');
+  const renameInputRef = useRef<HTMLInputElement>(null);
   const [showFileAgent, setShowFileAgent] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let isMounted = true;

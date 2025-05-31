@@ -161,8 +161,31 @@ class ChatService {
     }
     
     try {
+      // Find the actual tool with the given name
+      // This accounts for differences between the invocation syntax (@ToolName)
+      // and the actual registered tool name (ClearThought.ToolName)
+      let actualToolName = toolInvocation.toolName;
+      
+      // First try direct match
+      const allTools = MCPService.getAvailableTools();
+      let matchedTool = allTools.find(t => t.name.toLowerCase() === actualToolName.toLowerCase());
+      
+      // If no direct match, try more permissive matching
+      if (!matchedTool) {
+        // If user just provided the name part (e.g., @DecisionFramework)
+        // try to find a tool with that suffix
+        matchedTool = allTools.find(t => {
+          const parts = t.name.split('.');
+          return parts[parts.length - 1].toLowerCase() === actualToolName.toLowerCase();
+        });
+        
+        if (matchedTool) {
+          actualToolName = matchedTool.name;
+        }
+      }
+      
       // Execute the tool using MCPService
-      const result = await MCPService.executeTool(toolInvocation.toolName, toolInvocation.parameters);
+      const result = await MCPService.executeTool(actualToolName, toolInvocation.parameters);
       
       return result;
     } catch (error) {

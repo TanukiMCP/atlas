@@ -1,30 +1,32 @@
-import React from 'react';
-import { ViewType, TanukiModel } from '../types';
+import React, { useState } from 'react';
+import { HeaderProps, TanukiModel, ViewType } from '../types/index';
 import { PrimaryMenuBar } from './toolbar/PrimaryMenuBar';
 import { ContextualToolbar } from './toolbar/ContextualToolbar';
 
-interface HeaderProps {
-  currentView: ViewType;
-  onViewChange: (view: ViewType) => void;
+interface EnhancedHeaderProps extends HeaderProps {
   currentModel?: TanukiModel;
   availableModels: TanukiModel[];
   isConnected: boolean;
-  onModelSwitch: (model: TanukiModel | undefined) => void;
+  onModelSwitch: (modelName: string) => void;
   onOpenModelHub: () => void;
   onOpenLocalLLMHub: () => void;
   onFileExplorerToggle: () => void;
   isFileExplorerVisible: boolean;
   subjectMode: string;
   onSubjectModeChange: (mode: string) => void;
-  agentMode: boolean;
-  onAgentModeToggle: () => void;
+  agentMode?: boolean;
+  onAgentModeToggle?: () => void;
   isProcessing: boolean;
   onStopProcessing: () => void;
+  currentWorkingDirectory: string | null;
+  onChangeWorkingDirectory: (dirPath: string) => Promise<void>;
 }
 
-const Header: React.FC<HeaderProps> = ({ 
+const Header: React.FC<EnhancedHeaderProps> = ({ 
   currentView, 
-  onViewChange,
+  theme, 
+  onViewChange, 
+  onThemeToggle,
   currentModel,
   availableModels,
   isConnected,
@@ -35,26 +37,40 @@ const Header: React.FC<HeaderProps> = ({
   isFileExplorerVisible,
   subjectMode,
   onSubjectModeChange,
-  agentMode,
-  onAgentModeToggle,
+  agentMode = false,
+  onAgentModeToggle = () => {},
   isProcessing,
-  onStopProcessing
+  onStopProcessing,
+  currentWorkingDirectory,
+  onChangeWorkingDirectory
 }) => {
   // Wrapper function to handle ViewType to string conversion
   const handleViewChange = (view: string) => {
     onViewChange(view as ViewType);
   };
 
+  // Keyboard navigation handler for accessibility
+  const handleKeyDown = (e: React.KeyboardEvent, action: () => void) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      action();
+    }
+  };
+
   return (
     <>
       {/* Primary Menu Bar */}
       <PrimaryMenuBar
+        onThemeToggle={onThemeToggle}
+        theme={theme}
         onViewChange={handleViewChange}
         onFileExplorerToggle={onFileExplorerToggle}
         subjectMode={subjectMode}
         onSubjectModeChange={onSubjectModeChange}
         onOpenModelHub={onOpenModelHub}
         onOpenLocalLLMHub={onOpenLocalLLMHub}
+        currentWorkingDirectory={currentWorkingDirectory}
+        onChangeWorkingDirectory={onChangeWorkingDirectory}
       />
 
       {/* Contextual Toolbar */}

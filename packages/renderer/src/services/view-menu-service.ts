@@ -12,31 +12,7 @@
 /// <reference lib="dom" />
 
 import { useAppStore } from '../stores/app-store';
-
-export interface ViewState {
-  // Panel visibility states
-  fileExplorerVisible: boolean;
-  chatHistoryVisible: boolean;
-  terminalPanelVisible: boolean;
-  outputPanelVisible: boolean;
-  problemsPanelVisible: boolean;
-  
-  // Layout states
-  isFullscreen: boolean;
-  currentZoom: number;
-  layoutMode: 'normal' | 'zen' | 'presentation';
-  sidebarPosition: 'left' | 'right';
-  
-  // Command palette
-  commandPaletteOpen: boolean;
-  
-  // Theme and appearance
-  currentTheme: 'light' | 'dark' | 'auto';
-  compactMode: boolean;
-  showMinimap: boolean;
-  showBreadcrumbs: boolean;
-  showLineNumbers: boolean;
-}
+import { ViewState } from '../types/view-types';
 
 export interface CommandPaletteItem {
   id: string;
@@ -61,26 +37,10 @@ export interface PanelConfiguration {
 
 export class ViewMenuService {
   private static instance: ViewMenuService;
-  private viewState: ViewState = {
-    fileExplorerVisible: true,
-    chatHistoryVisible: false,
-    terminalPanelVisible: false,
-    outputPanelVisible: false,
-    problemsPanelVisible: false,
-    isFullscreen: false,
-    currentZoom: 1.0,
-    layoutMode: 'normal',
-    sidebarPosition: 'left',
-    commandPaletteOpen: false,
-    currentTheme: 'dark',
-    compactMode: false,
-    showMinimap: true,
-    showBreadcrumbs: true,
-    showLineNumbers: true
-  };
-
+  private viewState: ViewState;
   private commandPaletteItems: CommandPaletteItem[] = [];
   private panelConfigurations: Map<string, PanelConfiguration> = new Map();
+  private listeners: ((state: ViewState) => void)[];
 
   public static getInstance(): ViewMenuService {
     if (!ViewMenuService.instance) {
@@ -90,6 +50,38 @@ export class ViewMenuService {
   }
 
   constructor() {
+    // Default view state
+    this.viewState = {
+      // Theme and appearance
+      currentTheme: 'dark',
+      compactMode: false,
+      
+      // Panels
+      showFileExplorer: true,
+      showToolPanel: true,
+      showChatPanel: true,
+      showMinimap: true,
+      
+      // Editor
+      wordWrap: false,
+      showLineNumbers: true,
+      showIndentGuides: true,
+      fontSize: 14,
+      
+      // Terminal
+      showTerminal: false,
+      terminalHeight: 200,
+      
+      // Misc
+      isFullscreen: false,
+      isFocusMode: false,
+      zenMode: false,
+      panelPosition: 'right',
+      sidePanelWidth: 300,
+      bottomPanelHeight: 250,
+    };
+
+    this.listeners = [];
     this.initializeDefaultCommands();
     this.initializePanelConfigurations();
     this.setupKeyboardShortcuts();
@@ -97,7 +89,17 @@ export class ViewMenuService {
   }
 
   /**
-   * Get current view state
+   * Subscribe to view state changes
+   */
+  subscribe(listener: (state: ViewState) => void): () => void {
+    this.listeners.push(listener);
+    return () => {
+      this.listeners = this.listeners.filter(l => l !== listener);
+    };
+  }
+
+  /**
+   * Get the current view state
    */
   getViewState(): ViewState {
     return { ...this.viewState };
@@ -166,100 +168,137 @@ export class ViewMenuService {
   /**
    * Panel Management
    */
-  async toggleFileExplorer(): Promise<boolean> {
+  async togglePanel(panel: 'fileExplorer' | 'toolPanel' | 'chatPanel' | 'terminal'): Promise<boolean> {
     try {
-      this.viewState.fileExplorerVisible = !this.viewState.fileExplorerVisible;
-      
-      // Update app store
-      useAppStore.getState().setSidebarVisible(this.viewState.fileExplorerVisible);
-      
-      useAppStore.getState().addNotification({
-        type: 'success',
-        title: 'File Explorer',
-        message: `File Explorer ${this.viewState.fileExplorerVisible ? 'shown' : 'hidden'}.`
-      });
+      switch (panel) {
+        case 'fileExplorer':
+          this.viewState.showFileExplorer = !this.viewState.showFileExplorer;
+          break;
+        case 'toolPanel':
+          this.viewState.showToolPanel = !this.viewState.showToolPanel;
+          break;
+        case 'chatPanel':
+          this.viewState.showChatPanel = !this.viewState.showChatPanel;
+          break;
+        case 'terminal':
+          this.viewState.showTerminal = !this.viewState.showTerminal;
+          break;
+      }
 
       this.notifyStateChange();
       this.persistState();
       return true;
     } catch (error) {
-      console.error('Failed to toggle file explorer:', error);
+      console.error(`Failed to toggle ${panel}:`, error);
       return false;
     }
   }
 
-  async toggleChatHistory(): Promise<boolean> {
+  /**
+   * Editor Configuration
+   */
+  async toggleWordWrap(): Promise<boolean> {
     try {
-      this.viewState.chatHistoryVisible = !this.viewState.chatHistoryVisible;
-      
-      useAppStore.getState().addNotification({
-        type: 'success',
-        title: 'Chat History',
-        message: `Chat History panel ${this.viewState.chatHistoryVisible ? 'shown' : 'hidden'}.`
-      });
-
+      this.viewState.wordWrap = !this.viewState.wordWrap;
       this.notifyStateChange();
       this.persistState();
       return true;
     } catch (error) {
-      console.error('Failed to toggle chat history:', error);
+      console.error('Failed to toggle word wrap:', error);
       return false;
     }
   }
 
-  async toggleTerminalPanel(): Promise<boolean> {
+  async toggleLineNumbers(): Promise<boolean> {
     try {
-      this.viewState.terminalPanelVisible = !this.viewState.terminalPanelVisible;
-      
-      useAppStore.getState().addNotification({
-        type: 'success',
-        title: 'Terminal',
-        message: `Terminal panel ${this.viewState.terminalPanelVisible ? 'shown' : 'hidden'}.`
-      });
-
+      this.viewState.showLineNumbers = !this.viewState.showLineNumbers;
       this.notifyStateChange();
       this.persistState();
       return true;
     } catch (error) {
-      console.error('Failed to toggle terminal panel:', error);
+      console.error('Failed to toggle line numbers:', error);
       return false;
     }
   }
 
-  async toggleOutputPanel(): Promise<boolean> {
+  async toggleIndentGuides(): Promise<boolean> {
     try {
-      this.viewState.outputPanelVisible = !this.viewState.outputPanelVisible;
-      
-      useAppStore.getState().addNotification({
-        type: 'success',
-        title: 'Output',
-        message: `Output panel ${this.viewState.outputPanelVisible ? 'shown' : 'hidden'}.`
-      });
-
+      this.viewState.showIndentGuides = !this.viewState.showIndentGuides;
       this.notifyStateChange();
       this.persistState();
       return true;
     } catch (error) {
-      console.error('Failed to toggle output panel:', error);
+      console.error('Failed to toggle indent guides:', error);
       return false;
     }
   }
 
-  async toggleProblemsPanel(): Promise<boolean> {
+  async changeFontSize(size: number): Promise<boolean> {
     try {
-      this.viewState.problemsPanelVisible = !this.viewState.problemsPanelVisible;
-      
-      useAppStore.getState().addNotification({
-        type: 'success',
-        title: 'Problems',
-        message: `Problems panel ${this.viewState.problemsPanelVisible ? 'shown' : 'hidden'}.`
-      });
+      if (size >= 8 && size <= 32) {
+        this.viewState.fontSize = size;
+        this.notifyStateChange();
+        this.persistState();
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('Failed to change font size:', error);
+      return false;
+    }
+  }
 
+  /**
+   * UI Mode Management
+   */
+  async toggleCompactMode(): Promise<boolean> {
+    try {
+      this.viewState.compactMode = !this.viewState.compactMode;
       this.notifyStateChange();
       this.persistState();
       return true;
     } catch (error) {
-      console.error('Failed to toggle problems panel:', error);
+      console.error('Failed to toggle compact mode:', error);
+      return false;
+    }
+  }
+
+  async toggleFocusMode(): Promise<boolean> {
+    try {
+      this.viewState.isFocusMode = !this.viewState.isFocusMode;
+      this.notifyStateChange();
+      this.persistState();
+      return true;
+    } catch (error) {
+      console.error('Failed to toggle focus mode:', error);
+      return false;
+    }
+  }
+
+  async toggleZenMode(): Promise<boolean> {
+    try {
+      this.viewState.zenMode = !this.viewState.zenMode;
+      this.notifyStateChange();
+      this.persistState();
+      return true;
+    } catch (error) {
+      console.error('Failed to toggle zen mode:', error);
+      return false;
+    }
+  }
+
+  async toggleFullscreen(): Promise<boolean> {
+    try {
+      this.viewState.isFullscreen = !this.viewState.isFullscreen;
+      
+      // Send IPC message to main process to toggle fullscreen
+      // This would be implemented in a real application
+      
+      this.notifyStateChange();
+      this.persistState();
+      return true;
+    } catch (error) {
+      console.error('Failed to toggle fullscreen:', error);
       return false;
     }
   }
@@ -267,79 +306,250 @@ export class ViewMenuService {
   /**
    * Layout Management
    */
-  async toggleFullscreen(): Promise<boolean> {
+  async setPanelPosition(position: 'left' | 'right'): Promise<boolean> {
     try {
-      if (this.viewState.isFullscreen) {
-        await document.exitFullscreen();
-        this.viewState.isFullscreen = false;
-      } else {
-        await document.documentElement.requestFullscreen();
-        this.viewState.isFullscreen = true;
-      }
-
-      useAppStore.getState().addNotification({
-        type: 'success',
-        title: 'Fullscreen',
-        message: `Fullscreen mode ${this.viewState.isFullscreen ? 'enabled' : 'disabled'}.`
-      });
-
-      this.notifyStateChange();
-      return true;
-    } catch (error) {
-      console.error('Failed to toggle fullscreen:', error);
-      useAppStore.getState().addNotification({
-        type: 'error',
-        title: 'Fullscreen Failed',
-        message: 'Unable to toggle fullscreen mode.'
-      });
-      return false;
-    }
-  }
-
-  async setLayoutMode(mode: ViewState['layoutMode']): Promise<boolean> {
-    try {
-      this.viewState.layoutMode = mode;
-
-      let message = '';
-      switch (mode) {
-        case 'zen':
-          message = 'Zen mode enabled - distraction-free coding environment.';
-          // Hide all panels in zen mode
-          this.viewState.fileExplorerVisible = false;
-          this.viewState.chatHistoryVisible = false;
-          this.viewState.terminalPanelVisible = false;
-          break;
-        case 'presentation':
-          message = 'Presentation mode enabled - optimized for demos and presentations.';
-          // Larger font, hide certain UI elements
-          this.zoomIn(0.5); // Increase zoom for presentation
-          break;
-        case 'normal':
-        default:
-          message = 'Normal layout mode restored.';
-          // Restore default panel visibility
-          this.viewState.fileExplorerVisible = true;
-          break;
-      }
-
-      useAppStore.getState().addNotification({
-        type: 'success',
-        title: 'Layout Mode',
-        message
-      });
-
+      this.viewState.panelPosition = position;
       this.notifyStateChange();
       this.persistState();
       return true;
     } catch (error) {
-      console.error('Failed to set layout mode:', error);
+      console.error('Failed to set panel position:', error);
+      return false;
+    }
+  }
+
+  async setSidePanelWidth(width: number): Promise<boolean> {
+    try {
+      if (width >= 200 && width <= 800) {
+        this.viewState.sidePanelWidth = width;
+        this.notifyStateChange();
+        this.persistState();
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('Failed to set side panel width:', error);
+      return false;
+    }
+  }
+
+  async setBottomPanelHeight(height: number): Promise<boolean> {
+    try {
+      if (height >= 100 && height <= 500) {
+        this.viewState.bottomPanelHeight = height;
+        this.notifyStateChange();
+        this.persistState();
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('Failed to set bottom panel height:', error);
+      return false;
+    }
+  }
+
+  async toggleMinimap(): Promise<boolean> {
+    try {
+      this.viewState.showMinimap = !this.viewState.showMinimap;
+      this.notifyStateChange();
+      this.persistState();
+      return true;
+    } catch (error) {
+      console.error('Failed to toggle minimap:', error);
       return false;
     }
   }
 
   /**
-   * Zoom Management
+   * Terminal Management
    */
+  async setTerminalHeight(height: number): Promise<boolean> {
+    try {
+      if (height >= 100 && height <= 500) {
+        this.viewState.terminalHeight = height;
+        this.notifyStateChange();
+        this.persistState();
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('Failed to set terminal height:', error);
+      return false;
+    }
+  }
+
+  // Private helper methods
+  private initializeDefaultCommands(): void {
+    const defaultCommands: CommandPaletteItem[] = [
+      // File operations
+      { id: 'file.new', label: 'New File', category: 'File', shortcut: 'Ctrl+N', icon: '📄', action: () => console.log('New file') },
+      { id: 'file.open', label: 'Open File', category: 'File', shortcut: 'Ctrl+O', icon: '📁', action: () => console.log('Open file') },
+      { id: 'file.save', label: 'Save File', category: 'File', shortcut: 'Ctrl+S', icon: '💾', action: () => console.log('Save file') },
+      
+      // Edit operations
+      { id: 'edit.undo', label: 'Undo', category: 'Edit', shortcut: 'Ctrl+Z', icon: '↶', action: () => console.log('Undo') },
+      { id: 'edit.redo', label: 'Redo', category: 'Edit', shortcut: 'Ctrl+Y', icon: '↷', action: () => console.log('Redo') },
+      { id: 'edit.find', label: 'Find', category: 'Edit', shortcut: 'Ctrl+F', icon: '🔍', action: () => console.log('Find') },
+      
+      // View operations
+      { id: 'view.explorer', label: 'Toggle File Explorer', category: 'View', shortcut: 'Ctrl+Shift+E', icon: '📁', action: () => this.togglePanel('fileExplorer') },
+      { id: 'view.terminal', label: 'Toggle Terminal', category: 'View', shortcut: 'Ctrl+`', icon: '💻', action: () => this.togglePanel('terminal') },
+      { id: 'view.fullscreen', label: 'Toggle Fullscreen', category: 'View', shortcut: 'F11', icon: '⛶', action: () => this.toggleFullscreen() },
+      { id: 'view.zen', label: 'Toggle Zen Mode', category: 'View', shortcut: 'Ctrl+K Z', icon: '🧘', action: () => this.toggleZenMode() },
+      
+      // Theme operations
+      { id: 'theme.toggle', label: 'Toggle Theme', category: 'Theme', icon: '🎨', action: () => this.toggleTheme() },
+      { id: 'theme.light', label: 'Light Theme', category: 'Theme', icon: '☀️', action: () => this.setTheme('light') },
+      { id: 'theme.dark', label: 'Dark Theme', category: 'Theme', icon: '🌙', action: () => this.setTheme('dark') },
+      
+      // Zoom operations
+      { id: 'zoom.in', label: 'Zoom In', category: 'View', shortcut: 'Ctrl++', icon: '🔍', action: () => this.zoomIn() },
+      { id: 'zoom.out', label: 'Zoom Out', category: 'View', shortcut: 'Ctrl+-', icon: '🔍', action: () => this.zoomOut() },
+      { id: 'zoom.reset', label: 'Reset Zoom', category: 'View', shortcut: 'Ctrl+0', icon: '🔍', action: () => this.resetZoom() },
+    ];
+
+    this.commandPaletteItems = defaultCommands;
+  }
+
+  private initializePanelConfigurations(): void {
+    const panels: PanelConfiguration[] = [
+      { id: 'file-explorer', name: 'File Explorer', defaultVisible: true, position: 'left', minWidth: 200, resizable: true },
+      { id: 'chat-history', name: 'Chat History', defaultVisible: false, position: 'right', minWidth: 300, resizable: true },
+      { id: 'terminal', name: 'Terminal', defaultVisible: false, position: 'bottom', minHeight: 200, resizable: true },
+      { id: 'output', name: 'Output', defaultVisible: false, position: 'bottom', minHeight: 150, resizable: true },
+      { id: 'problems', name: 'Problems', defaultVisible: false, position: 'bottom', minHeight: 150, resizable: true },
+    ];
+
+    panels.forEach(panel => {
+      this.panelConfigurations.set(panel.id, panel);
+    });
+  }
+
+  private setupKeyboardShortcuts(): void {
+    document.addEventListener('keydown', (e: KeyboardEvent) => {
+      if (e.ctrlKey || e.metaKey) {
+        switch (e.key.toLowerCase()) {
+          case 'p':
+            if (e.shiftKey) {
+              this.openCommandPalette();
+              e.preventDefault();
+            }
+            break;
+          case 'e':
+            if (e.shiftKey) {
+              this.togglePanel('fileExplorer');
+              e.preventDefault();
+            }
+            break;
+          case '`':
+            this.togglePanel('terminal');
+            e.preventDefault();
+            break;
+          case '=':
+          case '+':
+            this.zoomIn();
+            e.preventDefault();
+            break;
+          case '-':
+            this.zoomOut();
+            e.preventDefault();
+            break;
+          case '0':
+            this.resetZoom();
+            e.preventDefault();
+            break;
+        }
+      } else if (e.key === 'F11') {
+        this.toggleFullscreen();
+        e.preventDefault();
+      } else if (e.key === 'Escape' && this.viewState.commandPaletteOpen) {
+        this.closeCommandPalette();
+        e.preventDefault();
+      }
+    });
+
+    // Listen for fullscreen changes
+    document.addEventListener('fullscreenchange', () => {
+      this.viewState.isFullscreen = !!document.fullscreenElement;
+      this.notifyStateChange();
+    });
+  }
+
+  private loadPersistedState(): void {
+    try {
+      const persistedState = localStorage.getItem('tanuki-view-state');
+      if (persistedState) {
+        this.viewState = {
+          ...this.viewState,
+          ...JSON.parse(persistedState),
+        };
+      }
+    } catch (error) {
+      console.error('Failed to load persisted view state:', error);
+    }
+  }
+
+  private persistState(): void {
+    try {
+      localStorage.setItem('tanuki-view-state', JSON.stringify(this.viewState));
+    } catch (error) {
+      console.error('Failed to persist view state:', error);
+    }
+  }
+
+  private notifyStateChange(): void {
+    for (const listener of this.listeners) {
+      listener(this.viewState);
+    }
+  }
+
+  // Public getters
+  getCommandPaletteItems(): CommandPaletteItem[] {
+    return [...this.commandPaletteItems];
+  }
+
+  getPanelConfiguration(panelId: string): PanelConfiguration | undefined {
+    return this.panelConfigurations.get(panelId);
+  }
+
+  getAllPanelConfigurations(): PanelConfiguration[] {
+    return Array.from(this.panelConfigurations.values());
+  }
+
+  // Cleanup method
+  cleanup(): void {
+    this.viewState = {
+      // Theme and appearance
+      currentTheme: 'dark',
+      compactMode: false,
+      
+      // Panels
+      showFileExplorer: true,
+      showToolPanel: true,
+      showChatPanel: true,
+      showMinimap: true,
+      
+      // Editor
+      wordWrap: false,
+      showLineNumbers: true,
+      showIndentGuides: true,
+      fontSize: 14,
+      
+      // Terminal
+      showTerminal: false,
+      terminalHeight: 200,
+      
+      // Misc
+      isFullscreen: false,
+      isFocusMode: false,
+      zenMode: false,
+      panelPosition: 'right',
+      sidePanelWidth: 300,
+      bottomPanelHeight: 250,
+    };
+    this.persistState();
+  }
+
   async zoomIn(amount: number = 0.1): Promise<boolean> {
     try {
       const newZoom = Math.min(this.viewState.currentZoom + amount, 3.0);
@@ -387,9 +597,6 @@ export class ViewMenuService {
     }
   }
 
-  /**
-   * Theme Management
-   */
   async toggleTheme(): Promise<boolean> {
     try {
       const newTheme = this.viewState.currentTheme === 'light' ? 'dark' : 'light';
@@ -404,10 +611,16 @@ export class ViewMenuService {
     try {
       this.viewState.currentTheme = theme;
       
-      // Update app store theme
-      useAppStore.getState().setTheme(theme === 'auto' ? 'dark' : theme);
+      // Map view service theme names to settings-store theme names
+      const settingsTheme = theme === 'auto' ? 'system' : theme;
+      
+      // Import directly to avoid circular dependencies
+      const { getSettingsStore } = await import('../stores/settings-store');
+      getSettingsStore().updateSettings({ theme: settingsTheme });
 
-      useAppStore.getState().addNotification({
+      // Add notification about theme change
+      const { addNotification } = useAppStore.getState();
+      addNotification({
         type: 'success',
         title: 'Theme',
         message: `Theme changed to ${theme} mode.`
@@ -420,295 +633,6 @@ export class ViewMenuService {
       console.error('Failed to set theme:', error);
       return false;
     }
-  }
-
-  /**
-   * UI Controls
-   */
-  async toggleCompactMode(): Promise<boolean> {
-    try {
-      this.viewState.compactMode = !this.viewState.compactMode;
-
-      useAppStore.getState().addNotification({
-        type: 'success',
-        title: 'Compact Mode',
-        message: `Compact mode ${this.viewState.compactMode ? 'enabled' : 'disabled'}.`
-      });
-
-      this.notifyStateChange();
-      this.persistState();
-      return true;
-    } catch (error) {
-      console.error('Failed to toggle compact mode:', error);
-      return false;
-    }
-  }
-
-  async toggleMinimap(): Promise<boolean> {
-    try {
-      this.viewState.showMinimap = !this.viewState.showMinimap;
-
-      useAppStore.getState().addNotification({
-        type: 'success',
-        title: 'Minimap',
-        message: `Minimap ${this.viewState.showMinimap ? 'shown' : 'hidden'}.`
-      });
-
-      this.notifyStateChange();
-      this.persistState();
-      return true;
-    } catch (error) {
-      console.error('Failed to toggle minimap:', error);
-      return false;
-    }
-  }
-
-  async toggleBreadcrumbs(): Promise<boolean> {
-    try {
-      this.viewState.showBreadcrumbs = !this.viewState.showBreadcrumbs;
-
-      useAppStore.getState().addNotification({
-        type: 'success',
-        title: 'Breadcrumbs',
-        message: `Breadcrumbs ${this.viewState.showBreadcrumbs ? 'shown' : 'hidden'}.`
-      });
-
-      this.notifyStateChange();
-      this.persistState();
-      return true;
-    } catch (error) {
-      console.error('Failed to toggle breadcrumbs:', error);
-      return false;
-    }
-  }
-
-  async toggleLineNumbers(): Promise<boolean> {
-    try {
-      this.viewState.showLineNumbers = !this.viewState.showLineNumbers;
-
-      useAppStore.getState().addNotification({
-        type: 'success',
-        title: 'Line Numbers',
-        message: `Line numbers ${this.viewState.showLineNumbers ? 'shown' : 'hidden'}.`
-      });
-
-      this.notifyStateChange();
-      this.persistState();
-      return true;
-    } catch (error) {
-      console.error('Failed to toggle line numbers:', error);
-      return false;
-    }
-  }
-
-  /**
-   * Window Management
-   */
-  async splitEditorHorizontally(): Promise<boolean> {
-    try {
-      // This would integrate with the editor component
-      useAppStore.getState().addNotification({
-        type: 'info',
-        title: 'Split Editor',
-        message: 'Horizontal editor split will be implemented with the editor component.'
-      });
-      return true;
-    } catch (error) {
-      console.error('Failed to split editor horizontally:', error);
-      return false;
-    }
-  }
-
-  async splitEditorVertically(): Promise<boolean> {
-    try {
-      // This would integrate with the editor component
-      useAppStore.getState().addNotification({
-        type: 'info',
-        title: 'Split Editor',
-        message: 'Vertical editor split will be implemented with the editor component.'
-      });
-      return true;
-    } catch (error) {
-      console.error('Failed to split editor vertically:', error);
-      return false;
-    }
-  }
-
-  // Private helper methods
-  private initializeDefaultCommands(): void {
-    const defaultCommands: CommandPaletteItem[] = [
-      // File operations
-      { id: 'file.new', label: 'New File', category: 'File', shortcut: 'Ctrl+N', icon: '📄', action: () => console.log('New file') },
-      { id: 'file.open', label: 'Open File', category: 'File', shortcut: 'Ctrl+O', icon: '📁', action: () => console.log('Open file') },
-      { id: 'file.save', label: 'Save File', category: 'File', shortcut: 'Ctrl+S', icon: '💾', action: () => console.log('Save file') },
-      
-      // Edit operations
-      { id: 'edit.undo', label: 'Undo', category: 'Edit', shortcut: 'Ctrl+Z', icon: '↶', action: () => console.log('Undo') },
-      { id: 'edit.redo', label: 'Redo', category: 'Edit', shortcut: 'Ctrl+Y', icon: '↷', action: () => console.log('Redo') },
-      { id: 'edit.find', label: 'Find', category: 'Edit', shortcut: 'Ctrl+F', icon: '🔍', action: () => console.log('Find') },
-      
-      // View operations
-      { id: 'view.explorer', label: 'Toggle File Explorer', category: 'View', shortcut: 'Ctrl+Shift+E', icon: '📁', action: () => this.toggleFileExplorer() },
-      { id: 'view.terminal', label: 'Toggle Terminal', category: 'View', shortcut: 'Ctrl+`', icon: '💻', action: () => this.toggleTerminalPanel() },
-      { id: 'view.fullscreen', label: 'Toggle Fullscreen', category: 'View', shortcut: 'F11', icon: '⛶', action: () => this.toggleFullscreen() },
-      { id: 'view.zen', label: 'Toggle Zen Mode', category: 'View', shortcut: 'Ctrl+K Z', icon: '🧘', action: () => this.setLayoutMode('zen') },
-      
-      // Theme operations
-      { id: 'theme.toggle', label: 'Toggle Theme', category: 'Theme', icon: '🎨', action: () => this.toggleTheme() },
-      { id: 'theme.light', label: 'Light Theme', category: 'Theme', icon: '☀️', action: () => this.setTheme('light') },
-      { id: 'theme.dark', label: 'Dark Theme', category: 'Theme', icon: '🌙', action: () => this.setTheme('dark') },
-      
-      // Zoom operations
-      { id: 'zoom.in', label: 'Zoom In', category: 'View', shortcut: 'Ctrl++', icon: '🔍', action: () => this.zoomIn() },
-      { id: 'zoom.out', label: 'Zoom Out', category: 'View', shortcut: 'Ctrl+-', icon: '🔍', action: () => this.zoomOut() },
-      { id: 'zoom.reset', label: 'Reset Zoom', category: 'View', shortcut: 'Ctrl+0', icon: '🔍', action: () => this.resetZoom() },
-    ];
-
-    this.commandPaletteItems = defaultCommands;
-  }
-
-  private initializePanelConfigurations(): void {
-    const panels: PanelConfiguration[] = [
-      { id: 'file-explorer', name: 'File Explorer', defaultVisible: true, position: 'left', minWidth: 200, resizable: true },
-      { id: 'chat-history', name: 'Chat History', defaultVisible: false, position: 'right', minWidth: 300, resizable: true },
-      { id: 'terminal', name: 'Terminal', defaultVisible: false, position: 'bottom', minHeight: 200, resizable: true },
-      { id: 'output', name: 'Output', defaultVisible: false, position: 'bottom', minHeight: 150, resizable: true },
-      { id: 'problems', name: 'Problems', defaultVisible: false, position: 'bottom', minHeight: 150, resizable: true },
-    ];
-
-    panels.forEach(panel => {
-      this.panelConfigurations.set(panel.id, panel);
-    });
-  }
-
-  private setupKeyboardShortcuts(): void {
-    document.addEventListener('keydown', (e: KeyboardEvent) => {
-      if (e.ctrlKey || e.metaKey) {
-        switch (e.key.toLowerCase()) {
-          case 'p':
-            if (e.shiftKey) {
-              this.openCommandPalette();
-              e.preventDefault();
-            }
-            break;
-          case 'e':
-            if (e.shiftKey) {
-              this.toggleFileExplorer();
-              e.preventDefault();
-            }
-            break;
-          case '`':
-            this.toggleTerminalPanel();
-            e.preventDefault();
-            break;
-          case '=':
-          case '+':
-            this.zoomIn();
-            e.preventDefault();
-            break;
-          case '-':
-            this.zoomOut();
-            e.preventDefault();
-            break;
-          case '0':
-            this.resetZoom();
-            e.preventDefault();
-            break;
-        }
-      } else if (e.key === 'F11') {
-        this.toggleFullscreen();
-        e.preventDefault();
-      } else if (e.key === 'Escape' && this.viewState.commandPaletteOpen) {
-        this.closeCommandPalette();
-        e.preventDefault();
-      }
-    });
-
-    // Listen for fullscreen changes
-    document.addEventListener('fullscreenchange', () => {
-      this.viewState.isFullscreen = !!document.fullscreenElement;
-      this.notifyStateChange();
-    });
-  }
-
-  private loadPersistedState(): void {
-    try {
-      const appState = useAppStore.getState();
-      this.viewState.currentTheme = appState.theme;
-      this.viewState.fileExplorerVisible = appState.isSidebarVisible;
-      
-      // Load other persisted settings from localStorage if available
-      const saved = localStorage.getItem('tanukimcp-view-state');
-      if (saved) {
-        const savedState = JSON.parse(saved);
-        this.viewState = { ...this.viewState, ...savedState };
-      }
-    } catch (error) {
-      console.warn('Failed to load persisted view state:', error);
-    }
-  }
-
-  private persistState(): void {
-    try {
-      // Save to localStorage
-      const stateToSave = {
-        currentZoom: this.viewState.currentZoom,
-        layoutMode: this.viewState.layoutMode,
-        compactMode: this.viewState.compactMode,
-        showMinimap: this.viewState.showMinimap,
-        showBreadcrumbs: this.viewState.showBreadcrumbs,
-        showLineNumbers: this.viewState.showLineNumbers,
-        chatHistoryVisible: this.viewState.chatHistoryVisible,
-        terminalPanelVisible: this.viewState.terminalPanelVisible,
-        outputPanelVisible: this.viewState.outputPanelVisible,
-        problemsPanelVisible: this.viewState.problemsPanelVisible,
-      };
-      
-      localStorage.setItem('tanukimcp-view-state', JSON.stringify(stateToSave));
-    } catch (error) {
-      console.warn('Failed to persist view state:', error);
-    }
-  }
-
-  private notifyStateChange(): void {
-    // Trigger any UI updates that depend on view state
-    // This could be expanded to use a proper event system
-    window.dispatchEvent(new CustomEvent('viewStateChanged', { detail: this.viewState }));
-  }
-
-  // Public getters
-  getCommandPaletteItems(): CommandPaletteItem[] {
-    return [...this.commandPaletteItems];
-  }
-
-  getPanelConfiguration(panelId: string): PanelConfiguration | undefined {
-    return this.panelConfigurations.get(panelId);
-  }
-
-  getAllPanelConfigurations(): PanelConfiguration[] {
-    return Array.from(this.panelConfigurations.values());
-  }
-
-  // Cleanup method
-  cleanup(): void {
-    this.viewState = {
-      fileExplorerVisible: true,
-      chatHistoryVisible: false,
-      terminalPanelVisible: false,
-      outputPanelVisible: false,
-      problemsPanelVisible: false,
-      isFullscreen: false,
-      currentZoom: 1.0,
-      layoutMode: 'normal',
-      sidebarPosition: 'left',
-      commandPaletteOpen: false,
-      currentTheme: 'dark',
-      compactMode: false,
-      showMinimap: true,
-      showBreadcrumbs: true,
-      showLineNumbers: true
-    };
-    this.persistState();
   }
 }
 

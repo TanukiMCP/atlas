@@ -17,6 +17,22 @@ interface ToolSelectorProps {
   searchText: string;
 }
 
+// Helper function to format tool name for display
+const formatToolName = (name: string): string => {
+  // If it has a dot notation like ClearThought.DecisionFramework
+  if (name.includes('.')) {
+    // Get the part after the dot
+    const parts = name.split('.');
+    // Convert CamelCase to space-separated words
+    return parts[parts.length - 1].replace(/([A-Z])/g, ' $1').trim();
+  }
+  
+  // For other cases, convert dot notation to spaces and capitalize words
+  return name.split('.').map(part => 
+    part.charAt(0).toUpperCase() + part.slice(1)
+  ).join(' ');
+};
+
 export const ToolSelector: React.FC<ToolSelectorProps> = ({
   visible,
   position,
@@ -214,7 +230,7 @@ export const ToolSelector: React.FC<ToolSelectorProps> = ({
                 data-index={index}
               >
                 <div className="flex items-center gap-2 mb-0.5">
-                  <span className="font-medium">{tool.name}</span>
+                  <span className="font-medium">{formatToolName(tool.name)}</span>
                   {tool.serverId && (
                     <span className="text-xs bg-muted px-1.5 py-0.5 rounded text-muted-foreground">
                       {tool.serverName || tool.serverId}
